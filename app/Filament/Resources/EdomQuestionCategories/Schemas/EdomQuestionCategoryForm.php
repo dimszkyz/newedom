@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Filament\Resources\EdomCategories\Schemas;
+namespace App\Filament\Resources\EdomQuestionCategories\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
-class EdomCategoryForm
+class EdomQuestionCategoryForm
 {
     public static function configure(Schema $schema): Schema
     {

@@ -47,7 +47,7 @@ class CategoriesRelationManager extends RelationManager
                     ->dateTime('d M Y H:i'),
             ])
             ->recordUrl(
-                fn ($record) => \App\Filament\Resources\EdomCategories\EdomCategoryResource::getUrl(
+                fn ($record) => \App\Filament\Resources\EdomQuestionCategories\EdomQuestionCategoryResource::getUrl(
                     'edit',
                     ['record' => $record]
                 )

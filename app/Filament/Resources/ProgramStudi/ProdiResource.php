@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Resources\Prodis;
+namespace App\Filament\Resources\ProgramStudis;
 
-use App\Filament\Resources\Prodis\Pages\ListProdis;
-use App\Filament\Resources\Prodis\Schemas\ProdiForm;
-use App\Filament\Resources\Prodis\Tables\ProdisTable;
+use App\Filament\Resources\ProgramStudis\Pages\ListProgramStudis;
+use App\Filament\Resources\ProgramStudis\Schemas\ProgramStudiForm;
+use App\Filament\Resources\ProgramStudis\Tables\ProgramStudisTable;
 use App\Models\Prodi;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -13,7 +13,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
-class ProdiResource extends Resource
+class ProgramStudiResource extends Resource
 {
     protected static ?string $model = Prodi::class;
 
@@ -29,7 +29,7 @@ class ProdiResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
 
-    protected static ?string $recordTitleAttribute = 'nama';
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function canCreate(): bool
     {
@@ -48,12 +48,12 @@ class ProdiResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return ProdiForm::configure($schema);
+        return ProgramStudiForm::configure($schema);
     }
 
     public static function table(Table $table): Table
     {
-        return ProdisTable::configure($table);
+        return ProgramStudisTable::configure($table);
     }
 
     public static function getRelations(): array
@@ -66,7 +66,7 @@ class ProdiResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListProdis::route('/'),
+            'index' => ListProgramStudis::route('/'),
         ];
     }
 }

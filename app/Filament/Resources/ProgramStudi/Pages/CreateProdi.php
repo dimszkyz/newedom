@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Filament\Resources\Prodis\Pages;
+namespace App\Filament\Resources\ProgramStudis\Pages;
 
-use App\Filament\Resources\Prodis\ProdiResource;
+use App\Filament\Resources\ProgramStudis\ProgramStudiResource;
 use Filament\Resources\Pages\CreateRecord;
 
-class CreateProdi extends CreateRecord
+class CreateProgramStudi extends CreateRecord
 {
-    protected static string $resource = ProdiResource::class;
+    protected static string $resource = ProgramStudiResource::class;
 }

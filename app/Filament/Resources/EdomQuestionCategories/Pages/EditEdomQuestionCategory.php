@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\EdomCategories\Pages;
+namespace App\Filament\Resources\EdomQuestionCategories\Pages;
 
-use App\Filament\Resources\EdomCategories\EdomCategoryResource;
+use App\Filament\Resources\EdomQuestionCategories\EdomQuestionCategoryResource;
 use App\Filament\Resources\Edoms\EdomResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
-class EditEdomCategory extends EditRecord
+class EditEdomQuestionCategory extends EditRecord
 {
-    protected static string $resource = EdomCategoryResource::class;
+    protected static string $resource = EdomQuestionCategoryResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -26,8 +26,8 @@ class EditEdomCategory extends EditRecord
             EdomResource::getUrl() => 'Kelola EDOM',
             EdomResource::getUrl('edit', [
                 'record' => $edom,
-            ]) => $edom->nama_edom,
-            '' => $this->record->nama_kategori,
+            ]) => $edom->name,
+            '' => $this->record->name,
         ];
     }
 }

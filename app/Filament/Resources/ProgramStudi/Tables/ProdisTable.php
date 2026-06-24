@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\Prodis\Tables;
+namespace App\Filament\Resources\ProgramStudis\Tables;
 
 use App\Models\Prodi;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
-class ProdisTable
+class ProgramStudisTable
 {
     public static function configure(Table $table): Table
     {

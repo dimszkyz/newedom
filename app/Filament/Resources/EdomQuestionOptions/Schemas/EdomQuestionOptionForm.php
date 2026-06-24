@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Filament\Resources\EdomOptions\Schemas;
+namespace App\Filament\Resources\EdomQuestionOptions\Schemas;
 
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
-class EdomOptionForm
+class EdomQuestionOptionForm
 {
     public static function configure(Schema $schema): Schema
     {

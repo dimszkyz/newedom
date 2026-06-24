@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\EdomCategories\RelationManagers;
+namespace App\Filament\Resources\EdomQuestionCategories\RelationManagers;
 
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
