@@ -21,7 +21,7 @@ class CategoriesRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                Forms\Components\TextInput::make('category_name')
+                Forms\Components\TextInput::make('name')
                     ->label('Nama Kategori')
                     ->required()
                     ->maxLength(255),
@@ -31,9 +31,8 @@ class CategoriesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-
             ->columns([
-                Tables\Columns\TextColumn::make('category_name')
+                Tables\Columns\TextColumn::make('name')
                     ->label('Nama Kategori')
                     ->searchable()
                     ->sortable(),
@@ -47,25 +46,22 @@ class CategoriesRelationManager extends RelationManager
                     ->label('Dibuat')
                     ->dateTime('d M Y H:i'),
             ])
-
             ->recordUrl(
                 fn ($record) => \App\Filament\Resources\EdomCategories\EdomCategoryResource::getUrl(
                     'edit',
                     ['record' => $record]
                 )
             )
-
             ->headerActions([
                 CreateAction::make()
                     ->slideOver()
                     ->mutateDataUsing(function (array $data): array {
-                        $data['edom_id'] = $this->ownerRecord->id;
+                        $data['edom_setting_id'] = $this->ownerRecord->id;
 
                         return $data;
                     })
                     ->visible(fn ($livewire) => $livewire->ownerRecord->isDraft()),
             ])
-
             ->actions([
                 EditAction::make()
                     ->slideOver()

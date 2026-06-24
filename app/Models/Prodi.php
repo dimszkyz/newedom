@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Prodi extends Model
 {
-    protected $table = 'study_programs';
+    protected $table = 'program_studi';
 
     protected $fillable = [
-        'unw_study_program_id',
+        'id_unw_program_studi',
         'name',
         'slug',
         'page_slug',
@@ -32,6 +32,16 @@ class Prodi extends Model
         return trim(($this->degree_short_name ? $this->degree_short_name . ' - ' : '') . $this->name);
     }
 
+    public function getUnwStudyProgramIdAttribute(): mixed
+    {
+        return $this->attributes['id_unw_program_studi'] ?? null;
+    }
+
+    public function setUnwStudyProgramIdAttribute(mixed $value): void
+    {
+        $this->attributes['id_unw_program_studi'] = $value;
+    }
+
     public function mataKuliahs()
     {
         return $this->hasMany(MataKuliah::class, 'study_program_id');
@@ -41,9 +51,9 @@ class Prodi extends Model
     {
         return $this->belongsToMany(
             Edom::class,
-            'edom_study_programs',
-            'study_program_id',
-            'edom_id'
+            'edom_settings_program_studi',
+            'program_studi_id',
+            'edom_setting_id'
         )->withTimestamps();
     }
 }

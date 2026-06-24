@@ -51,7 +51,7 @@ class QuestionsRelationManager extends RelationManager
                             ->required(),
                     ])
                     ->using(function (array $data) {
-                        $data['category_id'] = $this->ownerRecord->id;
+                        $data['edom_question_category_id'] = $this->ownerRecord->id;
 
                         return $this->ownerRecord->questions()->create($data);
                     })

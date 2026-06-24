@@ -42,7 +42,7 @@ class PreviewEdom extends Page implements HasForms
             ->schema([
                 Forms\Components\Select::make('edom_id')
                     ->label('Pilih EDOM untuk di-preview')
-                    ->options(Edom::pluck('edom_name', 'id'))
+                    ->options(Edom::pluck('name', 'id'))
                     ->searchable()
                     ->live(),
             ])

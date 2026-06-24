@@ -8,19 +8,31 @@ use App\Models\EdomQuestion;
 
 class Edom extends Model
 {
+    protected $table = 'edom_settings';
+
     protected $fillable = [
-        'edom_name',
+        'name',
         'created_date',
         'status',
     ];
+
+    public function getEdomNameAttribute(): ?string
+    {
+        return $this->attributes['name'] ?? null;
+    }
+
+    public function setEdomNameAttribute(?string $value): void
+    {
+        $this->attributes['name'] = $value;
+    }
 
     public function prodis()
     {
         return $this->belongsToMany(
             Prodi::class,
-            'edom_study_programs',
-            'edom_id',
-            'study_program_id'
+            'edom_settings_program_studi',
+            'edom_setting_id',
+            'program_studi_id'
         )->withTimestamps();
     }
 
@@ -36,7 +48,7 @@ class Edom extends Model
 
     public function categories()
     {
-        return $this->hasMany(EdomCategory::class);
+        return $this->hasMany(EdomCategory::class, 'edom_setting_id');
     }
 
     public function questions()
@@ -44,8 +56,10 @@ class Edom extends Model
         return $this->hasManyThrough(
             EdomQuestion::class,
             EdomCategory::class,
-            'edom_id',
-            'category_id'
+            'edom_setting_id',
+            'edom_question_category_id',
+            'id',
+            'id'
         );
     }
 
@@ -66,11 +80,11 @@ class Edom extends Model
 
     public function options()
     {
-        return $this->hasMany(EdomOption::class);
+        return $this->hasMany(EdomOption::class, 'edom_setting_id');
     }
 
     public function responses()
     {
-        return $this->hasMany(EdomResponse::class);
+        return $this->hasMany(EdomResponse::class, 'edom_id');
     }
 }
