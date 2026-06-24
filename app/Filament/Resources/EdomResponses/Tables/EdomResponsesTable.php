@@ -22,7 +22,7 @@ class EdomResponsesTable
             ->columns([
                 TextColumn::make('edom_name_snapshot')
                     ->label('EDOM')
-                    ->state(fn (EdomResponse $record): string => $record->edom_name_snapshot ?: ($record->edom?->edom_name ?? 'EDOM dihapus'))
+                    ->state(fn (EdomResponse $record): string => $record->edom_name_snapshot ?: ($record->edom?->name ?? 'EDOM dihapus'))
                     ->searchable()
                     ->sortable(),
 
@@ -73,7 +73,7 @@ class EdomResponsesTable
             ->filters([
                 SelectFilter::make('edom')
                     ->label('EDOM Aktif/Tersedia')
-                    ->relationship('edom', 'edom_name')
+                    ->relationship('edom', 'name')
                     ->searchable()
                     ->preload()
                     ->placeholder('Semua EDOM'),

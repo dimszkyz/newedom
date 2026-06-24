@@ -15,7 +15,7 @@ class EdomForm
     {
         return $schema
             ->components([
-                TextInput::make('edom_name')
+                TextInput::make('name')
                     ->label('Nama EDOM')
                     ->required()
                     ->maxLength(255)

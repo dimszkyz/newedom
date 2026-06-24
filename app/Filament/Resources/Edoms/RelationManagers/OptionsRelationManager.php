@@ -19,7 +19,7 @@ class OptionsRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                TextInput::make('label')
+                TextInput::make('name')
                     ->label('Opsi Jawaban')
                     ->required(),
 
@@ -38,13 +38,12 @@ class OptionsRelationManager extends RelationManager
                     ->label('Urutan')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('label')
+                Tables\Columns\TextColumn::make('name')
                     ->label('Opsi Jawaban'),
 
                 Tables\Columns\TextColumn::make('score')
                     ->label('Nilai'),
             ])
-
             ->headerActions([
                 CreateAction::make()
                     ->mutateDataUsing(function (array $data): array {
@@ -53,13 +52,11 @@ class OptionsRelationManager extends RelationManager
                             ->max('sort_order');
 
                         $data['sort_order'] = ($lastSortOrder ?? 0) + 1;
-
-                        $data['edom_id'] = $this->ownerRecord->id;
+                        $data['edom_setting_id'] = $this->ownerRecord->id;
 
                         return $data;
                     }),
             ])
-
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make(),

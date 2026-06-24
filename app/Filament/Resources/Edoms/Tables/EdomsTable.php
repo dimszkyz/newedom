@@ -15,7 +15,7 @@ class EdomsTable
     {
         return $table
             ->columns([
-                TextColumn::make('edom_name')
+                TextColumn::make('name')
                     ->label('Nama EDOM')
                     ->searchable(),
 

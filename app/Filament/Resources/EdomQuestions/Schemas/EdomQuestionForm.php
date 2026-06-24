@@ -13,8 +13,7 @@ class EdomQuestionForm
     {
         return $schema
             ->components([
-
-                Hidden::make('category_id'),
+                Hidden::make('edom_question_category_id'),
 
                 Textarea::make('statement')
                     ->label('Pernyataan')

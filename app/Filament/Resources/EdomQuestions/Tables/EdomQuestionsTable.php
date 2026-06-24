@@ -14,7 +14,7 @@ class EdomQuestionsTable
     {
         return $table
             ->columns([
-                TextColumn::make('category.category_name')
+                TextColumn::make('category.name')
                     ->label('Kategori')
                     ->searchable()
                     ->sortable(),

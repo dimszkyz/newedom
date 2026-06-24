@@ -14,7 +14,7 @@ class ProdisTable
         return $table
             ->defaultSort('name')
             ->columns([
-                TextColumn::make('unw_study_program_id')
+                TextColumn::make('id_unw_program_studi')
                     ->label('ID API')
                     ->sortable()
                     ->toggleable(),

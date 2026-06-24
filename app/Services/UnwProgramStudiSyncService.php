@@ -60,7 +60,7 @@ class UnwProgramStudiSyncService
             ];
 
             $prodi = Prodi::query()
-                ->where('unw_study_program_id', $externalId)
+                ->where('id_unw_program_studi', $externalId)
                 ->first();
 
             if ($prodi) {
@@ -70,7 +70,7 @@ class UnwProgramStudiSyncService
             }
 
             Prodi::query()->create([
-                'unw_study_program_id' => $externalId,
+                'id_unw_program_studi' => $externalId,
                 ...$attributes,
             ]);
 

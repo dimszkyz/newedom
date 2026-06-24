@@ -14,15 +14,15 @@ class EdomOptionsTable
     {
         return $table
             ->columns([
-                TextColumn::make('urutan')
+                TextColumn::make('sort_order')
                     ->label('Urutan')
                     ->sortable(),
 
-                TextColumn::make('label')
+                TextColumn::make('name')
                     ->label('Opsi Jawaban')
                     ->searchable(),
 
-                TextColumn::make('nilai')
+                TextColumn::make('score')
                     ->label('Nilai')
                     ->sortable(),
 
@@ -30,7 +30,7 @@ class EdomOptionsTable
                     ->label('Dibuat')
                     ->dateTime('d M Y H:i'),
             ])
-            ->defaultSort('urutan')
+            ->defaultSort('sort_order')
             ->filters([
                 //
             ])

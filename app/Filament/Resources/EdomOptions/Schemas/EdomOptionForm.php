@@ -11,12 +11,12 @@ class EdomOptionForm
     {
         return $schema
             ->components([
-                TextInput::make('label')
+                TextInput::make('name')
                     ->label('Nama Opsi')
                     ->required()
                     ->maxLength(255),
 
-                TextInput::make('nilai')
+                TextInput::make('score')
                     ->label('Nilai')
                     ->numeric()
                     ->required(),
