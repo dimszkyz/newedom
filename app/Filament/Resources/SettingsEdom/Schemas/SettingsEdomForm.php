@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\Edoms\Schemas;
+namespace App\Filament\Resources\SettingsEdom\Schemas;
 
-use App\Models\MataKuliah;
-use App\Models\Prodi;
+use App\Models\Course;
+use App\Models\ProgramStudi;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
-class EdomForm
+class SettingsEdomForm
 {
     public static function configure(Schema $schema): Schema
     {
@@ -44,7 +44,7 @@ class EdomForm
                         }
 
                         if (! empty($selectedMataKuliahs)) {
-                            $validMataKuliahs = MataKuliah::whereIn('study_program_id', $state)
+                            $validMataKuliahs = Course::whereIn('study_program_id', $state)
                                 ->whereIn('id', $selectedMataKuliahs)
                                 ->pluck('id')
                                 ->toArray();

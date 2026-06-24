@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Edoms\Tables;
+namespace App\Filament\Resources\SettingsEdom\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -9,7 +9,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
-class EdomsTable
+class SettingsEdomsTable
 {
     public static function configure(Table $table): Table
     {

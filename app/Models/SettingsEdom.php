@@ -3,10 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\EdomCategory;
+use App\Models\EdomQuestionCategory;
 use App\Models\EdomQuestion;
 
-class Edom extends Model
+class SettingsEdom extends Model
 {
     protected $table = 'edom_settings';
 
@@ -29,7 +29,7 @@ class Edom extends Model
     public function prodis()
     {
         return $this->belongsToMany(
-            Prodi::class,
+            ProgramStudi::class,
             'edom_settings_program_studi',
             'edom_setting_id',
             'program_studi_id'
@@ -39,7 +39,7 @@ class Edom extends Model
     public function mataKuliahs()
     {
         return $this->belongsToMany(
-            MataKuliah::class,
+            Course::class,
             'edom_courses',
             'edom_id',
             'course_id'
@@ -48,14 +48,14 @@ class Edom extends Model
 
     public function categories()
     {
-        return $this->hasMany(EdomCategory::class, 'edom_setting_id');
+        return $this->hasMany(EdomQuestionCategory::class, 'edom_setting_id');
     }
 
     public function questions()
     {
         return $this->hasManyThrough(
             EdomQuestion::class,
-            EdomCategory::class,
+            EdomQuestionCategory::class,
             'edom_setting_id',
             'edom_question_category_id',
             'id',
@@ -80,7 +80,7 @@ class Edom extends Model
 
     public function options()
     {
-        return $this->hasMany(EdomOption::class, 'edom_setting_id');
+        return $this->hasMany(EdomQuestionOption::class, 'edom_setting_id');
     }
 
     public function responses()

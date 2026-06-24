@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\ProgramStudis\Tables;
 
-use App\Models\Prodi;
+use App\Models\ProgramStudi;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -56,7 +56,7 @@ class ProgramStudisTable
             ->filters([
                 SelectFilter::make('degree_short_name')
                     ->label('Jenjang')
-                    ->options(fn (): array => Prodi::query()
+                    ->options(fn (): array => ProgramStudi::query()
                         ->whereNotNull('degree_short_name')
                         ->distinct()
                         ->orderBy('degree_short_name')
@@ -66,7 +66,7 @@ class ProgramStudisTable
 
                 SelectFilter::make('faculty_name')
                     ->label('Fakultas')
-                    ->options(fn (): array => Prodi::query()
+                    ->options(fn (): array => ProgramStudi::query()
                         ->whereNotNull('faculty_name')
                         ->distinct()
                         ->orderBy('faculty_name')

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Edom;
+use App\Models\SettingsEdom;
 use App\Models\EdomAnswer;
-use App\Models\EdomOption;
+use App\Models\EdomQuestionOption;
 use App\Models\EdomQuestion;
 use App\Models\EdomResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +17,7 @@ class EdomPublicController extends Controller
 {
     public function index(Request $request): View
     {
-        $activeEdoms = Edom::query()
+        $activeEdoms = SettingsEdom::query()
             ->with(['prodis', 'mataKuliahs'])
             ->withCount(['categories', 'questions'])
             ->where('status', 'active')
@@ -39,7 +39,7 @@ class EdomPublicController extends Controller
             return $this->show($activeEdoms->first());
         }
 
-        $closedEdoms = Edom::query()
+        $closedEdoms = SettingsEdom::query()
             ->with(['prodis', 'mataKuliahs'])
             ->where('status', 'closed')
             ->latest('created_date')
@@ -47,7 +47,7 @@ class EdomPublicController extends Controller
             ->limit(6)
             ->get();
 
-        $draftCount = Edom::query()
+        $draftCount = SettingsEdom::query()
             ->where('status', 'draft')
             ->count();
 
@@ -81,7 +81,7 @@ class EdomPublicController extends Controller
 
     public function submitFromHome(Request $request): RedirectResponse
     {
-        $edom = Edom::query()->findOrFail($request->input('edom_id'));
+        $edom = SettingsEdom::query()->findOrFail($request->input('edom_id'));
 
         return $this->submit($request, $edom);
     }
@@ -178,7 +178,7 @@ class EdomPublicController extends Controller
         if ($edom->options->isEmpty()) {
             $edom->setRelation(
                 'options',
-                EdomOption::query()
+                EdomQuestionOption::query()
                     ->orderBy('sort_order')
                     ->orderBy('score')
                     ->orderBy('id')

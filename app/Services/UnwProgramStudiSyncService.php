@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Prodi;
+use App\Models\ProgramStudi;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -59,7 +59,7 @@ class UnwProgramStudiSyncService
                 'synced_at' => now(),
             ];
 
-            $prodi = Prodi::query()
+            $prodi = ProgramStudi::query()
                 ->where('id_unw_program_studi', $externalId)
                 ->first();
 
@@ -69,7 +69,7 @@ class UnwProgramStudiSyncService
                 continue;
             }
 
-            Prodi::query()->create([
+            ProgramStudi::query()->create([
                 'id_unw_program_studi' => $externalId,
                 ...$attributes,
             ]);

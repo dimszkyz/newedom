@@ -6,7 +6,7 @@ use App\Filament\Resources\MataKuliahs\MataKuliahResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
-class EditMataKuliah extends EditRecord
+class EditCourse extends EditRecord
 {
     protected static string $resource = MataKuliahResource::class;
 

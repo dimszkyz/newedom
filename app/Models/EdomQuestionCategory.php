@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EdomCategory extends Model
+class EdomQuestionCategory extends Model
 {
     protected $table = 'edom_question_categories';
 
@@ -35,7 +35,7 @@ class EdomCategory extends Model
 
     public function edom()
     {
-        return $this->belongsTo(Edom::class, 'edom_setting_id');
+        return $this->belongsTo(SettingsEdom::class, 'edom_setting_id');
     }
 
     public function questions()

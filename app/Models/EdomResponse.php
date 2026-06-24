@@ -22,7 +22,7 @@ class EdomResponse extends Model
 
     public function edom()
     {
-        return $this->belongsTo(Edom::class);
+        return $this->belongsTo(SettingsEdom::class);
     }
 
     public function answers()

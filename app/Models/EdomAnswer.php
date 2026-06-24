@@ -30,6 +30,6 @@ class EdomAnswer extends Model
 
     public function option()
     {
-        return $this->belongsTo(EdomOption::class, 'edom_option_id');
+        return $this->belongsTo(EdomQuestionOption::class, 'edom_option_id');
     }
 }

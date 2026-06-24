@@ -2,12 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Edom;
-use App\Models\EdomCategory;
+use App\Models\SettingsEdom;
+use App\Models\EdomQuestionCategory;
 use App\Models\EdomQuestion;
 use App\Models\EdomResponse;
-use App\Models\MataKuliah;
-use App\Models\Prodi;
+use App\Models\Course;
+use App\Models\ProgramStudi;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -16,19 +16,19 @@ class EdomOverviewStats extends StatsOverviewWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Total EDOM', Edom::query()->count())
+            Stat::make('Total EDOM', SettingsEdom::query()->count())
                 ->description('Semua EDOM yang sudah dibuat')
                 ->color('primary'),
 
-            Stat::make('Draft', Edom::query()->where('status', 'draft')->count())
+            Stat::make('Draft', SettingsEdom::query()->where('status', 'draft')->count())
                 ->description('EDOM yang masih disusun')
                 ->color('gray'),
 
-            Stat::make('Aktif', Edom::query()->where('status', 'aktif')->count())
+            Stat::make('Aktif', SettingsEdom::query()->where('status', 'aktif')->count())
                 ->description('EDOM yang sedang berjalan')
                 ->color('success'),
 
-            Stat::make('Ditutup', Edom::query()->where('status', 'ditutup')->count())
+            Stat::make('Ditutup', SettingsEdom::query()->where('status', 'ditutup')->count())
                 ->description('EDOM yang sudah selesai')
                 ->color('danger'),
 
@@ -40,15 +40,15 @@ class EdomOverviewStats extends StatsOverviewWidget
                 ->description('Jumlah pertanyaan evaluasi')
                 ->color('info'),
 
-            Stat::make('Total Kategori', EdomCategory::query()->count())
+            Stat::make('Total Kategori', EdomQuestionCategory::query()->count())
                 ->description('Kelompok penilaian EDOM')
                 ->color('warning'),
 
-            Stat::make('Total Prodi', Prodi::query()->count())
+            Stat::make('Total Prodi', ProgramStudi::query()->count())
                 ->description('Program studi yang terdaftar')
                 ->color('success'),
 
-            Stat::make('Total Mata Kuliah', MataKuliah::query()->count())
+            Stat::make('Total Mata Kuliah', Course::query()->count())
                 ->description('Mata kuliah yang terdaftar')
                 ->color('primary'),
         ];

@@ -5,7 +5,7 @@ namespace App\Filament\Resources\ProgramStudis;
 use App\Filament\Resources\ProgramStudis\Pages\ListProgramStudis;
 use App\Filament\Resources\ProgramStudis\Schemas\ProgramStudiForm;
 use App\Filament\Resources\ProgramStudis\Tables\ProgramStudisTable;
-use App\Models\Prodi;
+use App\Models\ProgramStudi;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProgramStudiResource extends Resource
 {
-    protected static ?string $model = Prodi::class;
+    protected static ?string $model = ProgramStudi::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 

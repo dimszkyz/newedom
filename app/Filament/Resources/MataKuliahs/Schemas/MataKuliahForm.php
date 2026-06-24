@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\MataKuliahs\Schemas;
 
-use App\Models\Prodi;
+use App\Models\ProgramStudi;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;

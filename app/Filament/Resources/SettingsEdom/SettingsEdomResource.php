@@ -1,25 +1,25 @@
 <?php
 
-namespace App\Filament\Resources\Edoms;
+namespace App\Filament\Resources\SettingsEdom;
 
-use App\Filament\Resources\Edoms\Pages\CreateEdom;
-use App\Filament\Resources\Edoms\Pages\EditEdom;
-use App\Filament\Resources\Edoms\Pages\ListEdoms;
-use App\Filament\Resources\Edoms\RelationManagers\CategoriesRelationManager;
-use App\Filament\Resources\Edoms\RelationManagers\OptionsRelationManager;
-use App\Filament\Resources\Edoms\RelationManagers\ResponsesRelationManager;
-use App\Filament\Resources\Edoms\Schemas\EdomForm;
-use App\Filament\Resources\Edoms\Tables\EdomsTable;
-use App\Models\Edom;
+use App\Filament\Resources\SettingsEdom\Pages\CreateSettingsEdom;
+use App\Filament\Resources\SettingsEdom\Pages\EditSettingsEdom;
+use App\Filament\Resources\SettingsEdom\Pages\ListSettingsEdoms;
+use App\Filament\Resources\SettingsEdom\RelationManagers\CategoriesRelationManager;
+use App\Filament\Resources\SettingsEdom\RelationManagers\OptionsRelationManager;
+use App\Filament\Resources\SettingsEdom\RelationManagers\ResponsesRelationManager;
+use App\Filament\Resources\SettingsEdom\Schemas\SettingsEdomForm;
+use App\Filament\Resources\SettingsEdom\Tables\SettingsEdomsTable;
+use App\Models\SettingsEdom;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class EdomResource extends Resource
+class SettingsEdomResource extends Resource
 {
-    protected static ?string $model = Edom::class;
+    protected static ?string $model = SettingsEdom::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
@@ -37,12 +37,12 @@ class EdomResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return EdomForm::configure($schema);
+        return SettingsEdomForm::configure($schema);
     }
 
     public static function table(Table $table): Table
     {
-        return EdomsTable::configure($table);
+        return SettingsEdomsTable::configure($table);
     }
 
     public static function getRelations(): array
@@ -57,9 +57,9 @@ class EdomResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListEdoms::route('/'),
-            'create' => CreateEdom::route('/create'),
-            'edit' => EditEdom::route('/{record}/edit'),
+            'index' => ListSettingsEdoms::route('/'),
+            'create' => CreateSettingsEdom::route('/create'),
+            'edit' => EditSettingsEdom::route('/{record}/edit'),
         ];
     }
 }

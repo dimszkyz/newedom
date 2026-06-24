@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Edoms\RelationManagers;
+namespace App\Filament\Resources\SettingsEdom\RelationManagers;
 
 use App\Filament\Resources\EdomResponses\EdomResponseResource;
 use App\Models\EdomResponse;

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Prodi extends Model
+class ProgramStudi extends Model
 {
     protected $table = 'program_studi';
 
@@ -44,13 +44,13 @@ class Prodi extends Model
 
     public function mataKuliahs()
     {
-        return $this->hasMany(MataKuliah::class, 'study_program_id');
+        return $this->hasMany(Course::class, 'study_program_id');
     }
 
     public function edoms()
     {
         return $this->belongsToMany(
-            Edom::class,
+            SettingsEdom::class,
             'edom_settings_program_studi',
             'program_studi_id',
             'edom_setting_id'
