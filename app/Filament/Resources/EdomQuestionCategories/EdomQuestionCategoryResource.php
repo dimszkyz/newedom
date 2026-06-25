@@ -8,7 +8,7 @@ use App\Filament\Resources\EdomQuestionCategories\Pages\ListEdomQuestionCategori
 use App\Filament\Resources\EdomQuestionCategories\RelationManagers\QuestionsRelationManager;
 use App\Filament\Resources\EdomQuestionCategories\Schemas\EdomQuestionCategoryForm;
 use App\Filament\Resources\EdomQuestionCategories\Tables\EdomQuestionCategoriesTable;
-use App\Models\EdomCategory as EdomQuestionCategory;
+use App\Models\EdomQuestionCategory;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
