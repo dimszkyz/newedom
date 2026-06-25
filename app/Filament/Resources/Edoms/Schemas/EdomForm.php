@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Edoms\Schemas;
 
 use App\Models\MataKuliah;
-use App\Models\Prodi;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -30,7 +29,7 @@ class EdomForm
                 Select::make('prodis')
                     ->label('Prodi')
                     ->relationship('prodis', 'name')
-                    ->getOptionLabelFromRecordUsing(fn (Prodi $record): string => $record->display_name)
+                    ->getOptionLabelFromRecordUsing(fn ($record): string => $record->display_name ?? $record->name ?? '-')
                     ->multiple()
                     ->searchable()
                     ->preload()
