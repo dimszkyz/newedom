@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\MataKuliahs\Schemas;
 
-use App\Models\ProgramStudi;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -16,7 +15,7 @@ class MataKuliahForm
                 Select::make('study_program_id')
                     ->label('Prodi')
                     ->relationship('prodi', 'name')
-                    ->getOptionLabelFromRecordUsing(fn (Prodi $record): string => $record->display_name)
+                    ->getOptionLabelFromRecordUsing(fn ($record): string => $record->display_name ?? $record->name ?? '-')
                     ->searchable()
                     ->preload()
                     ->required(),
