@@ -23,13 +23,13 @@ class SettingsEdomResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
-    protected static ?string $navigationLabel = 'Kelola EDOM';
+    protected static ?string $navigationLabel = 'Setting EDOM';
 
     protected static ?string $modelLabel = 'EDOM';
 
-    protected static ?string $pluralModelLabel = 'EDOM';
+    protected static ?string $pluralModelLabel = 'Setting EDOM';
 
-    protected static ?string $slug = 'edom';
+    protected static ?string $slug = 'setting-edom';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
