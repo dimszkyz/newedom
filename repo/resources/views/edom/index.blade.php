@@ -42,17 +42,17 @@
             <section class="section">
                 <h2 class="section-title">Setting EDOM Aktif</h2>
 
-                @if ($activeSettingEdoms->isNotEmpty())
+                @if ($activeEdoms->isNotEmpty())
                     <div class="grid">
-                        @foreach ($activeSettingEdoms as $settingEdom)
+                        @foreach ($activeEdoms as $edom)
                             <article class="card">
                                 <span class="badge badge-active">Aktif</span>
-                                <h2>{{ $settingEdom->name }}</h2>
+                                <h2>{{ $edom->edom_name }}</h2>
                                 <p class="meta">
-                                    {{ $settingEdom->prodis->pluck('nama')->join(', ') ?: 'Semua Prodi' }}<br>
-                                    {{ $settingEdom->questions_count }} pernyataan dalam {{ $settingEdom->question_categories_count }} kategori
+                                    {{ $edom->programStudis->pluck('name')->join(', ') ?: 'Semua Program Studi' }}<br>
+                                    {{ $edom->questions_count }} pernyataan dalam {{ $edom->categories_count }} kategori
                                 </p>
-                                <a class="button" href="{{ route('edom.home', ['setting_edom' => $settingEdom->id]) }}">
+                                <a class="button" href="{{ route('edom.home', ['edom' => $edom->id]) }}">
                                     {{ $student ? 'Isi EDOM dari KRS' : 'Isi EDOM' }}
                                 </a>
                             </article>
@@ -63,24 +63,24 @@
                         @if ($student && ! $studentFetchError)
                             Tidak ada setting EDOM aktif yang cocok dengan program studi pada KRS Anda.
                         @elseif ($draftCount > 0)
-                            <br>Belum ada EDOM yang aktif untuk saat ini, harap tunggu dan kembali beberapa saat lagi.
+                            <br>Belum ada setting EDOM yang aktif untuk saat ini, harap tunggu dan kembali beberapa saat lagi.
                         @else
-                            Belum ada EDOM yang aktif untuk saat ini.
+                            Belum ada setting EDOM yang aktif untuk saat ini.
                         @endif
                     </div>
                 @endif
             </section>
 
-            @if ($closedSettingEdoms->isNotEmpty())
+            @if ($closedEdoms->isNotEmpty())
                 <section class="section">
                     <h2 class="section-title">Setting EDOM yang Sudah Ditutup</h2>
                     <div class="grid">
-                        @foreach ($closedSettingEdoms as $settingEdom)
+                        @foreach ($closedEdoms as $edom)
                             <article class="card">
                                 <span class="badge badge-closed">Ditutup</span>
-                                <h2>{{ $settingEdom->name }}</h2>
+                                <h2>{{ $edom->edom_name }}</h2>
                                 <p class="meta">
-                                    {{ $settingEdom->prodis->pluck('nama')->join(', ') ?: 'Semua Prodi' }}
+                                    {{ $edom->programStudis->pluck('name')->join(', ') ?: 'Semua Program Studi' }}
                                 </p>
                                 <span class="button button-muted">Pengisian Ditutup</span>
                             </article>

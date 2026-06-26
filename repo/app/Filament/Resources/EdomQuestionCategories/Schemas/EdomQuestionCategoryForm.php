@@ -17,7 +17,6 @@ class EdomQuestionCategoryForm
                 ->searchable()
                 ->preload()
                 ->required(),
-
             TextInput::make('name')
                 ->label('Nama Kategori')
                 ->required()

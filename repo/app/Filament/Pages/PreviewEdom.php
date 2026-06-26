@@ -15,20 +15,15 @@ class PreviewEdom extends Page implements HasForms
     use InteractsWithForms;
 
     protected static ?string $navigationLabel = 'Preview EDOM';
-
     protected static string|\UnitEnum|null $navigationGroup = 'Evaluasi';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEye;
-
     protected string $view = 'filament.pages.preview-edom';
 
     public ?array $formData = [];
 
     public function mount(): void
     {
-        $this->form->fill([
-            'setting_edom_id' => SettingEdom::query()->latest()->value('id'),
-        ]);
+        $this->form->fill(['setting_edom_id' => SettingEdom::query()->latest()->value('id')]);
     }
 
     public function getForms(): array
@@ -42,7 +37,7 @@ class PreviewEdom extends Page implements HasForms
             ->schema([
                 Forms\Components\Select::make('setting_edom_id')
                     ->label('Pilih Setting EDOM untuk di-preview')
-                    ->options(SettingEdom::query()->pluck('name', 'id'))
+                    ->options(SettingEdom::pluck('name', 'id'))
                     ->searchable()
                     ->live(),
             ])
@@ -57,10 +52,6 @@ class PreviewEdom extends Page implements HasForms
             return null;
         }
 
-        return SettingEdom::with([
-            'prodis',
-            'questionCategories.questions',
-            'questionOptions',
-        ])->find($settingEdomId);
+        return SettingEdom::with(['programStudis', 'categories.questions', 'questionOptions'])->find($settingEdomId);
     }
 }

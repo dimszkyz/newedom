@@ -2,26 +2,26 @@
 
 namespace App\Filament\Resources\SettingEdoms\RelationManagers;
 
+use App\Filament\Resources\EdomQuestionCategories\EdomQuestionCategoryResource;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
-class QuestionOptionsRelationManager extends RelationManager
+class CategoriesRelationManager extends RelationManager
 {
-    protected static string $relationship = 'questionOptions';
+    protected static string $relationship = 'categories';
 
-    protected static ?string $title = 'Opsi Pertanyaan';
+    protected static ?string $title = 'Kategori Pertanyaan';
 
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('name')->label('Opsi Jawaban')->required()->maxLength(255),
-            TextInput::make('score')->label('Nilai')->numeric()->required(),
+            Forms\Components\TextInput::make('name')->label('Nama Kategori')->required()->maxLength(255),
         ]);
     }
 
@@ -29,22 +29,22 @@ class QuestionOptionsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('sort_order')->label('Urutan')->sortable(),
-                Tables\Columns\TextColumn::make('name')->label('Opsi Jawaban'),
-                Tables\Columns\TextColumn::make('score')->label('Nilai'),
+                Tables\Columns\TextColumn::make('name')->label('Nama Kategori')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('questions_count')->label('Jumlah Pertanyaan')->counts('questions')->badge(),
+                Tables\Columns\TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
+            ->recordUrl(fn ($record) => EdomQuestionCategoryResource::getUrl('edit', ['record' => $record]))
             ->headerActions([
                 CreateAction::make()
+                    ->slideOver()
                     ->mutateDataUsing(function (array $data): array {
-                        $lastSortOrder = $this->ownerRecord->questionOptions()->max('sort_order');
-                        $data['sort_order'] = ($lastSortOrder ?? 0) + 1;
                         $data['edom_setting_id'] = $this->ownerRecord->id;
                         return $data;
                     })
                     ->visible(fn ($livewire) => $livewire->ownerRecord->isDraft()),
             ])
-            ->recordActions([
-                EditAction::make()->visible(fn ($record) => $record->settingEdom?->isDraft()),
+            ->actions([
+                EditAction::make()->slideOver()->visible(fn ($record) => $record->settingEdom?->isDraft()),
                 DeleteAction::make()->visible(fn ($record) => $record->settingEdom?->isDraft()),
             ]);
     }

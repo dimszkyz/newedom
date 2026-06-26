@@ -15,68 +15,33 @@ class SettingEdomsTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->label('Nama Setting EDOM')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('prodis.nama')
-                    ->label('Program Studi')
-                    ->badge()
-                    ->separator()
-                    ->placeholder('Semua Prodi'),
-
-                TextColumn::make('question_categories_count')
-                    ->counts('questionCategories')
-                    ->label('Kategori')
-                    ->badge(),
-
-                TextColumn::make('questions_count')
-                    ->counts('questions')
-                    ->label('Pertanyaan')
-                    ->badge(),
-
-                TextColumn::make('responses_count')
-                    ->counts('responses')
-                    ->label('Hasil')
-                    ->badge()
-                    ->color('success'),
-
-                TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'draft' => 'gray',
-                        'active' => 'success',
-                        'closed' => 'danger',
-                        default => 'gray',
-                    }),
-
-                TextColumn::make('created_at')
-                    ->label('Dibuat')
-                    ->dateTime('d M Y H:i'),
+                TextColumn::make('name')->label('Nama Setting EDOM')->searchable(),
+                TextColumn::make('programStudis.name')->label('Program Studi')->badge()->separator(),
+                TextColumn::make('categories_count')->counts('categories')->label('Kategori')->badge(),
+                TextColumn::make('questions_count')->counts('questions')->label('Pertanyaan')->badge(),
+                TextColumn::make('responses_count')->counts('responses')->label('Hasil')->badge()->color('success'),
+                TextColumn::make('status')->label('Status')->badge()->color(fn (string $state): string => match ($state) {
+                    'draft' => 'gray',
+                    'active' => 'success',
+                    'closed' => 'danger',
+                    default => 'gray',
+                }),
+                TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->filters([
                 SelectFilter::make('status')
                     ->label('Status')
-                    ->options([
-                        'draft' => 'Draft',
-                        'active' => 'Aktif',
-                        'closed' => 'Ditutup',
-                    ]),
+                    ->options(['draft' => 'Draft', 'active' => 'Aktif', 'closed' => 'Ditutup'])
+                    ->placeholder('Semua status'),
 
-                SelectFilter::make('prodis')
+                SelectFilter::make('programStudis')
                     ->label('Program Studi')
-                    ->relationship('prodis', 'nama')
+                    ->relationship('programStudis', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('Semua program studi'),
             ])
-            ->recordActions([
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->recordActions([EditAction::make()])
+            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
     }
 }

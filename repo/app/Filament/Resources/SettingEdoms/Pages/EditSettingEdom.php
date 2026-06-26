@@ -12,9 +12,6 @@ class EditSettingEdom extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            DeleteAction::make()
-                ->visible(fn ($record) => $record->isDraft()),
-        ];
+        return [DeleteAction::make()->visible(fn () => $this->record->isDraft())];
     }
 }

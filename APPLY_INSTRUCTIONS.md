@@ -1,44 +1,48 @@
-# Cara apply patch rename schema EDOM
+# Apply patch cleanup penamaan Filament + schema EDOM
 
-Patch ini memperbaiki error `Cannot add a required argument...` dan mengganti penamaan lama:
+Patch ini merapikan sisa penamaan lama di project:
 
-- `Edom` / folder `Edoms` -> `SettingEdom` / folder `SettingEdoms`
-- `EdomCategory` / folder `EdomCategories` -> `EdomQuestionCategory` / folder `EdomQuestionCategories`
-- `EdomOption` / folder `EdomOptions` -> `EdomQuestionOption` / folder `EdomQuestionOptions`
-- `EdomAnswer` -> `EdomResponseDetail`
-- Mata Kuliah manual dihapus.
+- `Edoms` → `SettingEdoms`
+- `EdomResource` → `SettingEdomResource`
+- `EdomCategory` / `EdomCategories` → `EdomQuestionCategory` / `EdomQuestionCategories`
+- `EdomOption` / `EdomOptions` → `EdomQuestionOption` / `EdomQuestionOptions`
+- `Prodi` / `Prodis` → `ProgramStudi` / `ProgramStudis`
+- `MataKuliahs`, `MataKuliah`, dan `Course` dihapus
+- tabel manual `courses` dan `edom_courses` dihapus
+- `edom_responses` / `edom_answers` diganti menjadi `edom_response` / `edom_response_detail`
 
-## Apply di root project
+## Cara apply manual Windows
 
-Root project adalah folder yang berisi `artisan`, `composer.json`, `app`, `database`.
+1. Extract ZIP.
+2. Buka folder `repo`.
+3. Copy semua isi folder `repo` ke root project Laravel kamu:
+   `D:\13. bptik\newedom`
+4. Pilih Replace/Timpa.
+5. Hapus file/folder lama yang ada di `DELETE_FILES.txt`.
+6. Jalankan:
 
 ```bash
-unzip newedom-rename-schema-fix.zip -d /tmp/newedom-rename-schema-fix
-cd /path/ke/newedom
-
-cp -R /tmp/newedom-rename-schema-fix/repo/* .
-
-while IFS= read -r file; do
-  [ -n "$file" ] && rm -f "$file"
-done < /tmp/newedom-rename-schema-fix/DELETE_FILES.txt
-
 composer dump-autoload
 php artisan optimize:clear
 php artisan migrate:fresh --seed
 ```
 
-## Test token
+## Cara apply otomatis PowerShell
+
+Dari PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "D:\path\hasil-extract\apply_update_windows.ps1" -ProjectRoot "D:\13. bptik\newedom"
+```
+
+## Test
 
 ```bash
 php artisan edom:make-token
 ```
 
-Default-nya memakai:
+Default test token memakai:
 
-```text
-testing18273 2026 2
-```
-
-## Catatan database
-
-Gunakan `migrate:fresh` karena tabel lama seperti `courses`, `edom_answers`, dan `edom_responses` harus hilang.
+- `siakad_idmahasiswa=testing18273`
+- `idtahunajaran=2026`
+- `idsemester=2`

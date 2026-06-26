@@ -5,7 +5,7 @@ namespace App\Filament\Resources\SettingEdoms;
 use App\Filament\Resources\SettingEdoms\Pages\CreateSettingEdom;
 use App\Filament\Resources\SettingEdoms\Pages\EditSettingEdom;
 use App\Filament\Resources\SettingEdoms\Pages\ListSettingEdoms;
-use App\Filament\Resources\SettingEdoms\RelationManagers\QuestionCategoriesRelationManager;
+use App\Filament\Resources\SettingEdoms\RelationManagers\CategoriesRelationManager;
 use App\Filament\Resources\SettingEdoms\RelationManagers\QuestionOptionsRelationManager;
 use App\Filament\Resources\SettingEdoms\RelationManagers\ResponsesRelationManager;
 use App\Filament\Resources\SettingEdoms\Schemas\SettingEdomForm;
@@ -48,7 +48,7 @@ class SettingEdomResource extends Resource
     public static function getRelations(): array
     {
         return [
-            QuestionCategoriesRelationManager::class,
+            CategoriesRelationManager::class,
             QuestionOptionsRelationManager::class,
             ResponsesRelationManager::class,
         ];

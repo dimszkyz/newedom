@@ -15,76 +15,38 @@ class EdomResponsesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query
-                ->with(['settingEdom', 'period', 'details.questionOption'])
-                ->latest('submitted_at')
-                ->latest('id'))
+            ->modifyQueryUsing(fn ($query) => $query->with(['settingEdom', 'details'])->latest('submitted_at')->latest('id'))
             ->columns([
-                TextColumn::make('settingEdom.name')
+                TextColumn::make('edom_name_snapshot')
                     ->label('Setting EDOM')
+                    ->state(fn (EdomResponse $record): string => $record->edom_name_snapshot ?: ($record->settingEdom?->name ?? 'Setting EDOM dihapus'))
                     ->searchable()
                     ->sortable(),
-
-                TextColumn::make('period.label')
-                    ->label('Periode')
-                    ->placeholder('-'),
-
-                TextColumn::make('siakad_idmahasiswa')
-                    ->label('ID Mahasiswa')
-                    ->searchable(),
-
-                TextColumn::make('siakad_idmatakuliah')
-                    ->label('ID Mata Kuliah')
-                    ->placeholder('-'),
-
-                TextColumn::make('siakad_idtawarmatakuliahdetail')
-                    ->label('ID Detail Penawaran')
-                    ->placeholder('-'),
-
-                TextColumn::make('details_count')
-                    ->counts('details')
-                    ->label('Jawaban')
-                    ->badge(),
-
+                TextColumn::make('study_program_snapshot')->label('Program Studi')->placeholder('-')->toggleable(isToggledHiddenByDefault: true)->wrap(),
+                TextColumn::make('course_snapshot')->label('Mata Kuliah dari KRS')->placeholder('-')->wrap(),
+                TextColumn::make('lecturer_name_snapshot')->label('Dosen')->placeholder('-')->searchable(),
+                TextColumn::make('respondent_name')->label('Nama Mahasiswa')->placeholder('Anonim')->searchable(),
+                TextColumn::make('student_number')->label('NIM')->placeholder('-')->searchable(),
+                TextColumn::make('details_count')->counts('details')->label('Jawaban')->badge(),
                 TextColumn::make('average_score')
                     ->label('Rata-rata Nilai')
                     ->state(function (EdomResponse $record): string {
-                        $average = $record->details
-                            ->map(fn ($detail) => $detail->questionOption?->score)
-                            ->filter(fn ($score) => $score !== null)
-                            ->avg();
-
+                        $average = $record->details->whereNotNull('score')->avg('score');
                         return $average === null ? '-' : number_format((float) $average, 2, ',', '.');
                     })
                     ->badge()
                     ->color('success'),
-
-                TextColumn::make('submitted_at')
-                    ->label('Dikirim')
-                    ->dateTime('d M Y H:i')
-                    ->sortable(),
+                TextColumn::make('submitted_at')->label('Dikirim')->dateTime('d M Y H:i')->sortable(),
             ])
             ->filters([
                 SelectFilter::make('settingEdom')
                     ->label('Setting EDOM')
                     ->relationship('settingEdom', 'name')
                     ->searchable()
-                    ->preload(),
-
-                SelectFilter::make('period')
-                    ->label('Periode')
-                    ->relationship('period', 'year')
-                    ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->placeholder('Semua Setting EDOM'),
             ])
-            ->recordActions([
-                ViewAction::make()
-                    ->label('Lihat Hasil'),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->recordActions([ViewAction::make()->label('Lihat Hasil')])
+            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
     }
 }

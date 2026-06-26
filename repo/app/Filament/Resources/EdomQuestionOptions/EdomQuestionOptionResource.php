@@ -15,27 +15,12 @@ use Filament\Tables\Table;
 class EdomQuestionOptionResource extends Resource
 {
     protected static ?string $model = EdomQuestionOption::class;
-
     protected static bool $shouldRegisterNavigation = false;
-
+    protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
-
     protected static ?string $recordTitleAttribute = 'name';
 
-    public static function form(Schema $schema): Schema
-    {
-        return EdomQuestionOptionForm::configure($schema);
-    }
-
-    public static function table(Table $table): Table
-    {
-        return EdomQuestionOptionsTable::configure($table);
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => ListEdomQuestionOptions::route('/'),
-        ];
-    }
+    public static function form(Schema $schema): Schema { return EdomQuestionOptionForm::configure($schema); }
+    public static function table(Table $table): Table { return EdomQuestionOptionsTable::configure($table); }
+    public static function getPages(): array { return ['index' => ListEdomQuestionOptions::route('/')]; }
 }

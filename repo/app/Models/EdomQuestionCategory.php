@@ -13,9 +13,24 @@ class EdomQuestionCategory extends Model
         'name',
     ];
 
+    public function getCategoryNameAttribute(): ?string
+    {
+        return $this->attributes['name'] ?? null;
+    }
+
+    public function setCategoryNameAttribute(?string $value): void
+    {
+        $this->attributes['name'] = $value;
+    }
+
     public function settingEdom()
     {
         return $this->belongsTo(SettingEdom::class, 'edom_setting_id');
+    }
+
+    public function edom()
+    {
+        return $this->settingEdom();
     }
 
     public function questions()

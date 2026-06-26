@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\Prodi;
+use App\Models\ProgramStudi;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 class UnwProgramStudiSyncService
 {
@@ -35,34 +37,57 @@ class UnwProgramStudiSyncService
 
         foreach ($items as $item) {
             $externalId = data_get($item, 'id');
-            $nama = trim((string) data_get($item, 'nama'));
+            $name = trim((string) data_get($item, 'nama'));
 
-            if (blank($externalId) || $nama === '') {
+            if (blank($externalId) || $name === '') {
                 $skipped++;
                 continue;
             }
 
-            $prodi = Prodi::query()->where('id_unw_program_studi', $externalId)->first();
+            $attributes = [
+                'name' => $name,
+                'slug' => data_get($item, 'slug'),
+                'page_slug' => data_get($item, 'page_slug'),
+                'degree_level' => data_get($item, 'jenjang'),
+                'degree_short_name' => data_get($item, 'jenjang_nama_singkat'),
+                'unw_faculty_id' => data_get($item, 'unwFakultas.id'),
+                'faculty_name' => trim((string) data_get($item, 'unwFakultas.nama')),
+                'faculty_page_slug' => data_get($item, 'unwFakultas.page_slug'),
+                'api_updated_at' => $this->parseDate(data_get($item, 'updatedAt')),
+                'synced_at' => now(),
+            ];
 
-            if ($prodi) {
-                $prodi->update(['nama' => $nama]);
+            $programStudi = ProgramStudi::query()
+                ->where('id_unw_program_studi', $externalId)
+                ->first();
+
+            if ($programStudi) {
+                $programStudi->update($attributes);
                 $updated++;
                 continue;
             }
 
-            Prodi::query()->create([
+            ProgramStudi::query()->create([
                 'id_unw_program_studi' => $externalId,
-                'nama' => $nama,
+                ...$attributes,
             ]);
 
             $created++;
         }
 
-        return [
-            'created' => $created,
-            'updated' => $updated,
-            'skipped' => $skipped,
-            'total' => count($items),
-        ];
+        return compact('created', 'updated', 'skipped') + ['total' => count($items)];
+    }
+
+    private function parseDate(mixed $value): ?Carbon
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

@@ -10,23 +10,15 @@ class EdomPeriodForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                TextInput::make('year')
-                    ->label('Tahun Ajaran / ID Tahun Ajaran SIAKAD')
-                    ->numeric()
-                    ->default((int) date('Y'))
-                    ->required(),
-
-                Select::make('siakad_idsemester')
-                    ->label('ID Semester SIAKAD')
-                    ->options([
-                        1 => '1',
-                        2 => '2',
-                        3 => '3',
-                    ])
-                    ->searchable()
-                    ->required(),
-            ]);
+        return $schema->components([
+            TextInput::make('year')->label('ID Tahun Ajaran SIAKAD')->numeric()->required(),
+            TextInput::make('siakad_idsemester')->label('ID Semester SIAKAD')->numeric()->required(),
+            TextInput::make('semester_name')->label('Nama Semester')->maxLength(100),
+            Select::make('status')->label('Status')->options([
+                'draft' => 'Draft',
+                'open' => 'Dibuka',
+                'closed' => 'Ditutup',
+            ])->default('draft')->required(),
+        ]);
     }
 }
