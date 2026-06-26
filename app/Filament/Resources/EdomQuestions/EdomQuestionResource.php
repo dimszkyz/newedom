@@ -20,7 +20,7 @@ class EdomQuestionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $recordTitleAttribute = 'pernyataan';
+    protected static ?string $recordTitleAttribute = 'statement';
 
     public static function form(Schema $schema): Schema
     {

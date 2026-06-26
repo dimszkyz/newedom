@@ -24,7 +24,10 @@ class UnwApiSiakad
 
             $response = Http::asJson()
                 ->acceptJson()
-                ->post($this->baseUrl().'/login', [
+                ->withOptions([
+                    'verify' => filter_var(config('services.unwapi_siakad.verify_ssl', true), FILTER_VALIDATE_BOOLEAN),
+                ])
+                ->post($this->baseUrl() . '/login', [
                     'email' => $email,
                     'password' => $password,
                 ])
@@ -44,6 +47,9 @@ class UnwApiSiakad
     {
         return Http::withToken($this->token())
             ->acceptJson()
+            ->withOptions([
+                'verify' => filter_var(config('services.unwapi_siakad.verify_ssl', true), FILTER_VALIDATE_BOOLEAN),
+            ])
             ->baseUrl($this->baseUrl());
     }
 
@@ -133,10 +139,10 @@ class UnwApiSiakad
     public function mahasiswa(array $siakadIdMahasiswa): array
     {
         $query = collect($siakadIdMahasiswa)
-            ->filter(fn ($id) => $id !== null && $id !== '')
-            ->map(fn ($id) => 'siakad_idmahasiswa[]='.rawurlencode((string) $id))
+            ->filter(fn($id) => $id !== null && $id !== '')
+            ->map(fn($id) => 'siakad_idmahasiswa[]=' . rawurlencode((string) $id))
             ->implode('&');
 
-        return $this->request('get', '/edom/mahasiswa'.($query === '' ? '' : '?'.$query));
+        return $this->request('get', '/edom/mahasiswa' . ($query === '' ? '' : '?' . $query));
     }
 }

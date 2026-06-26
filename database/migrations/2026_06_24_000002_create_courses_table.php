@@ -8,17 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('courses')) {
-            return;
-        }
-
         Schema::create('courses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('study_program_id')
-                ->constrained('program_studi')
-                ->cascadeOnDelete();
+            $table->unsignedBigInteger('study_program_id');
             $table->string('name');
             $table->timestamps();
+
+            $table->foreign('study_program_id')
+                ->references('id')
+                ->on('program_studi')
+                ->cascadeOnDelete();
         });
     }
 

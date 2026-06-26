@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Edom;
+use App\Models\SettingsEdom;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -27,7 +27,7 @@ class PreviewEdom extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'edom_id' => Edom::query()->latest()->value('id'),
+            'edom_id' => SettingsEdom::query()->latest()->value('id'),
         ]);
     }
 
@@ -42,7 +42,7 @@ class PreviewEdom extends Page implements HasForms
             ->schema([
                 Forms\Components\Select::make('edom_id')
                     ->label('Pilih EDOM untuk di-preview')
-                    ->options(Edom::pluck('name', 'id'))
+                    ->options(SettingsEdom::pluck('name', 'id'))
                     ->searchable()
                     ->live(),
             ])
@@ -57,7 +57,7 @@ class PreviewEdom extends Page implements HasForms
             return null;
         }
 
-        return Edom::with([
+        return SettingsEdom::with([
             'prodis',
             'mataKuliahs',
             'categories.questions',

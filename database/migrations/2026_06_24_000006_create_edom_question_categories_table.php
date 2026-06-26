@@ -8,17 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('edom_question_categories')) {
-            return;
-        }
-
         Schema::create('edom_question_categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('edom_setting_id')
-                ->constrained('edom_settings')
-                ->cascadeOnDelete();
+            $table->unsignedBigInteger('edom_setting_id');
             $table->string('name');
             $table->timestamps();
+
+            $table->foreign('edom_setting_id', 'edom_categories_edom_id_foreign')
+                ->references('id')
+                ->on('edom_settings')
+                ->cascadeOnDelete();
         });
     }
 

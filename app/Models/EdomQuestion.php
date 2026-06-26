@@ -24,6 +24,6 @@ class EdomQuestion extends Model
 
     public function category()
     {
-        return $this->belongsTo(EdomCategory::class, 'edom_question_category_id');
+        return $this->belongsTo(EdomQuestionCategory::class, 'edom_question_category_id');
     }
 }

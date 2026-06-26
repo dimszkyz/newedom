@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\EdomQuestions\Pages;
 
-use App\Filament\Resources\EdomCategories\EdomCategoryResource;
+use App\Filament\Resources\EdomQuestionCategories\EdomQuestionCategoryResource;
 use App\Filament\Resources\EdomQuestions\EdomQuestionResource;
-use App\Filament\Resources\Edoms\EdomResource;
+use App\Filament\Resources\SettingsEdom\SettingsEdomResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
@@ -25,10 +25,10 @@ class EditEdomQuestion extends EditRecord
         $edom = $category?->edom;
 
         return [
-            EdomResource::getUrl() => 'Kelola EDOM',
-            $edom ? EdomResource::getUrl('edit', ['record' => $edom]) : '#' => $edom?->nama_edom ?? 'EDOM',
-            $category ? EdomCategoryResource::getUrl('edit', ['record' => $category]) : '#' => $category?->nama_kategori ?? 'Kategori',
-            '' => $this->record->pernyataan ?: 'Edit Pertanyaan',
+            SettingsEdomResource::getUrl() => 'Kelola EDOM',
+            $edom ? SettingsEdomResource::getUrl('edit', ['record' => $edom]) : '#' => $edom?->name ?? 'EDOM',
+            $category ? EdomQuestionCategoryResource::getUrl('edit', ['record' => $category]) : '#' => $category?->name ?? 'Kategori',
+            '' => $this->record->statement ?: 'Edit Pertanyaan',
         ];
     }
 }

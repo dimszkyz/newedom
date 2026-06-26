@@ -8,20 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('edom_question_options')) {
-            return;
-        }
-
         Schema::create('edom_question_options', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('edom_setting_id')
-                ->nullable()
-                ->constrained('edom_settings')
-                ->cascadeOnDelete();
+            $table->unsignedBigInteger('edom_setting_id')->nullable();
             $table->string('name');
             $table->integer('score');
             $table->integer('sort_order')->default(1);
             $table->timestamps();
+
+            $table->foreign('edom_setting_id', 'edom_options_edom_id_foreign')
+                ->references('id')
+                ->on('edom_settings')
+                ->cascadeOnDelete();
         });
     }
 

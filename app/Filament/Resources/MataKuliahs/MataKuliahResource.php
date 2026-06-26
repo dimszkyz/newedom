@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\MataKuliahs;
 
-use App\Filament\Resources\MataKuliahs\Pages\CreateMataKuliah;
-use App\Filament\Resources\MataKuliahs\Pages\EditMataKuliah;
+use App\Filament\Resources\MataKuliahs\Pages\CreateCourse;
+use App\Filament\Resources\MataKuliahs\Pages\EditCourse;
 use App\Filament\Resources\MataKuliahs\Pages\ListMataKuliahs;
 use App\Filament\Resources\MataKuliahs\Schemas\MataKuliahForm;
 use App\Filament\Resources\MataKuliahs\Tables\MataKuliahsTable;
-use App\Models\MataKuliah;
+use App\Models\Course;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -16,7 +16,7 @@ use Filament\Tables\Table;
 
 class MataKuliahResource extends Resource
 {
-    protected static ?string $model = MataKuliah::class;
+    protected static ?string $model = Course::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
@@ -30,7 +30,7 @@ class MataKuliahResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
-    protected static ?string $recordTitleAttribute = 'nama';
+    protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema
     {
@@ -53,8 +53,8 @@ class MataKuliahResource extends Resource
     {
         return [
             'index' => ListMataKuliahs::route('/'),
-            'create' => CreateMataKuliah::route('/create'),
-            'edit' => EditMataKuliah::route('/{record}/edit'),
+            'create' => CreateCourse::route('/create'),
+            'edit' => EditCourse::route('/{record}/edit'),
         ];
     }
 }

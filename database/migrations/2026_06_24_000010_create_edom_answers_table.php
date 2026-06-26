@@ -8,25 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('edom_answers')) {
-            return;
-        }
-
         Schema::create('edom_answers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('edom_response_id')
-                ->constrained('edom_responses')
-                ->cascadeOnDelete();
-            $table->foreignId('edom_question_id')
-                ->nullable()
-                ->constrained('edom_questions')
-                ->nullOnDelete();
+            $table->foreignId('edom_response_id')->constrained('edom_responses')->cascadeOnDelete();
+            $table->foreignId('edom_question_id')->nullable()->constrained('edom_questions')->nullOnDelete();
             $table->string('category_name_snapshot')->nullable();
             $table->text('statement_snapshot')->nullable();
-            $table->foreignId('edom_option_id')
-                ->nullable()
-                ->constrained('edom_question_options')
-                ->nullOnDelete();
+            $table->foreignId('edom_option_id')->nullable()->constrained('edom_question_options')->nullOnDelete();
             $table->string('option_label_snapshot')->nullable();
             $table->integer('option_score_snapshot')->nullable();
             $table->text('answer_text')->nullable();

@@ -8,16 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('edom_responses')) {
-            return;
-        }
-
         Schema::create('edom_responses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('edom_id')
-                ->nullable()
-                ->constrained('edom_settings')
-                ->nullOnDelete();
+            $table->unsignedBigInteger('edom_id')->nullable();
             $table->string('edom_name_snapshot')->nullable();
             $table->text('study_program_snapshot')->nullable();
             $table->text('course_snapshot')->nullable();
@@ -25,6 +18,11 @@ return new class extends Migration
             $table->string('student_number')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
+
+            $table->foreign('edom_id')
+                ->references('id')
+                ->on('edom_settings')
+                ->nullOnDelete();
         });
     }
 
