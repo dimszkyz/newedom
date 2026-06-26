@@ -59,6 +59,22 @@ class EdomPublicController extends Controller
         ]);
     }
 
+    public function enter(Request $request): RedirectResponse
+    {
+        $payload = $this->verifyHandoffToken((string) $request->query('token'));
+
+        session([
+            'edom_student' => [
+                'siakad_idmahasiswa' => (int) $payload['siakad_idmahasiswa'],
+                'siakad_idtahunajaran' => (int) $payload['siakad_idtahunajaran'],
+                'siakad_idsemester' => (int) $payload['siakad_idsemester'],
+                'return_url' => $payload['return_url'] ?? null,
+            ],
+        ]);
+
+        return redirect()->route('edom.home');
+    }
+
     public function show(mixed $edom): View
     {
         $edom = $this->prepareEdom($edom);
@@ -197,6 +213,42 @@ class EdomPublicController extends Controller
         }
 
         return Edom::query()->findOrFail($edom);
+    }
+
+    private function verifyHandoffToken(string $token): array
+    {
+        [$b64, $signature] = array_pad(explode('.', $token, 2), 2, '');
+        $secret = (string) config('edom.hmac_siakad_secret');
+
+        abort_unless($token !== '' && $b64 !== '' && $signature !== '' && $secret !== '', 401, 'Invalid token');
+
+        $expected = hash_hmac('sha256', $b64, $secret);
+        abort_unless(hash_equals($expected, $signature), 401, 'Invalid token');
+
+        $decoded = $this->base64UrlDecode($b64);
+        abort_unless($decoded !== false, 400, 'Invalid token payload');
+
+        $payload = json_decode($decoded, true);
+        abort_unless(is_array($payload), 400, 'Invalid token payload');
+        abort_if((int) ($payload['exp'] ?? 0) < time(), 401, 'Token expired');
+
+        foreach (['siakad_idmahasiswa', 'siakad_idtahunajaran', 'siakad_idsemester'] as $key) {
+            abort_unless(array_key_exists($key, $payload), 400, "Missing {$key} in token payload");
+        }
+
+        return $payload;
+    }
+
+    private function base64UrlDecode(string $value): string|false
+    {
+        $base64 = strtr($value, '-_', '+/');
+        $padding = strlen($base64) % 4;
+
+        if ($padding > 0) {
+            $base64 .= str_repeat('=', 4 - $padding);
+        }
+
+        return base64_decode($base64, true);
     }
 
     private function isActiveEdom(Model $edom): bool
