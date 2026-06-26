@@ -57,6 +57,6 @@ class EdomOption extends Model
 
     public function edom()
     {
-        return $this->belongsTo(Edom::class, 'edom_setting_id');
+        return $this->belongsTo(SettingsEdom::class, 'edom_setting_id');
     }
 }
