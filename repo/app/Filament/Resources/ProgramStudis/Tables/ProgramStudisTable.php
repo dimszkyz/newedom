@@ -2,9 +2,6 @@
 
 namespace App\Filament\Resources\ProgramStudis\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -16,26 +13,22 @@ class ProgramStudisTable
             ->defaultSort('nama')
             ->columns([
                 TextColumn::make('id_unw_program_studi')
-                    ->label('ID SIAKAD')
-                    ->sortable(),
+                    ->label('ID API UNW')
+                    ->sortable()
+                    ->searchable(),
 
                 TextColumn::make('nama')
                     ->label('Nama Program Studi')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('created_at')
-                    ->label('Dibuat')
-                    ->dateTime('d M Y H:i'),
+                TextColumn::make('updated_at')
+                    ->label('Terakhir Diperbarui')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
             ])
             ->filters([])
-            ->recordActions([
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->recordActions([])
+            ->toolbarActions([]);
     }
 }

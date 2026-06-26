@@ -13,8 +13,14 @@ class UnwProgramStudiSyncService
         $url = config('services.unw_program_studi.url');
         $verifySsl = filter_var(config('services.unw_program_studi.verify_ssl', true), FILTER_VALIDATE_BOOLEAN);
 
+        if (blank($url)) {
+            throw new RuntimeException('UNW_PROGRAM_STUDI_API_URL belum diisi di file .env.');
+        }
+
         $response = Http::acceptJson()
-            ->withOptions(['verify' => $verifySsl])
+            ->withOptions([
+                'verify' => $verifySsl,
+            ])
             ->timeout(30)
             ->retry(2, 1000)
             ->get($url);
@@ -39,6 +45,7 @@ class UnwProgramStudiSyncService
 
             if (blank($externalId) || $nama === '') {
                 $skipped++;
+
                 continue;
             }
 
@@ -47,8 +54,12 @@ class UnwProgramStudiSyncService
                 ->first();
 
             if ($programStudi) {
-                $programStudi->update(['nama' => $nama]);
+                $programStudi->update([
+                    'nama' => $nama,
+                ]);
+
                 $updated++;
+
                 continue;
             }
 

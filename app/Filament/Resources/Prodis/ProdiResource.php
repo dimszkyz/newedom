@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Filament\Resources\ProgramStudis;
+namespace App\Filament\Resources\Prodis;
 
-use App\Filament\Resources\ProgramStudis\Pages\ListProgramStudis;
-use App\Filament\Resources\ProgramStudis\Schemas\ProgramStudiForm;
-use App\Filament\Resources\ProgramStudis\Tables\ProgramStudisTable;
-use App\Models\ProgramStudi;
+use App\Filament\Resources\Prodis\Pages\ListProdis;
+use App\Filament\Resources\Prodis\Schemas\ProdiForm;
+use App\Filament\Resources\Prodis\Tables\ProdisTable;
+use App\Models\Prodi;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -13,9 +13,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
-class ProgramStudiResource extends Resource
+class ProdiResource extends Resource
 {
-    protected static ?string $model = ProgramStudi::class;
+    protected static ?string $model = Prodi::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
@@ -48,18 +48,18 @@ class ProgramStudiResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return ProgramStudiForm::configure($schema);
+        return ProdiForm::configure($schema);
     }
 
     public static function table(Table $table): Table
     {
-        return ProgramStudisTable::configure($table);
+        return ProdisTable::configure($table);
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListProgramStudis::route('/'),
+            'index' => ListProdis::route('/'),
         ];
     }
 }

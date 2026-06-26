@@ -11,13 +11,12 @@ class ProgramStudiForm
     {
         return $schema->components([
             TextInput::make('id_unw_program_studi')
-                ->label('ID Program Studi SIAKAD')
-                ->numeric(),
+                ->label('ID Program Studi API UNW')
+                ->disabled(),
 
             TextInput::make('nama')
                 ->label('Nama Program Studi')
-                ->required()
-                ->maxLength(255),
+                ->disabled(),
         ]);
     }
 }

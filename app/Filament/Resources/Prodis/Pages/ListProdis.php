@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Filament\Resources\ProgramStudis\Pages;
+namespace App\Filament\Resources\Prodis\Pages;
 
-use App\Filament\Resources\ProgramStudis\ProgramStudiResource;
+use App\Filament\Resources\Prodis\ProdiResource;
 use App\Services\UnwProgramStudiSyncService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
 use Throwable;
 
-class ListProgramStudis extends ListRecords
+class ListProdis extends ListRecords
 {
-    protected static string $resource = ProgramStudiResource::class;
+    protected static string $resource = ProdiResource::class;
 
     protected function getHeaderActions(): array
     {
@@ -22,7 +22,7 @@ class ListProgramStudis extends ListRecords
                 ->color('primary')
                 ->requiresConfirmation()
                 ->modalHeading('Sinkronisasi Program Studi dari API UNW')
-                ->modalDescription('Data program studi akan diambil dari API resmi UNW. Data yang sudah ada akan diperbarui berdasarkan ID program studi dari API.')
+                ->modalDescription('Data program studi akan diambil dari API resmi UNW.')
                 ->modalSubmitActionLabel('Mulai Sinkronisasi')
                 ->action(function (): void {
                     try {
@@ -33,11 +33,7 @@ class ListProgramStudis extends ListRecords
                             ->body("{$result['created']} data baru, {$result['updated']} data diperbarui, {$result['skipped']} data dilewati dari total {$result['total']} data API.")
                             ->success()
                             ->send();
-
-                        $this->resetTable();
                     } catch (Throwable $exception) {
-                        report($exception);
-
                         Notification::make()
                             ->title('Sinkronisasi Program Studi gagal')
                             ->body($exception->getMessage())

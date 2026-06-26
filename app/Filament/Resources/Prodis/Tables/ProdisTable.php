@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Filament\Resources\ProgramStudis\Tables;
+namespace App\Filament\Resources\Prodis\Tables;
 
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class ProgramStudisTable
+class ProdisTable
 {
     public static function configure(Table $table): Table
     {
@@ -13,7 +13,7 @@ class ProgramStudisTable
             ->defaultSort('nama')
             ->columns([
                 TextColumn::make('id_unw_program_studi')
-                    ->label('ID API UNW')
+                    ->label('ID API')
                     ->sortable()
                     ->searchable(),
 
@@ -22,12 +22,16 @@ class ProgramStudisTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('updated_at')
-                    ->label('Terakhir Diperbarui')
+                TextColumn::make('created_at')
+                    ->label('Dibuat')
                     ->dateTime('d M Y H:i')
-                    ->sortable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('updated_at')
+                    ->label('Diubah')
+                    ->dateTime('d M Y H:i')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([])
             ->recordActions([])
             ->toolbarActions([]);
     }
