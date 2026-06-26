@@ -3,12 +3,32 @@
 @section('title', 'EDOM Universitas Ngudi Waluyo')
 
 @section('content')
+    @php
+        $student = $student ?? null;
+        $studentSections = collect($studentSections ?? []);
+        $studentFetchError = $studentFetchError ?? null;
+    @endphp
+
     <main class="page">
         <div class="container">
             <section class="hero">
                 <p class="eyebrow">Evaluasi Dosen Oleh Mahasiswa</p>
                 <h1>EDOM Universitas Ngudi Waluyo</h1>
 
+                @if ($student)
+                    <div class="alert success">
+                        Sesi mahasiswa dari SIAKAD aktif untuk tahun ajaran
+                        {{ $student['siakad_idtahunajaran'] ?? '-' }} dan semester
+                        {{ $student['siakad_idsemester'] ?? '-' }}.
+                        @if (! $studentFetchError)
+                            Jumlah mata kuliah dari KRS: {{ $studentSections->count() }}.
+                        @endif
+                    </div>
+                @endif
+
+                @if ($studentFetchError)
+                    <div class="alert error">{{ $studentFetchError }}</div>
+                @endif
 
                 @if (session('success'))
                     <div class="alert success">{{ session('success') }}</div>
@@ -33,14 +53,20 @@
                                     {{ $edom->mataKuliahs->pluck('name')->join(', ') ?: 'Semua Mata Kuliah' }}<br>
                                     {{ $edom->questions_count }} pernyataan dalam {{ $edom->categories_count }} kategori
                                 </p>
-                                <a class="button" href="{{ route('edom.home', ['edom' => $edom->id]) }}">Isi EDOM</a>
+                                <a class="button" href="{{ route('edom.home', ['edom' => $edom->id]) }}">
+                                    {{ $student ? 'Isi EDOM dari KRS' : 'Isi EDOM' }}
+                                </a>
                             </article>
                         @endforeach
                     </div>
                 @else
                     <div class="empty">
-                        @if ($draftCount > 0)
+                        @if ($student && ! $studentFetchError)
+                            Tidak ada paket EDOM aktif yang cocok dengan program studi pada KRS Anda.
+                        @elseif ($draftCount > 0)
                             <br>Belum ada EDOM yang aktif untuk saat ini, harap tunggu dan kembali beberapa saat lagi.
+                        @else
+                            Belum ada EDOM yang aktif untuk saat ini.
                         @endif
                     </div>
                 @endif
