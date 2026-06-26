@@ -10,50 +10,34 @@ use Filament\Tables\Table;
 class DetailsRelationManager extends RelationManager
 {
     protected static string $relationship = 'details';
-
     protected static ?string $title = 'Detail Jawaban';
-
-    protected static ?string $modelLabel = 'Jawaban';
-
-    protected static ?string $pluralModelLabel = 'Detail Jawaban';
 
     public function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['question.category', 'option'])->orderBy('id'))
+            ->modifyQueryUsing(fn ($query) => $query->with(['question.category', 'questionOption'])->orderBy('id'))
             ->columns([
-                TextColumn::make('question.category.name')
+                TextColumn::make('category_name_snapshot')
                     ->label('Kategori')
-                    ->placeholder('Kategori dihapus')
+                    ->state(fn (EdomResponseDetail $record): string => $record->category_name_snapshot ?: ($record->question?->category?->category_name ?? 'Kategori dihapus'))
                     ->badge()
-                    ->color('primary')
                     ->wrap(),
-
-                TextColumn::make('question.statement')
+                TextColumn::make('statement_snapshot')
                     ->label('Pernyataan')
-                    ->placeholder('Pernyataan dihapus')
+                    ->state(fn (EdomResponseDetail $record): string => $record->statement_snapshot ?: ($record->question?->statement ?? 'Pernyataan dihapus'))
                     ->limit(120)
                     ->wrap()
                     ->searchable(),
-
-                TextColumn::make('option.name')
+                TextColumn::make('option_label_snapshot')
                     ->label('Pilihan')
-                    ->state(fn (EdomResponseDetail $record): string => $record->option?->name ?: (filled($record->answer_text) ? '-' : '-'))
-                    ->badge()
-                    ->color(fn (EdomResponseDetail $record): string => $record->option ? 'success' : 'gray'),
-
+                    ->state(fn (EdomResponseDetail $record): string => $record->option_label_snapshot ?: ($record->questionOption?->label ?? '-'))
+                    ->badge(),
                 TextColumn::make('score')
                     ->label('Nilai')
-                    ->state(fn (EdomResponseDetail $record): ?int => $record->option?->score)
+                    ->state(fn (EdomResponseDetail $record): ?int => $record->option_score_snapshot ?? $record->score)
                     ->placeholder('-')
-                    ->badge()
-                    ->color('success'),
-
-                TextColumn::make('answer_text')
-                    ->label('Jawaban Teks')
-                    ->placeholder('-')
-                    ->limit(120)
-                    ->wrap(),
+                    ->badge(),
+                TextColumn::make('answer_text')->label('Jawaban Teks')->placeholder('-')->limit(120)->wrap(),
             ])
             ->recordActions([])
             ->toolbarActions([]);

@@ -41,4 +41,9 @@ class ProgramStudi extends Model
             'edom_setting_id'
         )->withTimestamps();
     }
+
+    public function edoms()
+    {
+        return $this->settingEdoms();
+    }
 }

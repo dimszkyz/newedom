@@ -17,39 +17,15 @@ use Filament\Tables\Table;
 class EdomPeriodResource extends Resource
 {
     protected static ?string $model = EdomPeriod::class;
-
-    protected static string|\UnitEnum|null $navigationGroup = 'EDOM';
-
+    protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
     protected static ?string $navigationLabel = 'Periode EDOM';
-
     protected static ?string $modelLabel = 'Periode EDOM';
-
     protected static ?string $pluralModelLabel = 'Periode EDOM';
-
     protected static ?string $slug = 'periode-edom';
-
-    protected static ?int $navigationSort = 10;
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
-    protected static ?string $recordTitleAttribute = 'year';
-
-    public static function form(Schema $schema): Schema
-    {
-        return EdomPeriodForm::configure($schema);
-    }
-
-    public static function table(Table $table): Table
-    {
-        return EdomPeriodsTable::configure($table);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
+    public static function form(Schema $schema): Schema { return EdomPeriodForm::configure($schema); }
+    public static function table(Table $table): Table { return EdomPeriodsTable::configure($table); }
 
     public static function getPages(): array
     {

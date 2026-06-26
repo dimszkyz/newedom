@@ -35,10 +35,8 @@ class MakeEdomToken extends Command
         $signature = hash_hmac('sha256', $b64, $secret);
         $token = $b64.'.'.$signature;
 
-        $url = rtrim((string) config('app.url'), '/').'/enter?token='.$token;
-
         $this->line('token: '.$token);
-        $this->line('url:   '.$url);
+        $this->line('url:   '.rtrim((string) config('app.url'), '/').'/enter?token='.$token);
 
         return self::SUCCESS;
     }

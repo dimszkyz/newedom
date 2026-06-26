@@ -11,6 +11,15 @@ class EdomPeriod extends Model
     protected $fillable = [
         'year',
         'siakad_idsemester',
+        'semester_name',
+        'status',
+        'opened_at',
+        'closed_at',
+    ];
+
+    protected $casts = [
+        'opened_at' => 'datetime',
+        'closed_at' => 'datetime',
     ];
 
     public function responses()
@@ -18,8 +27,13 @@ class EdomPeriod extends Model
         return $this->hasMany(EdomResponse::class, 'edom_period_id');
     }
 
-    public function getDisplayNameAttribute(): string
+    public function isOpen(): bool
     {
-        return trim($this->year.' / Semester '.$this->siakad_idsemester);
+        return $this->status === 'open';
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === 'closed';
     }
 }

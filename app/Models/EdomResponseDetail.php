@@ -11,8 +11,13 @@ class EdomResponseDetail extends Model
     protected $fillable = [
         'edom_response_id',
         'edom_question_id',
-        'edom_option_id',
+        'edom_question_option_id',
+        'category_name_snapshot',
+        'statement_snapshot',
+        'option_label_snapshot',
+        'option_score_snapshot',
         'answer_text',
+        'score',
     ];
 
     public function response()
@@ -25,13 +30,13 @@ class EdomResponseDetail extends Model
         return $this->belongsTo(EdomQuestion::class, 'edom_question_id');
     }
 
-    public function option()
+    public function questionOption()
     {
-        return $this->belongsTo(EdomOption::class, 'edom_option_id');
+        return $this->belongsTo(EdomQuestionOption::class, 'edom_question_option_id');
     }
 
-    public function getScoreAttribute(): ?int
+    public function option()
     {
-        return $this->option?->score;
+        return $this->questionOption();
     }
 }

@@ -23,19 +23,14 @@ class EdomQuestionCategory extends Model
         $this->attributes['name'] = $value;
     }
 
-    public function getEdomIdAttribute(): mixed
+    public function settingEdom()
     {
-        return $this->attributes['edom_setting_id'] ?? null;
-    }
-
-    public function setEdomIdAttribute(mixed $value): void
-    {
-        $this->attributes['edom_setting_id'] = $value;
+        return $this->belongsTo(SettingEdom::class, 'edom_setting_id');
     }
 
     public function edom()
     {
-        return $this->belongsTo(SettingsEdom::class, 'edom_setting_id');
+        return $this->settingEdom();
     }
 
     public function questions()

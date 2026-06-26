@@ -30,6 +30,11 @@ class EdomQuestionOption extends Model
         return $this->belongsTo(SettingEdom::class, 'edom_setting_id');
     }
 
+    public function edom()
+    {
+        return $this->settingEdom();
+    }
+
     public function responseDetails()
     {
         return $this->hasMany(EdomResponseDetail::class, 'edom_question_option_id');

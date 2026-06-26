@@ -14,15 +14,10 @@ return new class extends Migration
 
         Schema::create('edom_settings_program_studi', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('edom_setting_id')
-                ->constrained('edom_settings')
-                ->cascadeOnDelete();
-            $table->foreignId('program_studi_id')
-                ->constrained('program_studi')
-                ->cascadeOnDelete();
+            $table->foreignId('edom_setting_id')->constrained('edom_settings')->cascadeOnDelete();
+            $table->foreignId('program_studi_id')->constrained('program_studi')->cascadeOnDelete();
             $table->timestamps();
-
-            $table->unique(['edom_setting_id', 'program_studi_id'], 'edom_setting_prodi_unique');
+            $table->unique(['edom_setting_id', 'program_studi_id'], 'edom_settings_program_studi_unique');
         });
     }
 

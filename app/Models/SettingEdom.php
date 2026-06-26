@@ -33,6 +33,11 @@ class SettingEdom extends Model
         )->withTimestamps();
     }
 
+    public function prodis()
+    {
+        return $this->programStudis();
+    }
+
     public function categories()
     {
         return $this->hasMany(EdomQuestionCategory::class, 'edom_setting_id');
@@ -53,6 +58,11 @@ class SettingEdom extends Model
     public function questionOptions()
     {
         return $this->hasMany(EdomQuestionOption::class, 'edom_setting_id');
+    }
+
+    public function options()
+    {
+        return $this->questionOptions();
     }
 
     public function responses()

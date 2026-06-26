@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Edom;
+use App\Models\SettingEdom;
 use BackedEnum;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -15,20 +15,15 @@ class PreviewEdom extends Page implements HasForms
     use InteractsWithForms;
 
     protected static ?string $navigationLabel = 'Preview EDOM';
-
     protected static string|\UnitEnum|null $navigationGroup = 'Evaluasi';
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEye;
-
     protected string $view = 'filament.pages.preview-edom';
 
     public ?array $formData = [];
 
     public function mount(): void
     {
-        $this->form->fill([
-            'edom_id' => Edom::query()->latest()->value('id'),
-        ]);
+        $this->form->fill(['setting_edom_id' => SettingEdom::query()->latest()->value('id')]);
     }
 
     public function getForms(): array
@@ -40,27 +35,23 @@ class PreviewEdom extends Page implements HasForms
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('edom_id')
-                    ->label('Pilih EDOM untuk di-preview')
-                    ->options(Edom::pluck('name', 'id'))
+                Forms\Components\Select::make('setting_edom_id')
+                    ->label('Pilih Setting EDOM untuk di-preview')
+                    ->options(SettingEdom::pluck('name', 'id'))
                     ->searchable()
                     ->live(),
             ])
             ->statePath('formData');
     }
 
-    public function getEdom(): ?Edom
+    public function getSettingEdom(): ?SettingEdom
     {
-        $edomId = $this->formData['edom_id'] ?? null;
+        $settingEdomId = $this->formData['setting_edom_id'] ?? null;
 
-        if (! $edomId) {
+        if (! $settingEdomId) {
             return null;
         }
 
-        return Edom::with([
-            'prodis',
-            'categories.questions',
-            'options',
-        ])->find($edomId);
+        return SettingEdom::with(['programStudis', 'categories.questions', 'questionOptions'])->find($settingEdomId);
     }
 }
