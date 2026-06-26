@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SettingsEdom;
+use App\Models\Edom;
 use App\Models\EdomAnswer;
-use App\Models\EdomQuestionOption;
+use App\Models\EdomOption;
 use App\Models\EdomQuestion;
 use App\Models\EdomResponse;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class EdomPublicController extends Controller
 {
     public function index(Request $request): View
     {
-        $activeEdoms = SettingsEdom::query()
+        $activeEdoms = Edom::query()
             ->with(['prodis', 'mataKuliahs'])
             ->withCount(['categories', 'questions'])
             ->where('status', 'active')
@@ -39,7 +40,7 @@ class EdomPublicController extends Controller
             return $this->show($activeEdoms->first());
         }
 
-        $closedEdoms = SettingsEdom::query()
+        $closedEdoms = Edom::query()
             ->with(['prodis', 'mataKuliahs'])
             ->where('status', 'closed')
             ->latest('created_date')
@@ -47,7 +48,7 @@ class EdomPublicController extends Controller
             ->limit(6)
             ->get();
 
-        $draftCount = SettingsEdom::query()
+        $draftCount = Edom::query()
             ->where('status', 'draft')
             ->count();
 
@@ -58,17 +59,17 @@ class EdomPublicController extends Controller
         ]);
     }
 
-    public function show(Edom $edom): View
+    public function show(mixed $edom): View
     {
         $edom = $this->prepareEdom($edom);
 
-        if (! $edom->isActive()) {
+        if (! $this->isActiveEdom($edom)) {
             return view('edom.status', [
                 'edom' => $edom,
-                'statusTitle' => $edom->isDraft()
+                'statusTitle' => $this->isDraftEdom($edom)
                     ? 'EDOM belum dibuka'
                     : 'EDOM sudah ditutup',
-                'statusMessage' => $edom->isDraft()
+                'statusMessage' => $this->isDraftEdom($edom)
                     ? 'Form evaluasi ini masih berstatus draft, sehingga belum bisa diisi oleh mahasiswa.'
                     : 'Form evaluasi ini sudah ditutup dan tidak lagi menerima jawaban baru.',
             ]);
@@ -81,16 +82,14 @@ class EdomPublicController extends Controller
 
     public function submitFromHome(Request $request): RedirectResponse
     {
-        $edom = SettingsEdom::query()->findOrFail($request->input('edom_id'));
-
-        return $this->submit($request, $edom);
+        return $this->submit($request, $request->input('edom_id'));
     }
 
-    public function submit(Request $request, Edom $edom): RedirectResponse
+    public function submit(Request $request, mixed $edom): RedirectResponse
     {
         $edom = $this->prepareEdom($edom);
 
-        if (! $edom->isActive()) {
+        if (! $this->isActiveEdom($edom)) {
             return redirect()
                 ->route('edom.home')
                 ->with('error', 'EDOM tidak sedang aktif, sehingga jawaban tidak dapat dikirim.');
@@ -121,7 +120,7 @@ class EdomPublicController extends Controller
         DB::transaction(function () use ($request, $edom, $questions) {
             $response = EdomResponse::create([
                 'edom_id' => $edom->id,
-                'edom_name_snapshot' => $edom->edom_name,
+                'edom_name_snapshot' => $this->getEdomName($edom),
                 'study_program_snapshot' => $edom->prodis->pluck('name')->filter()->join(', '),
                 'course_snapshot' => $edom->mataKuliahs->pluck('name')->filter()->join(', '),
                 'respondent_name' => $request->input('respondent_name'),
@@ -165,8 +164,10 @@ class EdomPublicController extends Controller
             ->with('success', 'Terima kasih, jawaban EDOM Anda berhasil dikirim.');
     }
 
-    private function prepareEdom(Edom $edom): Edom
+    private function prepareEdom(mixed $edom): Model
     {
+        $edom = $this->resolveEdom($edom);
+
         $edom->load([
             'prodis',
             'mataKuliahs',
@@ -178,7 +179,7 @@ class EdomPublicController extends Controller
         if ($edom->options->isEmpty()) {
             $edom->setRelation(
                 'options',
-                EdomQuestionOption::query()
+                EdomOption::query()
                     ->orderBy('sort_order')
                     ->orderBy('score')
                     ->orderBy('id')
@@ -187,6 +188,38 @@ class EdomPublicController extends Controller
         }
 
         return $edom;
+    }
+
+    private function resolveEdom(mixed $edom): Model
+    {
+        if ($edom instanceof Model) {
+            return $edom;
+        }
+
+        return Edom::query()->findOrFail($edom);
+    }
+
+    private function isActiveEdom(Model $edom): bool
+    {
+        if (method_exists($edom, 'isActive')) {
+            return $edom->isActive();
+        }
+
+        return $edom->status === 'active';
+    }
+
+    private function isDraftEdom(Model $edom): bool
+    {
+        if (method_exists($edom, 'isDraft')) {
+            return $edom->isDraft();
+        }
+
+        return $edom->status === 'draft';
+    }
+
+    private function getEdomName(Model $edom): ?string
+    {
+        return $edom->edom_name ?? $edom->name ?? null;
     }
 
     private function isEssayQuestion(EdomQuestion $question): bool
