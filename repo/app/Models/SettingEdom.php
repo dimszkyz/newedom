@@ -45,14 +45,7 @@ class SettingEdom extends Model
 
     public function questions()
     {
-        return $this->hasManyThrough(
-            EdomQuestion::class,
-            EdomQuestionCategory::class,
-            'edom_setting_id',
-            'edom_question_category_id',
-            'id',
-            'id'
-        );
+        return $this->hasMany(EdomQuestion::class, 'edom_setting_id');
     }
 
     public function questionOptions()

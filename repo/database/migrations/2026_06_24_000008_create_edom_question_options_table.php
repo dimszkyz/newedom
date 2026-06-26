@@ -17,7 +17,6 @@ return new class extends Migration
             $table->foreignId('edom_setting_id')->nullable()->constrained('edom_settings')->cascadeOnDelete();
             $table->string('name');
             $table->integer('score');
-            $table->integer('sort_order')->default(1);
             $table->timestamps();
         });
     }

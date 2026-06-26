@@ -14,14 +14,11 @@ return new class extends Migration
 
         Schema::create('edom_periods', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('year');
-            $table->unsignedInteger('siakad_idsemester');
-            $table->string('semester_name')->nullable();
-            $table->enum('status', ['draft', 'open', 'closed'])->default('draft');
-            $table->timestamp('opened_at')->nullable();
-            $table->timestamp('closed_at')->nullable();
+            $table->unsignedBigInteger('year');
+            $table->unsignedBigInteger('siakad_idsemester');
             $table->timestamps();
-            $table->unique(['year', 'siakad_idsemester'], 'edom_periods_year_semester_unique');
+
+            $table->unique(['year', 'siakad_idsemester']);
         });
     }
 

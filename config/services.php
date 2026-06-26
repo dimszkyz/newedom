@@ -2,18 +2,6 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Third Party Services
-    |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate this type of information.
-    |
-    */
-
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
@@ -38,6 +26,14 @@ return [
     'unw_program_studi' => [
         'url' => env('UNW_PROGRAM_STUDI_API_URL', 'https://panel-web.unw.ac.id/api/unw-program-studi'),
         'verify_ssl' => env('UNW_PROGRAM_STUDI_VERIFY_SSL', true),
+    ],
+
+    'unwapi_siakad' => [
+        'base' => env('UNW_API_SIAKAD_BASE_URL'),
+        'email' => env('UNW_API_SIAKAD_EMAIL'),
+        'password' => env('UNW_API_SIAKAD_PASSWORD'),
+        'token_cache_key' => env('UNW_API_SIAKAD_TOKEN_CACHE_KEY', 'unwapi_siakad_token'),
+        'token_cache_hours' => (int) env('UNW_API_SIAKAD_TOKEN_CACHE_HOURS', 12),
     ],
 
 ];

@@ -3,15 +3,15 @@
 namespace App\Filament\Resources\ProgramStudis\Pages;
 
 use App\Filament\Resources\ProgramStudis\ProgramStudiResource;
-use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ListRecords;
+use Filament\Actions\DeleteAction;
+use Filament\Resources\Pages\EditRecord;
 
-class ListProgramStudis extends ListRecords
+class EditProgramStudi extends EditRecord
 {
     protected static string $resource = ProgramStudiResource::class;
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()];
+        return [DeleteAction::make()];
     }
 }

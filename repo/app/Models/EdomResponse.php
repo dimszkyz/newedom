@@ -12,18 +12,8 @@ class EdomResponse extends Model
         'edom_period_id',
         'edom_setting_id',
         'siakad_idmahasiswa',
-        'siakad_idtahunajaran',
-        'siakad_idsemester',
         'siakad_idmatakuliah',
         'siakad_idtawarmatakuliahdetail',
-        'id_unw_program_studi',
-        'edom_name_snapshot',
-        'study_program_snapshot',
-        'course_snapshot',
-        'lecturer_name_snapshot',
-        'lecturer_nidn_snapshot',
-        'respondent_name',
-        'student_number',
         'submitted_at',
     ];
 

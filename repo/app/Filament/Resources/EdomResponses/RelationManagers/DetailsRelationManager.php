@@ -10,6 +10,7 @@ use Filament\Tables\Table;
 class DetailsRelationManager extends RelationManager
 {
     protected static string $relationship = 'details';
+
     protected static ?string $title = 'Detail Jawaban';
 
     public function table(Table $table): Table
@@ -17,26 +18,10 @@ class DetailsRelationManager extends RelationManager
         return $table
             ->modifyQueryUsing(fn ($query) => $query->with(['question.category', 'questionOption'])->orderBy('id'))
             ->columns([
-                TextColumn::make('category_name_snapshot')
-                    ->label('Kategori')
-                    ->state(fn (EdomResponseDetail $record): string => $record->category_name_snapshot ?: ($record->question?->category?->category_name ?? 'Kategori dihapus'))
-                    ->badge()
-                    ->wrap(),
-                TextColumn::make('statement_snapshot')
-                    ->label('Pernyataan')
-                    ->state(fn (EdomResponseDetail $record): string => $record->statement_snapshot ?: ($record->question?->statement ?? 'Pernyataan dihapus'))
-                    ->limit(120)
-                    ->wrap()
-                    ->searchable(),
-                TextColumn::make('option_label_snapshot')
-                    ->label('Pilihan')
-                    ->state(fn (EdomResponseDetail $record): string => $record->option_label_snapshot ?: ($record->questionOption?->label ?? '-'))
-                    ->badge(),
-                TextColumn::make('score')
-                    ->label('Nilai')
-                    ->state(fn (EdomResponseDetail $record): ?int => $record->option_score_snapshot ?? $record->score)
-                    ->placeholder('-')
-                    ->badge(),
+                TextColumn::make('question.category.name')->label('Kategori')->badge()->wrap(),
+                TextColumn::make('question.statement')->label('Pernyataan')->limit(120)->wrap()->searchable(),
+                TextColumn::make('questionOption.name')->label('Pilihan')->placeholder('-')->badge(),
+                TextColumn::make('questionOption.score')->label('Nilai')->placeholder('-')->badge()->color('success'),
                 TextColumn::make('answer_text')->label('Jawaban Teks')->placeholder('-')->limit(120)->wrap(),
             ])
             ->recordActions([])

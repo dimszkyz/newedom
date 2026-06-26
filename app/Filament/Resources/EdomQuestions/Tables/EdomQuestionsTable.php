@@ -14,34 +14,14 @@ class EdomQuestionsTable
     {
         return $table
             ->columns([
-                TextColumn::make('category.category_name')
-                    ->label('Kategori')
-                    ->searchable()
-                    ->sortable(),
-
-                TextColumn::make('statement')
-                    ->label('Pernyataan')
-                    ->limit(60)
-                    ->searchable(),
-
-                TextColumn::make('question_type')
-                    ->label('Tipe')
-                    ->badge(),
-
-                TextColumn::make('created_at')
-                    ->label('Dibuat')
-                    ->dateTime('d M Y H:i'),
+                TextColumn::make('category.name')->label('Kategori')->searchable()->sortable(),
+                TextColumn::make('statement')->label('Pernyataan')->limit(60)->searchable(),
+                TextColumn::make('question_type')->label('Tipe')->badge(),
+                TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
-            ->filters([
-                //
-            ])
-            ->recordActions([
-                EditAction::make(),
-            ])
+            ->recordActions([EditAction::make()])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                BulkActionGroup::make([DeleteBulkAction::make()]),
             ]);
     }
 }

@@ -1,48 +1,18 @@
-# Apply patch cleanup penamaan Filament + schema EDOM
+# newedom SQL schema hotfix
 
-Patch ini merapikan sisa penamaan lama di project:
+This patch aligns the code to the uploaded SQL schema:
 
-- `Edoms` → `SettingEdoms`
-- `EdomResource` → `SettingEdomResource`
-- `EdomCategory` / `EdomCategories` → `EdomQuestionCategory` / `EdomQuestionCategories`
-- `EdomOption` / `EdomOptions` → `EdomQuestionOption` / `EdomQuestionOptions`
-- `Prodi` / `Prodis` → `ProgramStudi` / `ProgramStudis`
-- `MataKuliahs`, `MataKuliah`, dan `Course` dihapus
-- tabel manual `courses` dan `edom_courses` dihapus
-- `edom_responses` / `edom_answers` diganti menjadi `edom_response` / `edom_response_detail`
+- `program_studi.nama`, not `program_studi.name`
+- no `degree_short_name`, `faculty_name`, or `sort_order`
+- `edom_questions.question_type` uses `option` / `text`
+- `edom_response_detail.edom_option_id`, not `edom_question_option_id`
+- controller uses `SettingEdom`, not `SettingsEdom`, `Edom`, or `SettingSettingEdom`
 
-## Cara apply manual Windows
+Apply:
 
-1. Extract ZIP.
-2. Buka folder `repo`.
-3. Copy semua isi folder `repo` ke root project Laravel kamu:
-   `D:\13. bptik\newedom`
-4. Pilih Replace/Timpa.
-5. Hapus file/folder lama yang ada di `DELETE_FILES.txt`.
-6. Jalankan:
-
-```bash
+```powershell
+powershell -ExecutionPolicy Bypass -File "D:\path\hasil-extract\apply_sql_schema_hotfix.ps1" -ProjectRoot "D:\13. bptik\newedom"
 composer dump-autoload
 php artisan optimize:clear
 php artisan migrate:fresh --seed
 ```
-
-## Cara apply otomatis PowerShell
-
-Dari PowerShell:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File "D:\path\hasil-extract\apply_update_windows.ps1" -ProjectRoot "D:\13. bptik\newedom"
-```
-
-## Test
-
-```bash
-php artisan edom:make-token
-```
-
-Default test token memakai:
-
-- `siakad_idmahasiswa=testing18273`
-- `idtahunajaran=2026`
-- `idsemester=2`

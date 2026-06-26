@@ -21,50 +21,43 @@ class EdomPeriodsTable
             ->columns([
                 TextColumn::make('year')->label('Tahun Ajaran')->sortable(),
                 TextColumn::make('siakad_idsemester')->label('ID Semester')->sortable(),
-                TextColumn::make('semester_name')->label('Semester')->placeholder('-')->searchable(),
-                TextColumn::make('status')->label('Status')->badge()->color(fn (string $state): string => match ($state) {
-                    'open' => 'success',
-                    'closed' => 'danger',
-                    default => 'gray',
-                }),
-                TextColumn::make('opened_at')->label('Dibuka')->dateTime('d M Y H:i')->placeholder('-'),
-                TextColumn::make('closed_at')->label('Ditutup')->dateTime('d M Y H:i')->placeholder('-'),
+                TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->recordActions([
                 Action::make('openPeriod')
-                    ->label('Buka')
+                    ->label('Buka ke SIAKAD')
                     ->icon('heroicon-o-lock-open')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (EdomPeriod $record): bool => ! $record->isOpen())
                     ->action(function (EdomPeriod $record): void {
                         try {
                             app(UnwApiSiakad::class)->openPeriod($record->year, $record->siakad_idsemester);
-                            $record->update(['status' => 'open', 'opened_at' => now(), 'closed_at' => null]);
-                            Notification::make()->title('Periode EDOM berhasil dibuka')->success()->send();
+                            Notification::make()->title('Periode EDOM berhasil dibuka di SIAKAD')->success()->send();
                         } catch (Throwable $exception) {
                             report($exception);
                             Notification::make()->title('Gagal membuka periode EDOM')->body($exception->getMessage())->danger()->send();
                         }
                     }),
+
                 Action::make('closePeriod')
-                    ->label('Tutup')
+                    ->label('Tutup di SIAKAD')
                     ->icon('heroicon-o-lock-closed')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn (EdomPeriod $record): bool => $record->isOpen())
                     ->action(function (EdomPeriod $record): void {
                         try {
                             app(UnwApiSiakad::class)->closePeriod($record->year, $record->siakad_idsemester);
-                            $record->update(['status' => 'closed', 'closed_at' => now()]);
-                            Notification::make()->title('Periode EDOM berhasil ditutup')->success()->send();
+                            Notification::make()->title('Periode EDOM berhasil ditutup di SIAKAD')->success()->send();
                         } catch (Throwable $exception) {
                             report($exception);
                             Notification::make()->title('Gagal menutup periode EDOM')->body($exception->getMessage())->danger()->send();
                         }
                     }),
+
                 EditAction::make(),
             ])
-            ->toolbarActions([BulkActionGroup::make([DeleteBulkAction::make()])]);
+            ->toolbarActions([
+                BulkActionGroup::make([DeleteBulkAction::make()]),
+            ]);
     }
 }

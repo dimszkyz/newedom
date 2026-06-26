@@ -10,26 +10,22 @@ class ProgramStudi extends Model
 
     protected $fillable = [
         'id_unw_program_studi',
-        'name',
-        'slug',
-        'page_slug',
-        'degree_level',
-        'degree_short_name',
-        'unw_faculty_id',
-        'faculty_name',
-        'faculty_page_slug',
-        'api_updated_at',
-        'synced_at',
+        'nama',
     ];
 
-    protected $casts = [
-        'api_updated_at' => 'datetime',
-        'synced_at' => 'datetime',
-    ];
+    public function getNameAttribute(): ?string
+    {
+        return $this->attributes['nama'] ?? null;
+    }
+
+    public function setNameAttribute(?string $value): void
+    {
+        $this->attributes['nama'] = $value;
+    }
 
     public function getDisplayNameAttribute(): string
     {
-        return trim(($this->degree_short_name ? $this->degree_short_name.' - ' : '').$this->name);
+        return (string) ($this->nama ?? '-');
     }
 
     public function settingEdoms()

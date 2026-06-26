@@ -49,7 +49,7 @@
                                 <span class="badge badge-active">Aktif</span>
                                 <h2>{{ $edom->edom_name }}</h2>
                                 <p class="meta">
-                                    {{ $edom->programStudis->pluck('name')->join(', ') ?: 'Semua Program Studi' }}<br>
+                                    {{ $edom->programStudis->pluck('nama')->join(', ') ?: 'Semua Program Studi' }}<br>
                                     {{ $edom->questions_count }} pernyataan dalam {{ $edom->categories_count }} kategori
                                 </p>
                                 <a class="button" href="{{ route('edom.home', ['edom' => $edom->id]) }}">
@@ -63,7 +63,7 @@
                         @if ($student && ! $studentFetchError)
                             Tidak ada setting EDOM aktif yang cocok dengan program studi pada KRS Anda.
                         @elseif ($draftCount > 0)
-                            <br>Belum ada setting EDOM yang aktif untuk saat ini, harap tunggu dan kembali beberapa saat lagi.
+                            Belum ada setting EDOM yang aktif untuk saat ini.
                         @else
                             Belum ada setting EDOM yang aktif untuk saat ini.
                         @endif
@@ -79,9 +79,7 @@
                             <article class="card">
                                 <span class="badge badge-closed">Ditutup</span>
                                 <h2>{{ $edom->edom_name }}</h2>
-                                <p class="meta">
-                                    {{ $edom->programStudis->pluck('name')->join(', ') ?: 'Semua Program Studi' }}
-                                </p>
+                                <p class="meta">{{ $edom->programStudis->pluck('nama')->join(', ') ?: 'Semua Program Studi' }}</p>
                                 <span class="button button-muted">Pengisian Ditutup</span>
                             </article>
                         @endforeach

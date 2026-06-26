@@ -12,7 +12,6 @@ class EdomQuestionOption extends Model
         'edom_setting_id',
         'name',
         'score',
-        'sort_order',
     ];
 
     public function getLabelAttribute(): ?string
@@ -37,6 +36,6 @@ class EdomQuestionOption extends Model
 
     public function responseDetails()
     {
-        return $this->hasMany(EdomResponseDetail::class, 'edom_question_option_id');
+        return $this->hasMany(EdomResponseDetail::class, 'edom_option_id');
     }
 }

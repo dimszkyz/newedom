@@ -14,13 +14,11 @@ class SettingEdomForm
             TextInput::make('name')
                 ->label('Nama Setting EDOM')
                 ->required()
-                ->maxLength(255)
-                ->disabled(fn ($record) => $record && ! $record->isDraft()),
+                ->maxLength(255),
 
             Select::make('programStudis')
                 ->label('Program Studi')
-                ->relationship('programStudis', 'name')
-                ->getOptionLabelFromRecordUsing(fn ($record): string => $record->display_name ?? $record->name ?? '-')
+                ->relationship('programStudis', 'nama')
                 ->multiple()
                 ->searchable()
                 ->preload()
@@ -33,7 +31,7 @@ class SettingEdomForm
                     'active' => 'Aktif',
                     'closed' => 'Ditutup',
                 ])
-                ->disabled(fn ($record) => $record && $record->status === 'closed')
+                ->default('draft')
                 ->required(),
         ]);
     }
