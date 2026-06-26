@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', $settingEdom->name . ' - EDOM Universitas Ngudi Waluyo')
+@section('title', $edom->name . ' - EDOM Universitas Ngudi Waluyo')
 
 @section('content')
     @php
-        $options = $settingEdom->questionOptions;
+        $options = $edom->questionOptions;
         $sections = collect($sections ?? []);
         $student = $student ?? null;
-        $questions = $settingEdom->questionCategories->flatMap(fn ($category) => $category->questions);
+        $questions = $edom->categories->flatMap(fn ($category) => $category->questions);
         $hasQuestions = $questions->count() > 0;
-        $hasOptionQuestions = $questions->contains(fn ($question) => ! $question->isTextQuestion());
+        $hasOptionQuestions = $questions->contains(fn ($question) => ! in_array(strtolower((string) $question->question_type), ["text", "essay", "esai", "uraian", "textarea"], true));
         $canSubmit = $hasQuestions
             && (! $hasOptionQuestions || $options->isNotEmpty())
             && ($student && $sections->isNotEmpty());
@@ -68,11 +68,11 @@
         <div class="edom-public-container">
             <form method="POST" action="{{ route('edom.home.submit') }}" class="edom-form-card">
                 @csrf
-                <input type="hidden" name="setting_edom_id" value="{{ $settingEdom->id }}">
+                <input type="hidden" name="setting_edom_id" value="{{ $edom->id }}">
 
                 <section class="edom-intro-card" aria-labelledby="edom-intro-title">
                     <h1 id="edom-intro-title" class="edom-intro-title">EVALUASI DOSEN OLEH MAHASISWA</h1>
-                    <p class="edom-intro-subtitle">{{ $settingEdom->name }}</p>
+                    <p class="edom-intro-subtitle">{{ $edom->name }}</p>
 
                     @if ($student)
                         <div class="edom-alert edom-alert-success">
@@ -174,7 +174,7 @@
                                     </thead>
 
                                     <tbody>
-                                        @forelse ($settingEdom->questionCategories as $categoryIndex => $category)
+                                        @forelse ($edom->categories as $categoryIndex => $category)
                                             <tr class="edom-category-row">
                                                 <td colspan="{{ $options->count() + 2 }}">
                                                     {{ strtoupper($formatCategoryTitle($category->name, $categoryIndex)) }}
@@ -186,7 +186,7 @@
                                                     <td class="edom-question-number">{{ $questionNumber++ }}</td>
                                                     <td class="edom-question-text">{{ $question->statement }}</td>
 
-                                                    @if ($question->isTextQuestion())
+                                                    @if (in_array(strtolower((string) $question->question_type), ["text", "essay", "esai", "uraian", "textarea"], true))
                                                         <td colspan="{{ max($options->count(), 1) }}">
                                                             <textarea
                                                                 name="texts[{{ $key }}][{{ $question->id }}]"
@@ -244,3 +244,4 @@
         </div>
     </main>
 @endsection
+

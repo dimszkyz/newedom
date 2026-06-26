@@ -34,6 +34,8 @@ return [
         'password' => env('UNW_API_SIAKAD_PASSWORD'),
         'token_cache_key' => env('UNW_API_SIAKAD_TOKEN_CACHE_KEY', 'unwapi_siakad_token'),
         'token_cache_hours' => (int) env('UNW_API_SIAKAD_TOKEN_CACHE_HOURS', 12),
+        'verify_ssl' => filter_var(env('UNW_API_SIAKAD_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
 ];
+

@@ -22,7 +22,7 @@ class UnwApiSiakad
                 throw new InvalidArgumentException('UNW_API_SIAKAD_EMAIL dan UNW_API_SIAKAD_PASSWORD harus diisi di .env.');
             }
 
-            $response = Http::asJson()
+            $response = $this->http()->asJson()
                 ->acceptJson()
                 ->post($this->baseUrl().'/login', [
                     'email' => $email,
@@ -42,11 +42,17 @@ class UnwApiSiakad
 
     private function client(): PendingRequest
     {
-        return Http::withToken($this->token())
+        return $this->http()->withToken($this->token())
             ->acceptJson()
             ->baseUrl($this->baseUrl());
     }
 
+    private function http(): PendingRequest
+    {
+        return Http::withOptions([
+            'verify' => filter_var(config('services.unwapi_siakad.verify_ssl', true), FILTER_VALIDATE_BOOLEAN),
+        ]);
+    }
     private function baseUrl(): string
     {
         $baseUrl = rtrim((string) config('services.unwapi_siakad.base'), '/');
@@ -140,3 +146,4 @@ class UnwApiSiakad
         return $this->request('get', '/edom/mahasiswa'.($query === '' ? '' : '?'.$query));
     }
 }
+
