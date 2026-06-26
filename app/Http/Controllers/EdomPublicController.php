@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Edom;
+use App\Models\SettingsEdom as Edom;
 use App\Models\EdomAnswer;
 use App\Models\EdomOption;
 use App\Models\EdomQuestion;
