@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class EdomAnswer extends Model
 {
+    protected $table = 'edom_answers';
+
     protected $fillable = [
         'edom_response_id',
         'edom_question_id',
