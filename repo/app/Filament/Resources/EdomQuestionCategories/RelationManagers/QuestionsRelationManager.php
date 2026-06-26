@@ -34,7 +34,7 @@ class QuestionsRelationManager extends RelationManager
             ])
             ->headerActions([
                 CreateAction::make()
-                    ->label('Pertanyaan Baru')
+                    ->label('Tambah Pertanyaan')
                     ->slideOver()
                     ->schema([
                         Textarea::make('statement')
@@ -45,18 +45,18 @@ class QuestionsRelationManager extends RelationManager
                         Select::make('question_type')
                             ->label('Tipe Soal')
                             ->options([
-                                'option' => 'Pilihan / Opsi',
+                                'option' => 'Pilihan/Opsi',
                                 'text' => 'Teks',
                             ])
                             ->required(),
                     ])
                     ->using(function (array $data) {
-                        $data['edom_setting_id'] = $this->ownerRecord->edom_setting_id;
                         $data['edom_question_category_id'] = $this->ownerRecord->id;
+                        $data['edom_setting_id'] = $this->ownerRecord->edom_setting_id;
 
                         return $this->ownerRecord->questions()->create($data);
                     })
-                    ->visible(fn ($livewire) => $livewire->ownerRecord->edom->isDraft()),
+                    ->visible(fn ($livewire) => $livewire->ownerRecord->settingEdom?->isDraft()),
             ])
             ->recordActions([
                 EditAction::make()
@@ -71,7 +71,7 @@ class QuestionsRelationManager extends RelationManager
                         Select::make('question_type')
                             ->label('Tipe Soal')
                             ->options([
-                                'option' => 'Pilihan / Opsi',
+                                'option' => 'Pilihan/Opsi',
                                 'text' => 'Teks',
                             ])
                             ->required(),
@@ -81,10 +81,10 @@ class QuestionsRelationManager extends RelationManager
 
                         return $record;
                     })
-                    ->visible(fn ($record) => $record->category?->edom?->isDraft()),
+                    ->visible(fn ($record) => $record->category?->settingEdom?->isDraft()),
 
                 DeleteAction::make()
-                    ->visible(fn ($record) => $record->category?->edom?->isDraft()),
+                    ->visible(fn ($record) => $record->category?->settingEdom?->isDraft()),
             ]);
     }
 }

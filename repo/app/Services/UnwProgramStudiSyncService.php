@@ -14,9 +14,7 @@ class UnwProgramStudiSyncService
         $verifySsl = filter_var(config('services.unw_program_studi.verify_ssl', true), FILTER_VALIDATE_BOOLEAN);
 
         $response = Http::acceptJson()
-            ->withOptions([
-                'verify' => $verifySsl,
-            ])
+            ->withOptions(['verify' => $verifySsl])
             ->timeout(30)
             ->retry(2, 1000)
             ->get($url);
@@ -44,9 +42,7 @@ class UnwProgramStudiSyncService
                 continue;
             }
 
-            $prodi = Prodi::query()
-                ->where('id_unw_program_studi', $externalId)
-                ->first();
+            $prodi = Prodi::query()->where('id_unw_program_studi', $externalId)->first();
 
             if ($prodi) {
                 $prodi->update(['nama' => $nama]);

@@ -15,15 +15,22 @@ class ProdisTable
                 TextColumn::make('id_unw_program_studi')
                     ->label('ID API')
                     ->sortable()
-                    ->toggleable(),
+                    ->searchable(),
 
                 TextColumn::make('nama')
-                    ->label('Nama Prodi')
+                    ->label('Nama Program Studi')
                     ->searchable()
                     ->sortable(),
-            ])
-            ->filters([
-                //
+
+                TextColumn::make('created_at')
+                    ->label('Dibuat')
+                    ->dateTime('d M Y H:i')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('updated_at')
+                    ->label('Diubah')
+                    ->dateTime('d M Y H:i')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->recordActions([])
             ->toolbarActions([]);

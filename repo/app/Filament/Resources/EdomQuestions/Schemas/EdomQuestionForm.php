@@ -24,7 +24,7 @@ class EdomQuestionForm
                 Select::make('question_type')
                     ->label('Tipe Soal')
                     ->options([
-                        'option' => 'Pilihan / Opsi',
+                        'option' => 'Pilihan/Opsi',
                         'text' => 'Teks',
                     ])
                     ->required(),

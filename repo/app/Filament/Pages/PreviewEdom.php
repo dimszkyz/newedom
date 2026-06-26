@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Edom;
+use App\Models\SettingEdom;
 use BackedEnum;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -27,7 +27,7 @@ class PreviewEdom extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'edom_id' => Edom::query()->latest()->value('id'),
+            'setting_edom_id' => SettingEdom::query()->latest()->value('id'),
         ]);
     }
 
@@ -40,27 +40,27 @@ class PreviewEdom extends Page implements HasForms
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('edom_id')
-                    ->label('Pilih EDOM untuk di-preview')
-                    ->options(Edom::pluck('name', 'id'))
+                Forms\Components\Select::make('setting_edom_id')
+                    ->label('Pilih Setting EDOM untuk di-preview')
+                    ->options(SettingEdom::query()->pluck('name', 'id'))
                     ->searchable()
                     ->live(),
             ])
             ->statePath('formData');
     }
 
-    public function getEdom(): ?Edom
+    public function getSettingEdom(): ?SettingEdom
     {
-        $edomId = $this->formData['edom_id'] ?? null;
+        $settingEdomId = $this->formData['setting_edom_id'] ?? null;
 
-        if (! $edomId) {
+        if (! $settingEdomId) {
             return null;
         }
 
-        return Edom::with([
+        return SettingEdom::with([
             'prodis',
-            'categories.questions',
-            'options',
-        ])->find($edomId);
+            'questionCategories.questions',
+            'questionOptions',
+        ])->find($settingEdomId);
     }
 }

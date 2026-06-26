@@ -19,13 +19,13 @@ class ProdiResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
-    protected static ?string $navigationLabel = 'Prodi';
+    protected static ?string $navigationLabel = 'Program Studi';
 
-    protected static ?string $modelLabel = 'Prodi';
+    protected static ?string $modelLabel = 'Program Studi';
 
-    protected static ?string $pluralModelLabel = 'Prodi';
+    protected static ?string $pluralModelLabel = 'Program Studi';
 
-    protected static ?string $slug = 'prodi';
+    protected static ?string $slug = 'program-studi';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
 
@@ -54,13 +54,6 @@ class ProdiResource extends Resource
     public static function table(Table $table): Table
     {
         return ProdisTable::configure($table);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
     }
 
     public static function getPages(): array

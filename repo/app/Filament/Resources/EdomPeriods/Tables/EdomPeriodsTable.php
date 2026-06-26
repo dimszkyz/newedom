@@ -18,17 +18,14 @@ class EdomPeriodsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort('year', 'desc')
             ->columns([
                 TextColumn::make('year')
                     ->label('Tahun Ajaran')
-                    ->sortable()
-                    ->searchable(),
+                    ->sortable(),
 
                 TextColumn::make('siakad_idsemester')
                     ->label('ID Semester')
-                    ->sortable()
-                    ->searchable(),
+                    ->sortable(),
 
                 TextColumn::make('responses_count')
                     ->counts('responses')
@@ -50,12 +47,12 @@ class EdomPeriodsTable
                             app(UnwApiSiakad::class)->openPeriod($record->year, $record->siakad_idsemester);
 
                             Notification::make()
-                                ->title('Periode EDOM dibuka di SIAKAD')
+                                ->title('Periode EDOM berhasil dibuka di SIAKAD')
                                 ->success()
                                 ->send();
                         } catch (Throwable $exception) {
                             Notification::make()
-                                ->title('Gagal membuka periode')
+                                ->title('Gagal membuka periode di SIAKAD')
                                 ->body($exception->getMessage())
                                 ->danger()
                                 ->send();
@@ -72,12 +69,12 @@ class EdomPeriodsTable
                             app(UnwApiSiakad::class)->closePeriod($record->year, $record->siakad_idsemester);
 
                             Notification::make()
-                                ->title('Periode EDOM ditutup di SIAKAD')
+                                ->title('Periode EDOM berhasil ditutup di SIAKAD')
                                 ->success()
                                 ->send();
                         } catch (Throwable $exception) {
                             Notification::make()
-                                ->title('Gagal menutup periode')
+                                ->title('Gagal menutup periode di SIAKAD')
                                 ->body($exception->getMessage())
                                 ->danger()
                                 ->send();

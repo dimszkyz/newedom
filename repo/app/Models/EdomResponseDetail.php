@@ -25,13 +25,13 @@ class EdomResponseDetail extends Model
         return $this->belongsTo(EdomQuestion::class, 'edom_question_id');
     }
 
-    public function option()
+    public function questionOption()
     {
-        return $this->belongsTo(EdomOption::class, 'edom_option_id');
+        return $this->belongsTo(EdomQuestionOption::class, 'edom_option_id');
     }
 
     public function getScoreAttribute(): ?int
     {
-        return $this->option?->score;
+        return $this->questionOption?->score;
     }
 }

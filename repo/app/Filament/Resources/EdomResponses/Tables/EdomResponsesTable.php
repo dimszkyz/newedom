@@ -16,18 +16,16 @@ class EdomResponsesTable
     {
         return $table
             ->modifyQueryUsing(fn ($query) => $query
-                ->with(['edom', 'period', 'details.option'])
-                ->withCount('details')
+                ->with(['settingEdom', 'period', 'details.questionOption'])
                 ->latest('submitted_at')
                 ->latest('id'))
             ->columns([
-                TextColumn::make('edom.name')
-                    ->label('EDOM')
-                    ->placeholder('EDOM dihapus')
+                TextColumn::make('settingEdom.name')
+                    ->label('Setting EDOM')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('period.display_name')
+                TextColumn::make('period.label')
                     ->label('Periode')
                     ->placeholder('-'),
 
@@ -37,13 +35,11 @@ class EdomResponsesTable
 
                 TextColumn::make('siakad_idmatakuliah')
                     ->label('ID Mata Kuliah')
-                    ->placeholder('-')
-                    ->toggleable(),
+                    ->placeholder('-'),
 
                 TextColumn::make('siakad_idtawarmatakuliahdetail')
                     ->label('ID Detail Penawaran')
-                    ->placeholder('-')
-                    ->toggleable(),
+                    ->placeholder('-'),
 
                 TextColumn::make('details_count')
                     ->counts('details')
@@ -53,11 +49,10 @@ class EdomResponsesTable
                 TextColumn::make('average_score')
                     ->label('Rata-rata Nilai')
                     ->state(function (EdomResponse $record): string {
-                        $scores = $record->details
-                            ->map(fn ($detail) => $detail->option?->score)
-                            ->filter(fn ($score) => $score !== null);
-
-                        $average = $scores->isEmpty() ? null : $scores->avg();
+                        $average = $record->details
+                            ->map(fn ($detail) => $detail->questionOption?->score)
+                            ->filter(fn ($score) => $score !== null)
+                            ->avg();
 
                         return $average === null ? '-' : number_format((float) $average, 2, ',', '.');
                     })
@@ -70,19 +65,17 @@ class EdomResponsesTable
                     ->sortable(),
             ])
             ->filters([
-                SelectFilter::make('edom')
-                    ->label('EDOM')
-                    ->relationship('edom', 'name')
+                SelectFilter::make('settingEdom')
+                    ->label('Setting EDOM')
+                    ->relationship('settingEdom', 'name')
                     ->searchable()
-                    ->preload()
-                    ->placeholder('Semua EDOM'),
+                    ->preload(),
 
                 SelectFilter::make('period')
                     ->label('Periode')
                     ->relationship('period', 'year')
                     ->searchable()
-                    ->preload()
-                    ->placeholder('Semua periode'),
+                    ->preload(),
             ])
             ->recordActions([
                 ViewAction::make()

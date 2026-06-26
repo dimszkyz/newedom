@@ -18,8 +18,8 @@ class EdomPeriod extends Model
         return $this->hasMany(EdomResponse::class, 'edom_period_id');
     }
 
-    public function getDisplayNameAttribute(): string
+    public function getLabelAttribute(): string
     {
-        return trim($this->year.' / Semester '.$this->siakad_idsemester);
+        return $this->year.' / Semester '.$this->siakad_idsemester;
     }
 }

@@ -7,7 +7,6 @@
         $student = $student ?? null;
         $studentSections = collect($studentSections ?? []);
         $studentFetchError = $studentFetchError ?? null;
-        $formatProdis = fn ($edom) => $edom->prodis->map(fn ($prodi) => $prodi->display_name ?: $prodi->nama)->filter()->join(', ') ?: 'Semua Prodi';
     @endphp
 
     <main class="page">
@@ -41,19 +40,19 @@
             </section>
 
             <section class="section">
-                <h2 class="section-title">EDOM Aktif</h2>
+                <h2 class="section-title">Setting EDOM Aktif</h2>
 
-                @if ($activeEdoms->isNotEmpty())
+                @if ($activeSettingEdoms->isNotEmpty())
                     <div class="grid">
-                        @foreach ($activeEdoms as $edom)
+                        @foreach ($activeSettingEdoms as $settingEdom)
                             <article class="card">
                                 <span class="badge badge-active">Aktif</span>
-                                <h2>{{ $edom->edom_name }}</h2>
+                                <h2>{{ $settingEdom->name }}</h2>
                                 <p class="meta">
-                                    {{ $formatProdis($edom) }}<br>
-                                    {{ $edom->questions_count }} pernyataan dalam {{ $edom->categories_count }} kategori
+                                    {{ $settingEdom->prodis->pluck('nama')->join(', ') ?: 'Semua Prodi' }}<br>
+                                    {{ $settingEdom->questions_count }} pernyataan dalam {{ $settingEdom->question_categories_count }} kategori
                                 </p>
-                                <a class="button" href="{{ route('edom.home', ['edom' => $edom->id]) }}">
+                                <a class="button" href="{{ route('edom.home', ['setting_edom' => $settingEdom->id]) }}">
                                     {{ $student ? 'Isi EDOM dari KRS' : 'Isi EDOM' }}
                                 </a>
                             </article>
@@ -62,7 +61,7 @@
                 @else
                     <div class="empty">
                         @if ($student && ! $studentFetchError)
-                            Tidak ada paket EDOM aktif yang cocok dengan program studi pada KRS Anda.
+                            Tidak ada setting EDOM aktif yang cocok dengan program studi pada KRS Anda.
                         @elseif ($draftCount > 0)
                             <br>Belum ada EDOM yang aktif untuk saat ini, harap tunggu dan kembali beberapa saat lagi.
                         @else
@@ -72,16 +71,16 @@
                 @endif
             </section>
 
-            @if ($closedEdoms->isNotEmpty())
+            @if ($closedSettingEdoms->isNotEmpty())
                 <section class="section">
-                    <h2 class="section-title">EDOM yang Sudah Ditutup</h2>
+                    <h2 class="section-title">Setting EDOM yang Sudah Ditutup</h2>
                     <div class="grid">
-                        @foreach ($closedEdoms as $edom)
+                        @foreach ($closedSettingEdoms as $settingEdom)
                             <article class="card">
                                 <span class="badge badge-closed">Ditutup</span>
-                                <h2>{{ $edom->edom_name }}</h2>
+                                <h2>{{ $settingEdom->name }}</h2>
                                 <p class="meta">
-                                    {{ $formatProdis($edom) }}
+                                    {{ $settingEdom->prodis->pluck('nama')->join(', ') ?: 'Semua Prodi' }}
                                 </p>
                                 <span class="button button-muted">Pengisian Ditutup</span>
                             </article>

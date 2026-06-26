@@ -1,51 +1,44 @@
-# Cara menerapkan update EDOM ke repo `dimszkyz/newedom`
+# Cara apply patch rename schema EDOM
 
-Isi paket ini adalah file replacement untuk menyesuaikan project dengan schema inti:
+Patch ini memperbaiki error `Cannot add a required argument...` dan mengganti penamaan lama:
 
-- `edom_settings`
-- `edom_settings_program_studi`
-- `program_studi`
-- `edom_periods`
-- `edom_question_options`
-- `edom_question_categories`
-- `edom_questions`
-- `edom_response`
-- `edom_response_detail`
+- `Edom` / folder `Edoms` -> `SettingEdom` / folder `SettingEdoms`
+- `EdomCategory` / folder `EdomCategories` -> `EdomQuestionCategory` / folder `EdomQuestionCategories`
+- `EdomOption` / folder `EdomOptions` -> `EdomQuestionOption` / folder `EdomQuestionOptions`
+- `EdomAnswer` -> `EdomResponseDetail`
+- Mata Kuliah manual dihapus.
 
-Perubahan utama:
+## Apply di root project
 
-1. Menghapus penyimpanan Mata Kuliah manual dari database dan admin.
-2. Menghapus tabel `courses` dan `edom_courses`.
-3. Mengganti hasil pengisian dari `edom_responses`/`edom_answers` menjadi `edom_response`/`edom_response_detail`.
-4. Menambahkan `edom_periods`.
-5. Menjadikan `siakad_idmahasiswa` string supaya bisa dipakai untuk testing `testing18273`.
-6. Memasang HMAC temporary random di `.env.example`.
-
-## Langkah apply
-
-Jalankan dari root repository `newedom`:
+Root project adalah folder yang berisi `artisan`, `composer.json`, `app`, `database`.
 
 ```bash
-unzip newedom-edom-integration-update.zip -d /tmp/newedom-edom-update
+unzip newedom-rename-schema-fix.zip -d /tmp/newedom-rename-schema-fix
 cd /path/ke/newedom
 
-# copy semua file pengganti
-cp -R /tmp/newedom-edom-update/repo/* .
+cp -R /tmp/newedom-rename-schema-fix/repo/* .
 
-# hapus file lama yang sudah tidak dipakai
 while IFS= read -r file; do
   [ -n "$file" ] && rm -f "$file"
-done < /tmp/newedom-edom-update/DELETE_FILES.txt
+done < /tmp/newedom-rename-schema-fix/DELETE_FILES.txt
 
 composer dump-autoload
-php artisan migrate:fresh --seed
 php artisan optimize:clear
+php artisan migrate:fresh --seed
 ```
 
-Untuk test token:
+## Test token
 
 ```bash
-php artisan edom:make-token testing18273 2026 2 --ttl=3600
+php artisan edom:make-token
 ```
 
-Catatan: `migrate:fresh` disarankan karena schema inti berubah dan tabel Mata Kuliah manual memang dihapus.
+Default-nya memakai:
+
+```text
+testing18273 2026 2
+```
+
+## Catatan database
+
+Gunakan `migrate:fresh` karena tabel lama seperti `courses`, `edom_answers`, dan `edom_responses` harus hilang.

@@ -8,10 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('edom_settings')) {
-            return;
-        }
-
         Schema::create('edom_settings', function (Blueprint $table) {
             $table->id();
             $table->string('name');

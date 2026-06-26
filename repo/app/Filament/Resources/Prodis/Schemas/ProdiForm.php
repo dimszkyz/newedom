@@ -12,11 +12,11 @@ class ProdiForm
         return $schema
             ->components([
                 TextInput::make('id_unw_program_studi')
-                    ->label('ID API UNW')
-                    ->disabled(),
+                    ->label('ID API')
+                    ->numeric(),
 
                 TextInput::make('nama')
-                    ->label('Nama Prodi')
+                    ->label('Nama Program Studi')
                     ->required(),
             ]);
     }

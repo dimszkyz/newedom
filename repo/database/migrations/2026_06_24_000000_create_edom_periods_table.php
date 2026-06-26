@@ -8,13 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('edom_periods')) {
-            return;
-        }
-
         Schema::create('edom_periods', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('year');
+            $table->unsignedInteger('year');
             $table->unsignedBigInteger('siakad_idsemester');
             $table->timestamps();
 

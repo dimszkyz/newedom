@@ -15,19 +15,9 @@ class EdomQuestion extends Model
         'question_type',
     ];
 
-    public function getCategoryIdAttribute(): mixed
+    public function settingEdom()
     {
-        return $this->attributes['edom_question_category_id'] ?? null;
-    }
-
-    public function setCategoryIdAttribute(mixed $value): void
-    {
-        $this->attributes['edom_question_category_id'] = $value;
-    }
-
-    public function edom()
-    {
-        return $this->belongsTo(SettingsEdom::class, 'edom_setting_id');
+        return $this->belongsTo(SettingEdom::class, 'edom_setting_id');
     }
 
     public function category()
@@ -38,5 +28,10 @@ class EdomQuestion extends Model
     public function isTextQuestion(): bool
     {
         return in_array(strtolower((string) $this->question_type), ['text', 'essay', 'esai', 'uraian', 'textarea'], true);
+    }
+
+    public function isOptionQuestion(): bool
+    {
+        return ! $this->isTextQuestion();
     }
 }

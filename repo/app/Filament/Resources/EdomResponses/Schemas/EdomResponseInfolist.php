@@ -15,17 +15,16 @@ class EdomResponseInfolist
             ->components([
                 Section::make('Informasi Pengisian')
                     ->schema([
-                        TextEntry::make('edom.name')
-                            ->label('EDOM')
-                            ->placeholder('EDOM dihapus'),
+                        TextEntry::make('settingEdom.name')
+                            ->label('Setting EDOM')
+                            ->placeholder('-'),
 
-                        TextEntry::make('period.display_name')
+                        TextEntry::make('period.label')
                             ->label('Periode')
                             ->placeholder('-'),
 
                         TextEntry::make('siakad_idmahasiswa')
-                            ->label('ID Mahasiswa')
-                            ->placeholder('-'),
+                            ->label('ID Mahasiswa'),
 
                         TextEntry::make('siakad_idmatakuliah')
                             ->label('ID Mata Kuliah')
@@ -48,8 +47,11 @@ class EdomResponseInfolist
                             ->label('Rata-rata Nilai')
                             ->state(function (EdomResponse $record): string {
                                 $average = $record->details()
-                                    ->join('edom_question_options', 'edom_response_detail.edom_option_id', '=', 'edom_question_options.id')
-                                    ->avg('edom_question_options.score');
+                                    ->with('questionOption')
+                                    ->get()
+                                    ->map(fn ($detail) => $detail->questionOption?->score)
+                                    ->filter(fn ($score) => $score !== null)
+                                    ->avg();
 
                                 return $average === null ? '-' : number_format((float) $average, 2, ',', '.');
                             })

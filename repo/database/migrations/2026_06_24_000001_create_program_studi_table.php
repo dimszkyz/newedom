@@ -8,13 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('program_studi')) {
-            return;
-        }
-
         Schema::create('program_studi', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_unw_program_studi')->nullable()->unique('program_studi_id_unw_program_studi_unique');
+            $table->unsignedBigInteger('id_unw_program_studi')->nullable()->unique();
             $table->string('nama');
             $table->timestamps();
         });

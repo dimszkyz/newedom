@@ -13,38 +13,32 @@ class DetailsRelationManager extends RelationManager
 
     protected static ?string $title = 'Detail Jawaban';
 
-    protected static ?string $modelLabel = 'Jawaban';
-
-    protected static ?string $pluralModelLabel = 'Detail Jawaban';
-
     public function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['question.category', 'option'])->orderBy('id'))
+            ->modifyQueryUsing(fn ($query) => $query->with(['question.category', 'questionOption'])->orderBy('id'))
             ->columns([
                 TextColumn::make('question.category.name')
                     ->label('Kategori')
-                    ->placeholder('Kategori dihapus')
                     ->badge()
                     ->color('primary')
-                    ->wrap(),
+                    ->wrap()
+                    ->placeholder('-'),
 
                 TextColumn::make('question.statement')
                     ->label('Pernyataan')
-                    ->placeholder('Pernyataan dihapus')
                     ->limit(120)
                     ->wrap()
                     ->searchable(),
 
-                TextColumn::make('option.name')
+                TextColumn::make('questionOption.name')
                     ->label('Pilihan')
-                    ->state(fn (EdomResponseDetail $record): string => $record->option?->name ?: (filled($record->answer_text) ? '-' : '-'))
+                    ->state(fn (EdomResponseDetail $record): string => $record->questionOption?->name ?: '-')
                     ->badge()
-                    ->color(fn (EdomResponseDetail $record): string => $record->option ? 'success' : 'gray'),
+                    ->color(fn (EdomResponseDetail $record): string => $record->questionOption ? 'success' : 'gray'),
 
-                TextColumn::make('score')
+                TextColumn::make('questionOption.score')
                     ->label('Nilai')
-                    ->state(fn (EdomResponseDetail $record): ?int => $record->option?->score)
                     ->placeholder('-')
                     ->badge()
                     ->color('success'),

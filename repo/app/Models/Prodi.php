@@ -15,36 +15,16 @@ class Prodi extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return trim((string) ($this->nama ?? $this->attributes['nama'] ?? ''));
+        return trim((string) ($this->nama ?? ''));
     }
 
-    public function getNameAttribute(): ?string
-    {
-        return $this->attributes['nama'] ?? null;
-    }
-
-    public function setNameAttribute(?string $value): void
-    {
-        $this->attributes['nama'] = $value;
-    }
-
-    public function getUnwStudyProgramIdAttribute(): mixed
-    {
-        return $this->attributes['id_unw_program_studi'] ?? null;
-    }
-
-    public function setUnwStudyProgramIdAttribute(mixed $value): void
-    {
-        $this->attributes['id_unw_program_studi'] = $value;
-    }
-
-    public function edoms()
+    public function settingEdoms()
     {
         return $this->belongsToMany(
-            Edom::class,
+            SettingEdom::class,
             'edom_settings_program_studi',
             'program_studi_id',
             'edom_setting_id'
-        )->withTimestamps();
+        );
     }
 }
