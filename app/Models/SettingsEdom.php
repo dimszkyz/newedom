@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\EdomQuestionCategory;
-use App\Models\EdomQuestion;
 
 class SettingsEdom extends Model
 {
@@ -29,7 +27,7 @@ class SettingsEdom extends Model
     public function prodis()
     {
         return $this->belongsToMany(
-            ProgramStudi::class,
+            Prodi::class,
             'edom_settings_program_studi',
             'edom_setting_id',
             'program_studi_id'
@@ -39,7 +37,7 @@ class SettingsEdom extends Model
     public function mataKuliahs()
     {
         return $this->belongsToMany(
-            Course::class,
+            MataKuliah::class,
             'edom_courses',
             'edom_id',
             'course_id'
@@ -48,19 +46,29 @@ class SettingsEdom extends Model
 
     public function categories()
     {
-        return $this->hasMany(EdomQuestionCategory::class, 'edom_setting_id');
+        return $this->hasMany(EdomCategory::class, 'edom_setting_id');
     }
 
     public function questions()
     {
         return $this->hasManyThrough(
             EdomQuestion::class,
-            EdomQuestionCategory::class,
+            EdomCategory::class,
             'edom_setting_id',
             'edom_question_category_id',
             'id',
             'id'
         );
+    }
+
+    public function options()
+    {
+        return $this->hasMany(EdomOption::class, 'edom_setting_id');
+    }
+
+    public function responses()
+    {
+        return $this->hasMany(EdomResponse::class, 'edom_id');
     }
 
     public function isDraft(): bool
@@ -76,15 +84,5 @@ class SettingsEdom extends Model
     public function isClosed(): bool
     {
         return $this->status === 'closed';
-    }
-
-    public function options()
-    {
-        return $this->hasMany(EdomQuestionOption::class, 'edom_setting_id');
-    }
-
-    public function responses()
-    {
-        return $this->hasMany(EdomResponse::class, 'edom_id');
     }
 }
