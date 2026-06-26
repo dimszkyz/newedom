@@ -46,14 +46,14 @@ class SettingsEdom extends Model
 
     public function categories()
     {
-        return $this->hasMany(EdomCategory::class, 'edom_setting_id');
+        return $this->hasMany(EdomQuestionCategory::class, 'edom_setting_id');
     }
 
     public function questions()
     {
         return $this->hasManyThrough(
             EdomQuestion::class,
-            EdomCategory::class,
+            EdomQuestionCategory::class,
             'edom_setting_id',
             'edom_question_category_id',
             'id',
