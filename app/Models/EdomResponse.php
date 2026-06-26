@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class EdomResponse extends Model
 {
+    protected $table = 'edom_responses';
+
     protected $fillable = [
         'edom_id',
         'siakad_idmahasiswa',
@@ -30,11 +32,11 @@ class EdomResponse extends Model
 
     public function edom()
     {
-        return $this->belongsTo(Edom::class);
+        return $this->belongsTo(SettingsEdom::class, 'edom_id');
     }
 
     public function answers()
     {
-        return $this->hasMany(EdomAnswer::class);
+        return $this->hasMany(EdomAnswer::class, 'edom_response_id');
     }
 }
