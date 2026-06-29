@@ -20,6 +20,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Existing rollback behavior is handled by Laravel during migration rollback.
+        $tableName = 'edom_periods';
+
+        Schema::dropIfExists($tableName);
     }
 };
