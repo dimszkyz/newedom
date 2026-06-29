@@ -10,11 +10,11 @@ return new class extends Migration
     {
         Schema::create('edom_periods', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('year');
+            $table->unsignedInteger('siakad_idtahunajaran');
             $table->unsignedBigInteger('siakad_idsemester');
             $table->timestamps();
 
-            $table->unique(['year', 'siakad_idsemester'], 'edom_periods_year_semester_unique');
+            $table->unique(['siakad_idtahunajaran', 'siakad_idsemester'], 'edom_periods_tahunajaran_semester_unique');
         });
     }
 
