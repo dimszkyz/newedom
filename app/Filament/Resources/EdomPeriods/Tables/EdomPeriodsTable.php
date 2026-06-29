@@ -18,7 +18,7 @@ class EdomPeriodsTable
     {
         return $table
             ->columns([
-                TextColumn::make('siakad_idtahunajaran')->label('ID Tahun Ajaran')->sortable(),
+                TextColumn::make('year')->label('Tahun Ajaran')->sortable(),
                 TextColumn::make('siakad_idsemester')->label('ID Semester')->sortable(),
                 TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
@@ -29,7 +29,7 @@ class EdomPeriodsTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(function (EdomPeriod $record): void {
-                        app(UnwApiSiakad::class)->openPeriod($record->siakad_idtahunajaran, $record->siakad_idsemester);
+                        app(UnwApiSiakad::class)->openPeriod($record->year, $record->siakad_idsemester);
 
                         Notification::make()
                             ->title('Periode EDOM berhasil dibuka di SIAKAD')
@@ -43,7 +43,7 @@ class EdomPeriodsTable
                     ->color('danger')
                     ->requiresConfirmation()
                     ->action(function (EdomPeriod $record): void {
-                        app(UnwApiSiakad::class)->closePeriod($record->siakad_idtahunajaran, $record->siakad_idsemester);
+                        app(UnwApiSiakad::class)->closePeriod($record->year, $record->siakad_idsemester);
 
                         Notification::make()
                             ->title('Periode EDOM berhasil ditutup di SIAKAD')
