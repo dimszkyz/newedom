@@ -12,14 +12,14 @@ class EdomPeriodForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('siakad_idtahunajaran')
-                ->label('ID Tahun Ajaran SIAKAD')
-                ->options(self::tahunAjaranOptions())
+            Select::make('year')
+                ->label('Tahun Ajaran')
+                ->options(self::yearOptions())
                 ->default((int) now()->year)
                 ->searchable()
                 ->native(false)
                 ->required()
-                ->helperText('Nilai yang disimpan adalah siakad_idtahunajaran, misalnya 2026 untuk 2026/2027.'),
+                ->helperText('Nilai periode admin disimpan sebagai year, misalnya 2026 untuk 2026/2027.'),
 
             Select::make('siakad_idsemester')
                 ->label('Semester SIAKAD')
@@ -33,7 +33,7 @@ class EdomPeriodForm
         ]);
     }
 
-    public static function tahunAjaranOptions(): array
+    public static function yearOptions(): array
     {
         $currentYear = (int) now()->year;
 
@@ -42,11 +42,6 @@ class EdomPeriodForm
                 $year => $year.'/'.($year + 1),
             ])
             ->all();
-    }
-
-    public static function yearOptions(): array
-    {
-        return self::tahunAjaranOptions();
     }
 
     public static function semesterOptions(): array
