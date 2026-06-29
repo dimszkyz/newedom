@@ -9,7 +9,7 @@ class EdomPeriod extends Model
     protected $table = 'edom_periods';
 
     protected $fillable = [
-        'year',
+        'siakad_idtahunajaran',
         'siakad_idsemester',
     ];
 
