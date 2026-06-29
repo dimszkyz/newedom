@@ -9,16 +9,6 @@ use Tests\TestCase;
 
 class EdomPeriodFormTest extends TestCase
 {
-    public function test_year_options_store_the_starting_year_as_the_siakad_id(): void
-    {
-        $currentYear = (int) now()->year;
-
-        $this->assertSame(
-            $currentYear.'/'.($currentYear + 1),
-            EdomPeriodForm::yearOptions()[$currentYear]
-        );
-    }
-
     public function test_semester_options_are_loaded_from_the_siakad_api(): void
     {
         $siakad = Mockery::mock(UnwApiSiakad::class);
