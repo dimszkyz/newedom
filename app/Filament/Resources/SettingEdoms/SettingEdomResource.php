@@ -29,7 +29,7 @@ class SettingEdomResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Setting EDOM';
 
-    protected static ?string $slug = 'setting-edom';
+    protected static ?string $slug = 'setting_edom';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
