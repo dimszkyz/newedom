@@ -3,30 +3,31 @@
 namespace App\Filament\Resources\EdomQuestions\Schemas;
 
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Schema;
 
 class EdomQuestionForm
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                Hidden::make('edom_question_category_id'),
+        return $schema->components([
+            Hidden::make('edom_question_category_id'),
+            Hidden::make('edom_setting_id'),
 
-                Textarea::make('statement')
-                    ->label('Pernyataan')
-                    ->required()
-                    ->columnSpanFull(),
+            Textarea::make('statement')
+                ->label('Pernyataan')
+                ->required()
+                ->columnSpanFull(),
 
-                Select::make('question_type')
-                    ->label('Tipe Soal')
-                    ->options([
-                        'multiple_choice' => 'Pilihan Ganda',
-                        'essay' => 'Esai',
-                    ])
-                    ->required(),
-            ]);
+            Select::make('question_type')
+                ->label('Tipe Soal')
+                ->options([
+                    'option' => 'Pilihan / Opsi',
+                    'text' => 'Teks / Esai',
+                ])
+                ->default('option')
+                ->required(),
+        ]);
     }
 }

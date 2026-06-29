@@ -12,12 +12,11 @@ class EdomQuestionCategoryForm
     {
         return $schema->components([
             Select::make('edom_setting_id')
-                ->label('EDOM')
-                ->relationship('edom', 'name')
+                ->label('Setting EDOM')
+                ->relationship('settingEdom', 'name')
                 ->searchable()
                 ->preload()
                 ->required(),
-
             TextInput::make('name')
                 ->label('Nama Kategori')
                 ->required()

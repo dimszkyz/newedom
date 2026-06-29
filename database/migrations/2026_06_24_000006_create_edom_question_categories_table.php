@@ -14,9 +14,7 @@ return new class extends Migration
 
         Schema::create('edom_question_categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('edom_setting_id')
-                ->constrained('edom_settings')
-                ->cascadeOnDelete();
+            $table->foreignId('edom_setting_id')->constrained('edom_settings')->cascadeOnDelete();
             $table->string('name');
             $table->timestamps();
         });

@@ -2,11 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\Prodi;
-use Illuminate\Support\Carbon;
+use App\Models\ProgramStudi;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
-use Throwable;
 
 class UnwProgramStudiSyncService
 {
@@ -14,6 +12,10 @@ class UnwProgramStudiSyncService
     {
         $url = config('services.unw_program_studi.url');
         $verifySsl = filter_var(config('services.unw_program_studi.verify_ssl', true), FILTER_VALIDATE_BOOLEAN);
+
+        if (blank($url)) {
+            throw new RuntimeException('UNW_PROGRAM_STUDI_API_URL belum diisi di file .env.');
+        }
 
         $response = Http::acceptJson()
             ->withOptions([
@@ -24,7 +26,7 @@ class UnwProgramStudiSyncService
             ->get($url);
 
         if (! $response->successful()) {
-            throw new RuntimeException('API Program Studi UNW gagal diakses. Status: ' . $response->status());
+            throw new RuntimeException('API Program Studi UNW gagal diakses. Status: '.$response->status());
         }
 
         $items = data_get($response->json(), 'data');
@@ -39,39 +41,31 @@ class UnwProgramStudiSyncService
 
         foreach ($items as $item) {
             $externalId = data_get($item, 'id');
-            $name = trim((string) data_get($item, 'nama'));
+            $nama = trim((string) data_get($item, 'nama'));
 
-            if (blank($externalId) || $name === '') {
+            if (blank($externalId) || $nama === '') {
                 $skipped++;
+
                 continue;
             }
 
-            $attributes = [
-                'name' => $name,
-                'slug' => data_get($item, 'slug'),
-                'page_slug' => data_get($item, 'page_slug'),
-                'degree_level' => data_get($item, 'jenjang'),
-                'degree_short_name' => data_get($item, 'jenjang_nama_singkat'),
-                'unw_faculty_id' => data_get($item, 'unwFakultas.id'),
-                'faculty_name' => trim((string) data_get($item, 'unwFakultas.nama')),
-                'faculty_page_slug' => data_get($item, 'unwFakultas.page_slug'),
-                'api_updated_at' => $this->parseDate(data_get($item, 'updatedAt')),
-                'synced_at' => now(),
-            ];
-
-            $prodi = Prodi::query()
+            $programStudi = ProgramStudi::query()
                 ->where('id_unw_program_studi', $externalId)
                 ->first();
 
-            if ($prodi) {
-                $prodi->update($attributes);
+            if ($programStudi) {
+                $programStudi->update([
+                    'nama' => $nama,
+                ]);
+
                 $updated++;
+
                 continue;
             }
 
-            Prodi::query()->create([
+            ProgramStudi::query()->create([
                 'id_unw_program_studi' => $externalId,
-                ...$attributes,
+                'nama' => $nama,
             ]);
 
             $created++;
@@ -83,18 +77,5 @@ class UnwProgramStudiSyncService
             'skipped' => $skipped,
             'total' => count($items),
         ];
-    }
-
-    private function parseDate(mixed $value): ?Carbon
-    {
-        if (blank($value)) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($value);
-        } catch (Throwable) {
-            return null;
-        }
     }
 }

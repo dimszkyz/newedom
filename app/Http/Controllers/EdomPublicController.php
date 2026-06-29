@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\EdomAnswer;
-use App\Models\EdomOption;
+use App\Models\EdomPeriod;
 use App\Models\EdomQuestion;
 use App\Models\EdomResponse;
-use App\Models\SettingsEdom as Edom;
+use App\Models\EdomResponseDetail;
+use App\Models\SettingEdom;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -36,19 +36,17 @@ class EdomPublicController extends Controller
             }
         }
 
-        $activeQuery = Edom::query()
-            ->with(['prodis', 'mataKuliahs'])
+        $activeQuery = SettingEdom::query()
+            ->with(['programStudis'])
             ->withCount(['categories', 'questions'])
             ->where('status', 'active')
-            ->latest('created_date')
             ->latest('id');
 
         if ($student && $studentProgramStudiIds !== []) {
-            $this->scopeEdomsForProgramStudi($activeQuery, $studentProgramStudiIds);
+            $this->scopeSettingEdomsForProgramStudi($activeQuery, $studentProgramStudiIds);
         }
 
         $activeEdoms = $activeQuery->get();
-
         $selectedEdomId = (int) $request->query('edom');
 
         if ($selectedEdomId > 0) {
@@ -63,15 +61,14 @@ class EdomPublicController extends Controller
             return $this->show($activeEdoms->first());
         }
 
-        $closedEdoms = Edom::query()
-            ->with(['prodis', 'mataKuliahs'])
+        $closedEdoms = SettingEdom::query()
+            ->with(['programStudis'])
             ->where('status', 'closed')
-            ->latest('created_date')
             ->latest('id')
             ->limit(6)
             ->get();
 
-        $draftCount = Edom::query()
+        $draftCount = SettingEdom::query()
             ->where('status', 'draft')
             ->count();
 
@@ -91,7 +88,7 @@ class EdomPublicController extends Controller
 
         session([
             'edom_student' => [
-                'siakad_idmahasiswa' => (int) $payload['siakad_idmahasiswa'],
+                'siakad_idmahasiswa' => (string) $payload['siakad_idmahasiswa'],
                 'siakad_idtahunajaran' => (int) $payload['siakad_idtahunajaran'],
                 'siakad_idsemester' => (int) $payload['siakad_idsemester'],
                 'return_url' => $payload['return_url'] ?? null,
@@ -103,15 +100,13 @@ class EdomPublicController extends Controller
 
     public function show(mixed $edom): View
     {
-        $edom = $this->prepareEdom($edom);
+        $edom = $this->prepareSettingEdom($edom);
 
-        if (! $this->isActiveEdom($edom)) {
+        if (! $edom->isActive()) {
             return view('edom.status', [
                 'edom' => $edom,
-                'statusTitle' => $this->isDraftEdom($edom)
-                    ? 'EDOM belum dibuka'
-                    : 'EDOM sudah ditutup',
-                'statusMessage' => $this->isDraftEdom($edom)
+                'statusTitle' => $edom->isDraft() ? 'EDOM belum dibuka' : 'EDOM sudah ditutup',
+                'statusMessage' => $edom->isDraft()
                     ? 'Form evaluasi ini masih berstatus draft, sehingga belum bisa diisi oleh mahasiswa.'
                     : 'Form evaluasi ini sudah ditutup dan tidak lagi menerima jawaban baru.',
             ]);
@@ -122,7 +117,7 @@ class EdomPublicController extends Controller
 
         if ($student) {
             try {
-                $sections = $this->sectionsForEdom($edom, $this->fetchStudentSections($student));
+                $sections = $this->sectionsForSettingEdom($edom, $this->fetchStudentSections($student));
             } catch (Throwable $exception) {
                 report($exception);
 
@@ -137,16 +132,12 @@ class EdomPublicController extends Controller
                 return view('edom.status', [
                     'edom' => $edom,
                     'statusTitle' => 'Tidak ada mata kuliah untuk EDOM ini',
-                    'statusMessage' => 'Data KRS dari SIAKAD tidak memiliki mata kuliah yang cocok dengan paket pertanyaan EDOM ini.',
+                    'statusMessage' => 'Data KRS dari SIAKAD tidak memiliki mata kuliah yang cocok dengan setting EDOM ini.',
                 ]);
             }
         }
 
-        return view('edom.show', [
-            'edom' => $edom,
-            'student' => $student,
-            'sections' => $sections,
-        ]);
+        return view('edom.show', compact('edom', 'student', 'sections'));
     }
 
     public function submitFromHome(Request $request): RedirectResponse
@@ -156,12 +147,10 @@ class EdomPublicController extends Controller
 
     public function submit(Request $request, mixed $edom): RedirectResponse
     {
-        $edom = $this->prepareEdom($edom);
+        $edom = $this->prepareSettingEdom($edom);
 
-        if (! $this->isActiveEdom($edom)) {
-            return redirect()
-                ->route('edom.home')
-                ->with('error', 'EDOM tidak sedang aktif, sehingga jawaban tidak dapat dikirim.');
+        if (! $edom->isActive()) {
+            return redirect()->route('edom.home')->with('error', 'EDOM tidak sedang aktif.');
         }
 
         if (session('edom_student') && $request->has('sections')) {
@@ -175,16 +164,14 @@ class EdomPublicController extends Controller
     {
         $student = session('edom_student');
         $questions = $edom->categories->flatMap(fn ($category) => $category->questions);
-        $optionIds = $edom->options->pluck('id')->map(fn ($id) => (string) $id)->values()->all();
+        $optionIds = $edom->questionOptions->pluck('id')->map(fn ($id) => (string) $id)->values()->all();
         $submittedSections = $request->input('sections', []);
 
-        $rules = [
-            'sections' => ['required', 'array', 'min:1'],
-        ];
+        $rules = ['sections' => ['required', 'array', 'min:1']];
 
         foreach ($submittedSections as $sectionKey => $section) {
             foreach ($questions as $question) {
-                if ($this->isEssayQuestion($question)) {
+                if ($this->isTextQuestion($question)) {
                     $rules["essays.{$sectionKey}.{$question->id}"] = ['nullable', 'string', 'max:5000'];
                 } else {
                     $rules["answers.{$sectionKey}.{$question->id}"] = ['required', Rule::in($optionIds)];
@@ -192,54 +179,36 @@ class EdomPublicController extends Controller
             }
         }
 
-        $request->validate($rules, [
-            'sections.required' => 'Data mata kuliah EDOM tidak ditemukan.',
-            'answers.*.*.required' => 'Semua pernyataan evaluasi wajib dipilih untuk setiap mata kuliah.',
-            'answers.*.*.in' => 'Opsi jawaban yang dipilih tidak valid.',
-        ]);
+        $request->validate($rules);
 
         DB::transaction(function () use ($request, $edom, $questions, $submittedSections, $student) {
             foreach ($submittedSections as $sectionKey => $section) {
                 $section = is_array($section) ? $section : [];
-                $lecturer = $this->sectionLecturer($section);
+                $period = $this->firstOrCreatePeriod($student);
 
                 $response = EdomResponse::updateOrCreate(
                     [
-                        'edom_id' => $edom->id,
-                        'siakad_idmahasiswa' => $student['siakad_idmahasiswa'],
-                        'siakad_idtahunajaran' => $student['siakad_idtahunajaran'],
-                        'siakad_idsemester' => $student['siakad_idsemester'],
+                        'edom_period_id' => $period->id,
+                        'edom_setting_id' => $edom->id,
+                        'siakad_idmahasiswa' => (string) $student['siakad_idmahasiswa'],
                         'siakad_idmatakuliah' => $this->nullableInteger($section['idmatakuliah'] ?? null),
                         'siakad_idtawarmatakuliahdetail' => $this->nullableInteger($section['idtawarmatakuliahdetail'] ?? null),
                     ],
                     [
-                        'id_unw_program_studi' => $this->nullableInteger($section['id_unw_program_studi'] ?? null),
-                        'edom_name_snapshot' => $this->getEdomName($edom),
-                        'study_program_snapshot' => $this->studyProgramSnapshot($edom, $section),
-                        'course_snapshot' => $this->courseSnapshot($section),
-                        'lecturer_name_snapshot' => $lecturer['nama'] ?? null,
-                        'lecturer_nidn_snapshot' => $lecturer['nidn'] ?? null,
                         'submitted_at' => now(),
                     ]
                 );
 
                 foreach ($questions as $question) {
-                    $categoryName = $question->category?->category_name;
-
-                    if ($this->isEssayQuestion($question)) {
-                        EdomAnswer::updateOrCreate(
+                    if ($this->isTextQuestion($question)) {
+                        EdomResponseDetail::updateOrCreate(
                             [
                                 'edom_response_id' => $response->id,
                                 'edom_question_id' => $question->id,
                             ],
                             [
-                                'category_name_snapshot' => $categoryName,
-                                'statement_snapshot' => $question->statement,
                                 'edom_option_id' => null,
-                                'option_label_snapshot' => null,
-                                'option_score_snapshot' => null,
                                 'answer_text' => $request->input("essays.{$sectionKey}.{$question->id}"),
-                                'score' => null,
                             ]
                         );
 
@@ -247,21 +216,15 @@ class EdomPublicController extends Controller
                     }
 
                     $optionId = (int) $request->input("answers.{$sectionKey}.{$question->id}");
-                    $option = $edom->options->firstWhere('id', $optionId);
 
-                    EdomAnswer::updateOrCreate(
+                    EdomResponseDetail::updateOrCreate(
                         [
                             'edom_response_id' => $response->id,
                             'edom_question_id' => $question->id,
                         ],
                         [
-                            'category_name_snapshot' => $categoryName,
-                            'statement_snapshot' => $question->statement,
-                            'edom_option_id' => $option?->id,
-                            'option_label_snapshot' => $option?->label,
-                            'option_score_snapshot' => $option?->score,
+                            'edom_option_id' => $optionId,
                             'answer_text' => null,
-                            'score' => $option?->score,
                         ]
                     );
                 }
@@ -285,118 +248,69 @@ class EdomPublicController extends Controller
 
             return redirect()
                 ->route('edom.home')
-                ->with('error', 'Jawaban tersimpan, tetapi status selesai belum dapat dikirim ke SIAKAD. Silakan coba buka EDOM kembali beberapa saat lagi.');
+                ->with('error', 'Jawaban tersimpan, tetapi status selesai belum dapat dikirim ke SIAKAD.');
         }
 
-        return redirect()
-            ->route('edom.home')
-            ->with('success', 'Jawaban EDOM berhasil disimpan. Masih ada mata kuliah lain yang perlu diisi sebelum dikirim selesai ke SIAKAD.');
+        return redirect()->route('edom.home')->with('success', 'Jawaban EDOM berhasil disimpan.');
     }
 
     private function submitLegacySingleForm(Request $request, Model $edom): RedirectResponse
     {
         $questions = $edom->categories->flatMap(fn ($category) => $category->questions);
-        $optionIds = $edom->options->pluck('id')->map(fn ($id) => (string) $id)->values()->all();
+        $optionIds = $edom->questionOptions->pluck('id')->map(fn ($id) => (string) $id)->values()->all();
 
-        $rules = [
-            'edom_id' => ['nullable', 'integer'],
-            'respondent_name' => ['nullable', 'string', 'max:150'],
-            'student_number' => ['nullable', 'string', 'max:50'],
-        ];
+        $rules = [];
 
         foreach ($questions as $question) {
-            if ($this->isEssayQuestion($question)) {
+            if ($this->isTextQuestion($question)) {
                 $rules["essays.{$question->id}"] = ['nullable', 'string', 'max:5000'];
             } else {
                 $rules["answers.{$question->id}"] = ['required', Rule::in($optionIds)];
             }
         }
 
-        $request->validate($rules, [
-            'answers.*.required' => 'Semua pernyataan evaluasi wajib dipilih.',
-            'answers.*.in' => 'Opsi jawaban yang dipilih tidak valid.',
-        ]);
+        $request->validate($rules);
 
         DB::transaction(function () use ($request, $edom, $questions) {
             $response = EdomResponse::create([
-                'edom_id' => $edom->id,
-                'edom_name_snapshot' => $this->getEdomName($edom),
-                'study_program_snapshot' => $edom->prodis->pluck('name')->filter()->join(', '),
-                'course_snapshot' => $edom->mataKuliahs->pluck('name')->filter()->join(', '),
-                'respondent_name' => $request->input('respondent_name'),
-                'student_number' => $request->input('student_number'),
+                'edom_setting_id' => $edom->id,
                 'submitted_at' => now(),
             ]);
 
             foreach ($questions as $question) {
-                $categoryName = $question->category?->category_name;
-
-                if ($this->isEssayQuestion($question)) {
-                    EdomAnswer::create([
+                if ($this->isTextQuestion($question)) {
+                    EdomResponseDetail::create([
                         'edom_response_id' => $response->id,
                         'edom_question_id' => $question->id,
-                        'category_name_snapshot' => $categoryName,
-                        'statement_snapshot' => $question->statement,
                         'answer_text' => $request->input("essays.{$question->id}"),
                     ]);
 
                     continue;
                 }
 
-                $optionId = (int) $request->input("answers.{$question->id}");
-                $option = $edom->options->firstWhere('id', $optionId);
-
-                EdomAnswer::create([
+                EdomResponseDetail::create([
                     'edom_response_id' => $response->id,
                     'edom_question_id' => $question->id,
-                    'category_name_snapshot' => $categoryName,
-                    'statement_snapshot' => $question->statement,
-                    'edom_option_id' => $option?->id,
-                    'option_label_snapshot' => $option?->label,
-                    'option_score_snapshot' => $option?->score,
-                    'score' => $option?->score,
+                    'edom_option_id' => (int) $request->input("answers.{$question->id}"),
                 ]);
             }
         });
 
-        return redirect()
-            ->route('edom.home')
-            ->with('success', 'Terima kasih, jawaban EDOM Anda berhasil dikirim.');
+        return redirect()->route('edom.home')->with('success', 'Jawaban EDOM berhasil dikirim.');
     }
 
-    private function prepareEdom(mixed $edom): Model
+    private function prepareSettingEdom(mixed $edom): Model
     {
-        $edom = $this->resolveEdom($edom);
+        $edom = $edom instanceof Model ? $edom : SettingEdom::query()->findOrFail($edom);
 
         $edom->load([
-            'prodis',
-            'mataKuliahs',
+            'programStudis',
             'categories' => fn ($query) => $query->orderBy('id'),
             'categories.questions' => fn ($query) => $query->orderBy('id'),
-            'options' => fn ($query) => $query->orderBy('sort_order')->orderBy('score')->orderBy('id'),
+            'questionOptions' => fn ($query) => $query->orderBy('score')->orderBy('id'),
         ]);
 
-        if ($edom->options->isEmpty()) {
-            $edom->setRelation(
-                'options',
-                EdomOption::query()
-                    ->orderBy('sort_order')
-                    ->orderBy('score')
-                    ->orderBy('id')
-                    ->get()
-            );
-        }
-
         return $edom;
-    }
-
-    private function resolveEdom(mixed $edom): Model
-    {
-        if ($edom instanceof Model) {
-            return $edom;
-        }
-
-        return Edom::query()->findOrFail($edom);
     }
 
     private function fetchStudentSections(array $student): array
@@ -407,10 +321,7 @@ class EdomPublicController extends Controller
             $student['siakad_idsemester']
         );
 
-        return collect($sections)
-            ->filter(fn ($section) => is_array($section))
-            ->values()
-            ->all();
+        return collect($sections)->filter(fn ($section) => is_array($section))->values()->all();
     }
 
     private function programStudiIdsFromSections(array $sections): array
@@ -424,32 +335,31 @@ class EdomPublicController extends Controller
             ->all();
     }
 
-    private function scopeEdomsForProgramStudi(Builder $query, array $programStudiIds): void
+    private function scopeSettingEdomsForProgramStudi(Builder $query, array $programStudiIds): void
     {
         $query->where(function (Builder $query) use ($programStudiIds) {
-            $query
-                ->whereDoesntHave('prodis')
-                ->orWhereHas('prodis', function (Builder $query) use ($programStudiIds) {
+            $query->whereDoesntHave('programStudis')
+                ->orWhereHas('programStudis', function (Builder $query) use ($programStudiIds) {
                     $query->whereIn('program_studi.id_unw_program_studi', $programStudiIds);
                 });
         });
     }
 
-    private function sectionsForEdom(Model $edom, array $sections): array
+    private function sectionsForSettingEdom(Model $edom, array $sections): array
     {
-        $edomProgramStudiIds = $edom->prodis
+        $settingProgramStudiIds = $edom->programStudis
             ->pluck('id_unw_program_studi')
             ->map(fn ($id) => (int) $id)
             ->filter(fn (int $id) => $id > 0)
             ->values()
             ->all();
 
-        if ($edomProgramStudiIds === []) {
+        if ($settingProgramStudiIds === []) {
             return array_values($sections);
         }
 
         return collect($sections)
-            ->filter(fn (array $section) => in_array((int) ($section['id_unw_program_studi'] ?? 0), $edomProgramStudiIds, true))
+            ->filter(fn (array $section) => in_array((int) ($section['id_unw_program_studi'] ?? 0), $settingProgramStudiIds, true))
             ->values()
             ->all();
     }
@@ -462,22 +372,13 @@ class EdomPublicController extends Controller
 
         foreach ($sections as $section) {
             $query = EdomResponse::query()
-                ->where('siakad_idmahasiswa', $student['siakad_idmahasiswa'])
-                ->where('siakad_idtahunajaran', $student['siakad_idtahunajaran'])
-                ->where('siakad_idsemester', $student['siakad_idsemester']);
+                ->where('siakad_idmahasiswa', (string) $student['siakad_idmahasiswa']);
 
             $detailId = $this->nullableInteger($section['idtawarmatakuliahdetail'] ?? null);
-            $courseId = $this->nullableInteger($section['idmatakuliah'] ?? null);
 
-            if ($detailId !== null) {
-                $query->where('siakad_idtawarmatakuliahdetail', $detailId);
-            } else {
-                $query->whereNull('siakad_idtawarmatakuliahdetail');
-            }
-
-            if ($courseId !== null) {
-                $query->where('siakad_idmatakuliah', $courseId);
-            }
+            $detailId !== null
+                ? $query->where('siakad_idtawarmatakuliahdetail', $detailId)
+                : $query->whereNull('siakad_idtawarmatakuliahdetail');
 
             if (! $query->exists()) {
                 return false;
@@ -485,6 +386,14 @@ class EdomPublicController extends Controller
         }
 
         return true;
+    }
+
+    private function firstOrCreatePeriod(array $student): EdomPeriod
+    {
+        return EdomPeriod::firstOrCreate([
+            'year' => (int) $student['siakad_idtahunajaran'],
+            'siakad_idsemester' => (int) $student['siakad_idsemester'],
+        ]);
     }
 
     private function verifyHandoffToken(string $token): array
@@ -523,40 +432,6 @@ class EdomPublicController extends Controller
         return base64_decode($base64, true);
     }
 
-    private function sectionLecturer(array $section): array
-    {
-        $lecturer = $section['dosen'] ?? [];
-
-        return is_array($lecturer) ? $lecturer : [];
-    }
-
-    private function courseSnapshot(array $section): ?string
-    {
-        $kode = trim((string) ($section['kode'] ?? ''));
-        $nama = trim((string) ($section['nama'] ?? ''));
-
-        return trim($kode.' - '.$nama, ' -') ?: null;
-    }
-
-    private function studyProgramSnapshot(Model $edom, array $section): ?string
-    {
-        $programStudiId = (int) ($section['id_unw_program_studi'] ?? 0);
-
-        if ($programStudiId > 0) {
-            $prodiName = $edom->prodis
-                ->firstWhere('id_unw_program_studi', $programStudiId)
-                ?->name;
-
-            if ($prodiName) {
-                return $prodiName;
-            }
-
-            return (string) $programStudiId;
-        }
-
-        return $edom->prodis->pluck('name')->filter()->join(', ') ?: null;
-    }
-
     private function nullableInteger(mixed $value): ?int
     {
         if ($value === null || $value === '') {
@@ -566,31 +441,8 @@ class EdomPublicController extends Controller
         return (int) $value;
     }
 
-    private function isActiveEdom(Model $edom): bool
+    private function isTextQuestion(EdomQuestion $question): bool
     {
-        if (method_exists($edom, 'isActive')) {
-            return $edom->isActive();
-        }
-
-        return $edom->status === 'active';
-    }
-
-    private function isDraftEdom(Model $edom): bool
-    {
-        if (method_exists($edom, 'isDraft')) {
-            return $edom->isDraft();
-        }
-
-        return $edom->status === 'draft';
-    }
-
-    private function getEdomName(Model $edom): ?string
-    {
-        return $edom->edom_name ?? $edom->name ?? null;
-    }
-
-    private function isEssayQuestion(EdomQuestion $question): bool
-    {
-        return in_array(strtolower((string) $question->question_type), ['essay', 'esai', 'uraian', 'text', 'textarea'], true);
+        return in_array(strtolower((string) $question->question_type), ['text', 'essay', 'esai', 'uraian', 'textarea'], true);
     }
 }

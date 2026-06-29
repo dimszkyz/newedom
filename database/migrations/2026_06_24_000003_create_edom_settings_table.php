@@ -15,7 +15,6 @@ return new class extends Migration
         Schema::create('edom_settings', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->date('created_date');
             $table->enum('status', ['draft', 'active', 'closed'])->default('draft');
             $table->timestamps();
         });

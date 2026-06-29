@@ -6,7 +6,8 @@ use Illuminate\Console\Command;
 
 class MakeEdomToken extends Command
 {
-    protected $signature = 'edom:make-token {idmahasiswa} {idtahunajaran} {idsemester} {--ttl=3600} {--return-url=}';
+    // protected $signature = 'edom:make-token {idmahasiswa=testing18273} {idtahunajaran=2026} {idsemester=2} {--ttl=3600} {--return-url=}';
+    protected $signature = 'edom:make-token {idmahasiswa=18273} {idtahunajaran=2026} {idsemester=2} {--ttl=3600} {--return-url=}';
 
     protected $description = 'Mint a siakad-style EDOM handoff token for testing /enter';
 
@@ -15,7 +16,7 @@ class MakeEdomToken extends Command
         $secret = (string) config('edom.hmac_siakad_secret');
 
         if ($secret === '') {
-            $this->error('HMAC_SIAKAD_SECRET is empty. Fill it in .env before generating a token.');
+            $this->error('HMAC_SIAKAD_SECRET masih kosong. Isi dulu di file .env.');
 
             return self::FAILURE;
         }
@@ -24,7 +25,7 @@ class MakeEdomToken extends Command
             ?: rtrim((string) config('edom.siakad_fallback_url', config('app.url')), '/').'/edom';
 
         $payload = [
-            'siakad_idmahasiswa' => (int) $this->argument('idmahasiswa'),
+            'siakad_idmahasiswa' => (string) $this->argument('idmahasiswa'),
             'siakad_idtahunajaran' => (int) $this->argument('idtahunajaran'),
             'siakad_idsemester' => (int) $this->argument('idsemester'),
             'return_url' => $returnUrl,
@@ -34,10 +35,9 @@ class MakeEdomToken extends Command
         $b64 = rtrim(strtr(base64_encode((string) json_encode($payload)), '+/', '-_'), '=');
         $signature = hash_hmac('sha256', $b64, $secret);
         $token = $b64.'.'.$signature;
-        $url = rtrim((string) config('app.url'), '/').'/enter?token='.$token;
 
         $this->line('token: '.$token);
-        $this->line('url:   '.$url);
+        $this->line('url:   '.rtrim((string) config('app.url'), '/').'/enter?token='.$token);
 
         return self::SUCCESS;
     }

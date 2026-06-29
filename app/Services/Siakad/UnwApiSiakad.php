@@ -19,12 +19,12 @@ class UnwApiSiakad
             $password = (string) config('services.unwapi_siakad.password');
 
             if ($email === '' || $password === '') {
-                throw new InvalidArgumentException('UNW_API_SIAKAD_EMAIL and UNW_API_SIAKAD_PASSWORD must be configured.');
+                throw new InvalidArgumentException('UNW_API_SIAKAD_EMAIL dan UNW_API_SIAKAD_PASSWORD harus diisi di .env.');
             }
 
-            $response = Http::asJson()
+            $response = $this->http()->asJson()
                 ->acceptJson()
-                ->post($this->baseUrl().'/login', [
+                ->post($this->baseUrl() . '/login', [
                     'email' => $email,
                     'password' => $password,
                 ])
@@ -33,7 +33,7 @@ class UnwApiSiakad
             $token = $response->json('data.token');
 
             if (! is_string($token) || $token === '') {
-                throw new InvalidArgumentException('unw-api-siakad login response does not contain data.token.');
+                throw new InvalidArgumentException('Response login unw-api-siakad tidak memiliki data.token.');
             }
 
             return $token;
@@ -42,17 +42,23 @@ class UnwApiSiakad
 
     private function client(): PendingRequest
     {
-        return Http::withToken($this->token())
+        return $this->http()->withToken($this->token())
             ->acceptJson()
             ->baseUrl($this->baseUrl());
     }
 
+    private function http(): PendingRequest
+    {
+        return Http::withOptions([
+            'verify' => filter_var(config('services.unwapi_siakad.verify_ssl', true), FILTER_VALIDATE_BOOLEAN),
+        ]);
+    }
     private function baseUrl(): string
     {
         $baseUrl = rtrim((string) config('services.unwapi_siakad.base'), '/');
 
         if ($baseUrl === '') {
-            throw new InvalidArgumentException('UNW_API_SIAKAD_BASE_URL must be configured.');
+            throw new InvalidArgumentException('UNW_API_SIAKAD_BASE_URL harus diisi di .env.');
         }
 
         return $baseUrl;
@@ -85,9 +91,9 @@ class UnwApiSiakad
     public function krs(int|string $siakadIdMahasiswa, int|string $siakadIdTahunAjaran, int|string $siakadIdSemester): array
     {
         return $this->request('get', '/edom/krs', [
-            'siakad_idmahasiswa' => $siakadIdMahasiswa,
-            'siakad_idtahunajaran' => $siakadIdTahunAjaran,
-            'siakad_idsemester' => $siakadIdSemester,
+            'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
+            'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
+            'siakad_idsemester' => (int) $siakadIdSemester,
         ]);
     }
 
@@ -108,9 +114,9 @@ class UnwApiSiakad
     public function complete(int|string $siakadIdMahasiswa, int|string $siakadIdTahunAjaran, int|string $siakadIdSemester): array
     {
         return $this->request('post', '/edom/complete', [
-            'siakad_idmahasiswa' => $siakadIdMahasiswa,
-            'siakad_idtahunajaran' => $siakadIdTahunAjaran,
-            'siakad_idsemester' => $siakadIdSemester,
+            'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
+            'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
+            'siakad_idsemester' => (int) $siakadIdSemester,
         ]);
     }
 
@@ -133,10 +139,10 @@ class UnwApiSiakad
     public function mahasiswa(array $siakadIdMahasiswa): array
     {
         $query = collect($siakadIdMahasiswa)
-            ->filter(fn ($id) => $id !== null && $id !== '')
-            ->map(fn ($id) => 'siakad_idmahasiswa[]='.rawurlencode((string) $id))
+            ->filter(fn($id) => $id !== null && $id !== '')
+            ->map(fn($id) => 'siakad_idmahasiswa[]=' . rawurlencode((string) $id))
             ->implode('&');
 
-        return $this->request('get', '/edom/mahasiswa'.($query === '' ? '' : '?'.$query));
+        return $this->request('get', '/edom/mahasiswa' . ($query === '' ? '' : '?' . $query));
     }
 }
