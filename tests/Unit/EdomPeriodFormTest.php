@@ -9,13 +9,13 @@ use Tests\TestCase;
 
 class EdomPeriodFormTest extends TestCase
 {
-    public function test_tahun_ajaran_options_store_the_starting_year_as_the_siakad_id(): void
+    public function test_year_options_store_the_starting_year_as_the_siakad_id(): void
     {
         $currentYear = (int) now()->year;
 
         $this->assertSame(
             $currentYear.'/'.($currentYear + 1),
-            EdomPeriodForm::tahunAjaranOptions()[$currentYear]
+            EdomPeriodForm::yearOptions()[$currentYear]
         );
     }
 
