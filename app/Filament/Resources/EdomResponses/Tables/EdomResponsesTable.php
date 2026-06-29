@@ -18,7 +18,7 @@ class EdomResponsesTable
             ->modifyQueryUsing(fn ($query) => $query->with(['settingEdom', 'details.questionOption'])->latest('submitted_at')->latest('id'))
             ->columns([
                 TextColumn::make('settingEdom.name')->label('Setting EDOM')->placeholder('-')->searchable(),
-                TextColumn::make('period.siakad_idtahunajaran')->label('ID Tahun Ajaran')->placeholder('-'),
+                TextColumn::make('period.year')->label('Tahun')->placeholder('-'),
                 TextColumn::make('period.siakad_idsemester')->label('Semester')->placeholder('-'),
                 TextColumn::make('siakad_idmahasiswa')->label('ID Mahasiswa')->placeholder('-')->searchable(),
                 TextColumn::make('siakad_idmatakuliah')->label('ID Mata Kuliah')->placeholder('-'),
