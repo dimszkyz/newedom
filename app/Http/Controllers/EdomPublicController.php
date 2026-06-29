@@ -453,7 +453,7 @@ class EdomPublicController extends Controller
         }
 
         $period = EdomPeriod::query()
-            ->where('year', (int) $student['siakad_idtahunajaran'])
+            ->where('siakad_idtahunajaran', (int) $student['siakad_idtahunajaran'])
             ->where('siakad_idsemester', (int) $student['siakad_idsemester'])
             ->first();
 
@@ -501,7 +501,7 @@ class EdomPublicController extends Controller
     private function firstOrCreatePeriod(array $student): EdomPeriod
     {
         return EdomPeriod::firstOrCreate([
-            'year' => (int) $student['siakad_idtahunajaran'],
+            'siakad_idtahunajaran' => (int) $student['siakad_idtahunajaran'],
             'siakad_idsemester' => (int) $student['siakad_idsemester'],
         ]);
     }
