@@ -6,7 +6,8 @@ use Illuminate\Console\Command;
 
 class MakeEdomToken extends Command
 {
-    protected $signature = 'edom:make-token {idmahasiswa=testing18273} {idtahunajaran=2026} {idsemester=2} {--ttl=3600} {--return-url=}';
+    // protected $signature = 'edom:make-token {idmahasiswa=testing18273} {idtahunajaran=2026} {idsemester=2} {--ttl=3600} {--return-url=}';
+    protected $signature = 'edom:make-token {idmahasiswa=18273} {idtahunajaran=2026} {idsemester=2} {--ttl=3600} {--return-url=}';
 
     protected $description = 'Mint a siakad-style EDOM handoff token for testing /enter';
 

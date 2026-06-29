@@ -24,7 +24,7 @@ class UnwApiSiakad
 
             $response = $this->http()->asJson()
                 ->acceptJson()
-                ->post($this->baseUrl().'/login', [
+                ->post($this->baseUrl() . '/login', [
                     'email' => $email,
                     'password' => $password,
                 ])
@@ -91,9 +91,9 @@ class UnwApiSiakad
     public function krs(int|string $siakadIdMahasiswa, int|string $siakadIdTahunAjaran, int|string $siakadIdSemester): array
     {
         return $this->request('get', '/edom/krs', [
-            'siakad_idmahasiswa' => $siakadIdMahasiswa,
-            'siakad_idtahunajaran' => $siakadIdTahunAjaran,
-            'siakad_idsemester' => $siakadIdSemester,
+            'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
+            'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
+            'siakad_idsemester' => (int) $siakadIdSemester,
         ]);
     }
 
@@ -114,9 +114,9 @@ class UnwApiSiakad
     public function complete(int|string $siakadIdMahasiswa, int|string $siakadIdTahunAjaran, int|string $siakadIdSemester): array
     {
         return $this->request('post', '/edom/complete', [
-            'siakad_idmahasiswa' => $siakadIdMahasiswa,
-            'siakad_idtahunajaran' => $siakadIdTahunAjaran,
-            'siakad_idsemester' => $siakadIdSemester,
+            'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
+            'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
+            'siakad_idsemester' => (int) $siakadIdSemester,
         ]);
     }
 
@@ -139,11 +139,10 @@ class UnwApiSiakad
     public function mahasiswa(array $siakadIdMahasiswa): array
     {
         $query = collect($siakadIdMahasiswa)
-            ->filter(fn ($id) => $id !== null && $id !== '')
-            ->map(fn ($id) => 'siakad_idmahasiswa[]='.rawurlencode((string) $id))
+            ->filter(fn($id) => $id !== null && $id !== '')
+            ->map(fn($id) => 'siakad_idmahasiswa[]=' . rawurlencode((string) $id))
             ->implode('&');
 
-        return $this->request('get', '/edom/mahasiswa'.($query === '' ? '' : '?'.$query));
+        return $this->request('get', '/edom/mahasiswa' . ($query === '' ? '' : '?' . $query));
     }
 }
-
