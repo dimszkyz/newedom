@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EdomPeriods\Schemas;
 
 use App\Services\Siakad\UnwApiSiakad;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Throwable;
 
@@ -12,14 +13,15 @@ class EdomPeriodForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('year')
+            TextInput::make('year')
                 ->label('Tahun Ajaran')
-                ->options(self::yearOptions())
+                ->numeric()
+                ->integer()
                 ->default((int) now()->year)
-                ->searchable()
-                ->native(false)
                 ->required()
-                ->helperText('Nilai periode admin disimpan sebagai year, misalnya 2026 untuk 2026/2027.'),
+                ->minValue(2000)
+                ->maxValue(2100)
+                ->helperText('Input manual angka tahun ajaran, misalnya 2026 untuk 2026/2027.'),
 
             Select::make('siakad_idsemester')
                 ->label('Semester SIAKAD')
@@ -31,17 +33,6 @@ class EdomPeriodForm
                 ->placeholder('Pilih semester dari API SIAKAD')
                 ->helperText('Daftar semester diambil melalui GET /edom/semester.'),
         ]);
-    }
-
-    public static function yearOptions(): array
-    {
-        $currentYear = (int) now()->year;
-
-        return collect(range($currentYear + 1, $currentYear - 5))
-            ->mapWithKeys(fn (int $year): array => [
-                $year => $year.'/'.($year + 1),
-            ])
-            ->all();
     }
 
     public static function semesterOptions(): array
