@@ -88,8 +88,24 @@ class UnwApiSiakad
         return $this->request('get', '/edom/semester');
     }
 
-    public function krs(int|string $siakadIdMahasiswa, int|string $siakadIdTahunAjaran, int|string $siakadIdSemester): array
-    {
+    // public function krs(int|string $siakadIdMahasiswa, int|string $siakadIdTahunAjaran, int|string $siakadIdSemester): array
+    // {
+    //     return $this->request('get', '/edom/krs', [
+    //         'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
+    //         'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
+    //         'siakad_idsemester' => (int) $siakadIdSemester,
+    //     ]);
+    // }
+
+    public function krs(
+        int|string $siakadIdMahasiswa,
+        int|string $siakadIdTahunAjaran,
+        int|string $siakadIdSemester
+    ): array {
+        if ($this->isFake()) {
+            return config('edom.fake_siakad.krs', []);
+        }
+
         return $this->request('get', '/edom/krs', [
             'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
             'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
@@ -144,5 +160,11 @@ class UnwApiSiakad
             ->implode('&');
 
         return $this->request('get', '/edom/mahasiswa' . ($query === '' ? '' : '?' . $query));
+    }
+
+    private function isFake(): bool
+    {
+        return app()->environment(['local', 'testing'])
+            && (bool) config('edom.fake_siakad.enabled', false);
     }
 }

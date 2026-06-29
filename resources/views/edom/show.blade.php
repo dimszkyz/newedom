@@ -68,7 +68,7 @@
         <div class="edom-public-container">
             <form method="POST" action="{{ route('edom.home.submit') }}" class="edom-form-card">
                 @csrf
-                <input type="hidden" name="setting_edom_id" value="{{ $edom->id }}">
+                <input type="hidden" name="edom_id" value="{{ $edom->id }}">
 
                 <section class="edom-intro-card" aria-labelledby="edom-intro-title">
                     <h1 id="edom-intro-title" class="edom-intro-title">EVALUASI DOSEN OLEH MAHASISWA</h1>
@@ -189,10 +189,11 @@
                                                     @if (in_array(strtolower((string) $question->question_type), ["text", "essay", "esai", "uraian", "textarea"], true))
                                                         <td colspan="{{ max($options->count(), 1) }}">
                                                             <textarea
-                                                                name="texts[{{ $key }}][{{ $question->id }}]"
+                                                                {{-- name="texts[{{ $key }}][{{ $question->id }}]" --}}
+                                                                name="essays[{{ $key }}][{{ $question->id }}]"
                                                                 class="edom-essay-input"
                                                                 placeholder="Tulis jawaban Anda di sini..."
-                                                            >{{ old('texts.' . $key . '.' . $question->id) }}</textarea>
+                                                            >{{ old('essays.' . $key . '.' . $question->id) }}</textarea>
                                                         </td>
                                                     @elseif ($options->isNotEmpty())
                                                         @foreach ($options as $option)
