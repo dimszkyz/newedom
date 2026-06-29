@@ -2,9 +2,7 @@
 
 namespace App\Filament\Resources\EdomPeriods;
 
-use App\Filament\Resources\EdomPeriods\Pages\CreateEdomPeriod;
-use App\Filament\Resources\EdomPeriods\Pages\EditEdomPeriod;
-use App\Filament\Resources\EdomPeriods\Pages\ListEdomPeriods;
+use App\Filament\Resources\EdomPeriods\Pages\ManageEdomPeriods;
 use App\Filament\Resources\EdomPeriods\Schemas\EdomPeriodForm;
 use App\Filament\Resources\EdomPeriods\Tables\EdomPeriodsTable;
 use App\Models\EdomPeriod;
@@ -24,15 +22,20 @@ class EdomPeriodResource extends Resource
     protected static ?string $slug = 'edom_periods';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
-    public static function form(Schema $schema): Schema { return EdomPeriodForm::configure($schema); }
-    public static function table(Table $table): Table { return EdomPeriodsTable::configure($table); }
+    public static function form(Schema $schema): Schema
+    {
+        return EdomPeriodForm::configure($schema);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return EdomPeriodsTable::configure($table);
+    }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListEdomPeriods::route('/'),
-            'create' => CreateEdomPeriod::route('/create'),
-            'edit' => EditEdomPeriod::route('/{record}/edit'),
+            'index' => ManageEdomPeriods::route('/'),
         ];
     }
 }
