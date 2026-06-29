@@ -15,7 +15,7 @@ class EdomResponseInfolist
             Section::make('Informasi Pengisian')
                 ->schema([
                     TextEntry::make('settingEdom.name')->label('Setting EDOM')->placeholder('-'),
-                    TextEntry::make('period.year')->label('Tahun Ajaran')->placeholder('-'),
+                    TextEntry::make('period.siakad_idtahunajaran')->label('ID Tahun Ajaran')->placeholder('-'),
                     TextEntry::make('period.siakad_idsemester')->label('Semester')->placeholder('-'),
                     TextEntry::make('siakad_idmahasiswa')->label('ID Mahasiswa')->placeholder('-'),
                     TextEntry::make('siakad_idmatakuliah')->label('ID Mata Kuliah')->placeholder('-'),
