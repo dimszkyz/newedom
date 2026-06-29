@@ -10,16 +10,16 @@ return new class extends Migration
     {
         Schema::create('edom_periods', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('siakad_idtahunajaran');
+            $table->unsignedInteger('year');
             $table->unsignedBigInteger('siakad_idsemester');
             $table->timestamps();
 
-            $table->unique(['siakad_idtahunajaran', 'siakad_idsemester'], 'edom_periods_tahunajaran_semester_unique');
+            $table->unique(['year', 'siakad_idsemester'], 'edom_periods_year_semester_unique');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('edom_periods');
+        // Existing rollback behavior is handled by Laravel during migration rollback.
     }
 };
