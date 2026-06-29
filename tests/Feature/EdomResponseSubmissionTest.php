@@ -121,11 +121,11 @@ class EdomResponseSubmissionTest extends TestCase
             'status' => 'active',
         ]);
         $oldPeriod = EdomPeriod::query()->create([
-            'year' => 2025,
+            'siakad_idtahunajaran' => 2025,
             'siakad_idsemester' => 2,
         ]);
         $currentPeriod = EdomPeriod::query()->create([
-            'year' => 2026,
+            'siakad_idtahunajaran' => 2026,
             'siakad_idsemester' => 2,
         ]);
         $student = $this->student();
