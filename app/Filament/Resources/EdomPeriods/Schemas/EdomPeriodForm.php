@@ -21,7 +21,7 @@ class EdomPeriodForm
                 ->required()
                 ->minValue(2000)
                 ->maxValue(2100)
-                ->helperText('Input manual angka tahun ajaran, misalnya 2026 untuk 2026/2027.'),
+                ->helperText('Input angka tahun ajaran, misalnya 2026 untuk 2026/2027.'),
 
             Select::make('siakad_idsemester')
                 ->label('Semester SIAKAD')
@@ -30,8 +30,8 @@ class EdomPeriodForm
                 ->preload()
                 ->native(false)
                 ->required()
-                ->placeholder('Pilih semester dari API SIAKAD')
-                ->helperText('Daftar semester diambil melalui GET /edom/semester.'),
+                ->placeholder('Pilih semester dari SIAKAD')
+                ->helperText('Daftar semester diambil melalui /edom/semester.'),
         ]);
     }
 

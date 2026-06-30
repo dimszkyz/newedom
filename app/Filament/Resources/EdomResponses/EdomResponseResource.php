@@ -18,9 +18,9 @@ class EdomResponseResource extends Resource
 {
     protected static ?string $model = EdomResponse::class;
     protected static string|\UnitEnum|null $navigationGroup = 'EDOM';
-    protected static ?string $navigationLabel = 'Hasil EDOM';
-    protected static ?string $modelLabel = 'Hasil EDOM';
-    protected static ?string $pluralModelLabel = 'Hasil EDOM';
+    protected static ?string $navigationLabel = 'EDOM Responses';
+    protected static ?string $modelLabel = 'EDOM Responses';
+    protected static ?string $pluralModelLabel = 'EDOM Responses';
     protected static ?string $slug = 'edom_response';
     protected static ?int $navigationSort = 20;
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;

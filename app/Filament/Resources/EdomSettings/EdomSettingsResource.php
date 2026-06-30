@@ -23,11 +23,11 @@ class EdomSettingsResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
-    protected static ?string $navigationLabel = 'EdomSettings';
+    protected static ?string $navigationLabel = 'EDOM Settings';
 
-    protected static ?string $modelLabel = 'EdomSettings';
+    protected static ?string $modelLabel = 'EDOM Settings';
 
-    protected static ?string $pluralModelLabel = 'EdomSettings';
+    protected static ?string $pluralModelLabel = 'EDOM Settings';
 
     protected static ?string $slug = 'edom_settings';
 

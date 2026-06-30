@@ -16,9 +16,9 @@ class EdomPeriodResource extends Resource
 {
     protected static ?string $model = EdomPeriod::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
-    protected static ?string $navigationLabel = 'Periode EDOM';
-    protected static ?string $modelLabel = 'Periode EDOM';
-    protected static ?string $pluralModelLabel = 'Periode EDOM';
+    protected static ?string $navigationLabel = 'EDOM Periods';
+    protected static ?string $modelLabel = 'EDOM Periods';
+    protected static ?string $pluralModelLabel = 'EDOM Periods';
     protected static ?string $slug = 'edom_periods';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
