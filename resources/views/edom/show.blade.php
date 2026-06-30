@@ -56,6 +56,30 @@
             return is_array($lecturer) ? $lecturer : [];
         };
 
+        $sectionTeamLecturers = function (array $section): array {
+            $team = $section['dosen_team'] ?? [];
+
+            if (is_string($team)) {
+                $team = [$team];
+            }
+
+            if (! is_array($team)) {
+                return [];
+            }
+
+            return collect($team)
+                ->map(function (mixed $lecturer): string {
+                    if (is_array($lecturer)) {
+                        return trim((string) ($lecturer['nama'] ?? $lecturer['nidn'] ?? ''));
+                    }
+
+                    return trim((string) $lecturer);
+                })
+                ->filter()
+                ->values()
+                ->all();
+        };
+
         $sectionTitle = function (array $section): string {
             $kode = trim((string) ($section['kode'] ?? ''));
             $nama = trim((string) ($section['nama'] ?? ''));
@@ -125,6 +149,7 @@
                             $section = is_array($section) ? $section : [];
                             $key = $sectionKey($section, $sectionIndex);
                             $lecturer = $sectionLecturer($section);
+                            $teamLecturers = $sectionTeamLecturers($section);
                             $questionNumber = 1;
                         @endphp
 
@@ -137,8 +162,12 @@
                                 @if (! empty($lecturer['nidn']))
                                     (NIDN: {{ $lecturer['nidn'] }})
                                 @endif
+                                @if ($teamLecturers !== [])
+                                    <br>Tim dosen: {{ implode(', ', $teamLecturers) }}
+                                @endif
                             </p>
                             <p class="edom-guide-text">
+                                ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }} ·
                                 Program Studi SIAKAD: {{ $section['id_unw_program_studi'] ?? '-' }} ·
                                 ID Detail Penawaran: {{ $section['idtawarmatakuliahdetail'] ?? '-' }}
                             </p>
@@ -245,4 +274,3 @@
         </div>
     </main>
 @endsection
-

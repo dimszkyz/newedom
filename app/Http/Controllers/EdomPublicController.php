@@ -43,7 +43,7 @@ class EdomPublicController extends Controller
             ->where('status', 'active')
             ->latest('id');
 
-        if ($student && $studentProgramStudiIds !== []) {
+        if ($student) {
             $this->scopeEdomSettingsForProgramStudi($activeQuery, $studentProgramStudiIds);
         }
 
@@ -154,11 +154,13 @@ class EdomPublicController extends Controller
             return redirect()->route('edom.home')->with('error', 'EDOM tidak sedang aktif.');
         }
 
-        if (session('edom_student') && $request->has('sections')) {
-            return $this->submitStudentSections($request, $edom);
+        if (! is_array(session('edom_student'))) {
+            return redirect()
+                ->route('edom.home')
+                ->with('error', 'Pengisian EDOM harus dibuka melalui SIAKAD.');
         }
 
-        return $this->submitLegacySingleForm($request, $edom);
+        return $this->submitStudentSections($request, $edom);
     }
 
     private function submitStudentSections(Request $request, Model $edom): RedirectResponse
@@ -253,7 +255,7 @@ class EdomPublicController extends Controller
         try {
             $currentSections = $this->fetchStudentSections($student);
 
-            if ($this->studentHasCompletedAllSections($student, $currentSections, $edom)) {
+            if ($this->studentHasCompletedAllApplicableEdoms($student, $currentSections)) {
                 app(UnwApiSiakad::class)->complete(
                     $student['siakad_idmahasiswa'],
                     $student['siakad_idtahunajaran'],
@@ -271,51 +273,6 @@ class EdomPublicController extends Controller
         }
 
         return redirect()->route('edom.home')->with('success', 'Jawaban EDOM berhasil disimpan.');
-    }
-
-    private function submitLegacySingleForm(Request $request, Model $edom): RedirectResponse
-    {
-        $questions = $edom->categories->flatMap(fn ($category) => $category->questions);
-        $optionIds = $edom->questionOptions->pluck('id')->map(fn ($id) => (string) $id)->values()->all();
-
-        $rules = [];
-
-        foreach ($questions as $question) {
-            if ($this->isTextQuestion($question)) {
-                $rules["essays.{$question->id}"] = ['nullable', 'string', 'max:5000'];
-            } else {
-                $rules["answers.{$question->id}"] = ['required', Rule::in($optionIds)];
-            }
-        }
-
-        $request->validate($rules);
-
-        DB::transaction(function () use ($request, $edom, $questions) {
-            $response = EdomResponse::create([
-                'edom_setting_id' => $edom->id,
-                'submitted_at' => now(),
-            ]);
-
-            foreach ($questions as $question) {
-                if ($this->isTextQuestion($question)) {
-                    EdomResponseDetail::create([
-                        'edom_response_id' => $response->id,
-                        'edom_question_id' => $question->id,
-                        'answer_text' => $request->input("essays.{$question->id}"),
-                    ]);
-
-                    continue;
-                }
-
-                EdomResponseDetail::create([
-                    'edom_response_id' => $response->id,
-                    'edom_question_id' => $question->id,
-                    'edom_option_id' => (int) $request->input("answers.{$question->id}"),
-                ]);
-            }
-        });
-
-        return redirect()->route('edom.home')->with('success', 'Jawaban EDOM berhasil dikirim.');
     }
 
     private function prepareEdomSettings(mixed $edom): Model
@@ -444,6 +401,41 @@ class EdomPublicController extends Controller
         throw ValidationException::withMessages([
             'sections' => 'Daftar mata kuliah berubah atau tidak sesuai dengan KRS terbaru. Muat ulang halaman lalu coba lagi.',
         ]);
+    }
+
+    private function studentHasCompletedAllApplicableEdoms(array $student, array $sections): bool
+    {
+        if ($sections === []) {
+            return false;
+        }
+
+        $applicableEdoms = EdomSettings::query()
+            ->with('programStudis')
+            ->where('status', 'active');
+
+        $this->scopeEdomSettingsForProgramStudi(
+            $applicableEdoms,
+            $this->programStudiIdsFromSections($sections)
+        );
+
+        $applicableEdoms = $applicableEdoms->get();
+
+        if ($applicableEdoms->isEmpty()) {
+            return false;
+        }
+
+        foreach ($applicableEdoms as $edom) {
+            $settingSections = $this->sectionsForEdomSettings($edom, $sections);
+
+            if (
+                $settingSections === []
+                || ! $this->studentHasCompletedAllSections($student, $settingSections, $edom)
+            ) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function studentHasCompletedAllSections(array $student, array $sections, Model $edom): bool
