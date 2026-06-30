@@ -20,8 +20,8 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('siakad_idmahasiswa');
-            $table->unsignedBigInteger('siakad_idmatakuliah')->nullable();
-            $table->unsignedBigInteger('siakad_idtawarmatakuliahdetail')->nullable();
+            $table->unsignedBigInteger('siakad_idmatakuliah');
+            $table->unsignedBigInteger('siakad_idtawarmatakuliahdetail');
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
 
