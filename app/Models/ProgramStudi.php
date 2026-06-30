@@ -28,7 +28,7 @@ class ProgramStudi extends Model
         return (string) ($this->nama ?? '-');
     }
 
-    public function settingEdoms()
+    public function edomSettings()
     {
         return $this->belongsToMany(
             SettingEdom::class,
@@ -40,6 +40,6 @@ class ProgramStudi extends Model
 
     public function edoms()
     {
-        return $this->settingEdoms();
+        return $this->edomSettings();
     }
 }

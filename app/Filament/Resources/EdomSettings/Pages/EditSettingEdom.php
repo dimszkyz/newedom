@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Filament\Resources\SettingEdoms\Pages;
+namespace App\Filament\Resources\EdomSettings\Pages;
 
-use App\Filament\Resources\SettingEdoms\SettingEdomResource;
+use App\Filament\Resources\EdomSettings\SettingEdomResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 

@@ -44,7 +44,7 @@ class EdomPublicController extends Controller
             ->latest('id');
 
         if ($student && $studentProgramStudiIds !== []) {
-            $this->scopeSettingEdomsForProgramStudi($activeQuery, $studentProgramStudiIds);
+            $this->scopeEdomSettingsForProgramStudi($activeQuery, $studentProgramStudiIds);
         }
 
         $activeEdoms = $activeQuery->get();
@@ -354,7 +354,7 @@ class EdomPublicController extends Controller
             ->all();
     }
 
-    private function scopeSettingEdomsForProgramStudi(Builder $query, array $programStudiIds): void
+    private function scopeEdomSettingsForProgramStudi(Builder $query, array $programStudiIds): void
     {
         $query->where(function (Builder $query) use ($programStudiIds) {
             $query->whereDoesntHave('programStudis')

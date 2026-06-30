@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\SettingEdoms;
+namespace App\Filament\Resources\EdomSettings;
 
-use App\Filament\Resources\SettingEdoms\Pages\CreateSettingEdom;
-use App\Filament\Resources\SettingEdoms\Pages\EditSettingEdom;
-use App\Filament\Resources\SettingEdoms\Pages\ListSettingEdoms;
-use App\Filament\Resources\SettingEdoms\RelationManagers\CategoriesRelationManager;
-use App\Filament\Resources\SettingEdoms\RelationManagers\QuestionOptionsRelationManager;
-use App\Filament\Resources\SettingEdoms\RelationManagers\ResponsesRelationManager;
-use App\Filament\Resources\SettingEdoms\Schemas\SettingEdomForm;
-use App\Filament\Resources\SettingEdoms\Tables\SettingEdomsTable;
+use App\Filament\Resources\EdomSettings\Pages\CreateSettingEdom;
+use App\Filament\Resources\EdomSettings\Pages\EditSettingEdom;
+use App\Filament\Resources\EdomSettings\Pages\ListEdomSettings;
+use App\Filament\Resources\EdomSettings\RelationManagers\CategoriesRelationManager;
+use App\Filament\Resources\EdomSettings\RelationManagers\QuestionOptionsRelationManager;
+use App\Filament\Resources\EdomSettings\RelationManagers\ResponsesRelationManager;
+use App\Filament\Resources\EdomSettings\Schemas\SettingEdomForm;
+use App\Filament\Resources\EdomSettings\Tables\EdomSettingsTable;
 use App\Models\SettingEdom;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -42,7 +42,7 @@ class SettingEdomResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return SettingEdomsTable::configure($table);
+        return EdomSettingsTable::configure($table);
     }
 
     public static function getRelations(): array
@@ -57,7 +57,7 @@ class SettingEdomResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListSettingEdoms::route('/'),
+            'index' => ListEdomSettings::route('/'),
             'create' => CreateSettingEdom::route('/create'),
             'edit' => EditSettingEdom::route('/{record}/edit'),
         ];
