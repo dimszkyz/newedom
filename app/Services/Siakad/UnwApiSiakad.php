@@ -24,7 +24,7 @@ class UnwApiSiakad
 
             $response = $this->http()->asJson()
                 ->acceptJson()
-                ->post($this->baseUrl() . '/login', [
+                ->post($this->baseUrl().'/login', [
                     'email' => $email,
                     'password' => $password,
                 ])
@@ -49,10 +49,13 @@ class UnwApiSiakad
 
     private function http(): PendingRequest
     {
-        return Http::withOptions([
-            'verify' => filter_var(config('services.unwapi_siakad.verify_ssl', true), FILTER_VALIDATE_BOOLEAN),
-        ]);
+        return Http::connectTimeout(10)
+            ->timeout(30)
+            ->withOptions([
+                'verify' => filter_var(config('services.unwapi_siakad.verify_ssl', true), FILTER_VALIDATE_BOOLEAN),
+            ]);
     }
+
     private function baseUrl(): string
     {
         $baseUrl = rtrim((string) config('services.unwapi_siakad.base'), '/');
@@ -87,15 +90,6 @@ class UnwApiSiakad
     {
         return $this->request('get', '/edom/semester');
     }
-
-    // public function krs(int|string $siakadIdMahasiswa, int|string $siakadIdTahunAjaran, int|string $siakadIdSemester): array
-    // {
-    //     return $this->request('get', '/edom/krs', [
-    //         'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
-    //         'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
-    //         'siakad_idsemester' => (int) $siakadIdSemester,
-    //     ]);
-    // }
 
     public function krs(
         int|string $siakadIdMahasiswa,
@@ -155,11 +149,11 @@ class UnwApiSiakad
     public function mahasiswa(array $siakadIdMahasiswa): array
     {
         $query = collect($siakadIdMahasiswa)
-            ->filter(fn($id) => $id !== null && $id !== '')
-            ->map(fn($id) => 'siakad_idmahasiswa[]=' . rawurlencode((string) $id))
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => 'siakad_idmahasiswa[]='.rawurlencode((string) $id))
             ->implode('&');
 
-        return $this->request('get', '/edom/mahasiswa' . ($query === '' ? '' : '?' . $query));
+        return $this->request('get', '/edom/mahasiswa'.($query === '' ? '' : '?'.$query));
     }
 
     private function isFake(): bool
