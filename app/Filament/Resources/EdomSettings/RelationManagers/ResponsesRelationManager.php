@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\SettingEdoms\RelationManagers;
+namespace App\Filament\Resources\EdomSettings\RelationManagers;
 
 use App\Filament\Resources\EdomResponses\EdomResponseResource;
 use App\Models\EdomResponse;
@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 class ResponsesRelationManager extends RelationManager
 {
     protected static string $relationship = 'responses';
+
     protected static ?string $title = 'Hasil Pengisian';
 
     public function table(Table $table): Table
@@ -24,6 +25,7 @@ class ResponsesRelationManager extends RelationManager
                 TextColumn::make('details_count')->counts('details')->label('Jawaban')->badge(),
                 TextColumn::make('average_score')->label('Rata-rata Nilai')->state(function (EdomResponse $record): string {
                     $average = $record->details->whereNotNull('score')->avg('score');
+
                     return $average === null ? '-' : number_format((float) $average, 2, ',', '.');
                 })->badge()->color('success'),
                 TextColumn::make('submitted_at')->label('Dikirim')->dateTime('d M Y H:i')->sortable(),

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\SettingEdoms\Schemas;
+namespace App\Filament\Resources\EdomSettings\Schemas;
 
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;

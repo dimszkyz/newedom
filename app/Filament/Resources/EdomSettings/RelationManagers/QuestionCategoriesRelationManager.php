@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\SettingEdoms\RelationManagers;
+namespace App\Filament\Resources\EdomSettings\RelationManagers;
 
 use App\Filament\Resources\EdomQuestionCategories\EdomQuestionCategoryResource;
 use Filament\Actions\CreateAction;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\SettingEdoms\RelationManagers;
+namespace App\Filament\Resources\EdomSettings\RelationManagers;
 
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -43,6 +43,7 @@ class QuestionOptionsRelationManager extends RelationManager
                 CreateAction::make()
                     ->mutateDataUsing(function (array $data): array {
                         $data['edom_setting_id'] = $this->ownerRecord->id;
+
                         return $data;
                     }),
             ])
