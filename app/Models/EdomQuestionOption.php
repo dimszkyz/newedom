@@ -24,14 +24,14 @@ class EdomQuestionOption extends Model
         $this->attributes['name'] = $value;
     }
 
-    public function settingEdom()
+    public function edomSettings()
     {
-        return $this->belongsTo(SettingEdom::class, 'edom_setting_id');
+        return $this->belongsTo(EdomSettings::class, 'edom_setting_id');
     }
 
     public function edom()
     {
-        return $this->settingEdom();
+        return $this->edomSettings();
     }
 
     public function responseDetails()

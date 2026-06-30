@@ -8,7 +8,7 @@ use App\Models\EdomQuestion;
 use App\Models\EdomQuestionCategory;
 use App\Models\EdomQuestionOption;
 use App\Models\EdomResponse;
-use App\Models\SettingEdom;
+use App\Models\EdomSettings;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
@@ -112,11 +112,11 @@ class EdomResponseSubmissionTest extends TestCase
 
     public function test_completion_only_counts_responses_from_the_current_period_and_setting(): void
     {
-        $setting = SettingEdom::query()->create([
+        $setting = EdomSettings::query()->create([
             'name' => 'EDOM Aktif',
             'status' => 'active',
         ]);
-        $otherSetting = SettingEdom::query()->create([
+        $otherSetting = EdomSettings::query()->create([
             'name' => 'EDOM Lain',
             'status' => 'active',
         ]);
@@ -167,7 +167,7 @@ class EdomResponseSubmissionTest extends TestCase
 
     private function createActiveSetting(): array
     {
-        $setting = SettingEdom::query()->create([
+        $setting = EdomSettings::query()->create([
             'name' => 'EDOM Aktif',
             'status' => 'active',
         ]);

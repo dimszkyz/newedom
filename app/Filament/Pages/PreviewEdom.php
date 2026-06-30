@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\SettingEdom;
+use App\Models\EdomSettings;
 use BackedEnum;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -15,15 +15,18 @@ class PreviewEdom extends Page implements HasForms
     use InteractsWithForms;
 
     protected static ?string $navigationLabel = 'Preview EDOM';
+
     protected static string|\UnitEnum|null $navigationGroup = 'Evaluasi';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEye;
+
     protected string $view = 'filament.pages.preview-edom';
 
     public ?array $formData = [];
 
     public function mount(): void
     {
-        $this->form->fill(['setting_edom_id' => SettingEdom::query()->latest()->value('id')]);
+        $this->form->fill(['edom_settings_id' => EdomSettings::query()->latest()->value('id')]);
     }
 
     public function getForms(): array
@@ -35,23 +38,23 @@ class PreviewEdom extends Page implements HasForms
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('setting_edom_id')
-                    ->label('Pilih Setting EDOM untuk di-preview')
-                    ->options(SettingEdom::pluck('name', 'id'))
+                Forms\Components\Select::make('edom_settings_id')
+                    ->label('Pilih EdomSettings untuk di-preview')
+                    ->options(EdomSettings::pluck('name', 'id'))
                     ->searchable()
                     ->live(),
             ])
             ->statePath('formData');
     }
 
-    public function getSettingEdom(): ?SettingEdom
+    public function getEdomSettings(): ?EdomSettings
     {
-        $settingEdomId = $this->formData['setting_edom_id'] ?? null;
+        $edomSettingsId = $this->formData['edom_settings_id'] ?? null;
 
-        if (! $settingEdomId) {
+        if (! $edomSettingsId) {
             return null;
         }
 
-        return SettingEdom::with(['programStudis', 'categories.questions', 'questionOptions'])->find($settingEdomId);
+        return EdomSettings::with(['programStudis', 'categories.questions', 'questionOptions'])->find($edomSettingsId);
     }
 }

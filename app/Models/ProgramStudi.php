@@ -31,7 +31,7 @@ class ProgramStudi extends Model
     public function edomSettings()
     {
         return $this->belongsToMany(
-            SettingEdom::class,
+            EdomSettings::class,
             'edom_settings_program_studi',
             'program_studi_id',
             'edom_setting_id'

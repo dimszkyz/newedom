@@ -2,34 +2,34 @@
 
 namespace App\Filament\Resources\EdomSettings;
 
-use App\Filament\Resources\EdomSettings\Pages\CreateSettingEdom;
-use App\Filament\Resources\EdomSettings\Pages\EditSettingEdom;
+use App\Filament\Resources\EdomSettings\Pages\CreateEdomSettings;
+use App\Filament\Resources\EdomSettings\Pages\EditEdomSettings;
 use App\Filament\Resources\EdomSettings\Pages\ListEdomSettings;
 use App\Filament\Resources\EdomSettings\RelationManagers\CategoriesRelationManager;
 use App\Filament\Resources\EdomSettings\RelationManagers\QuestionOptionsRelationManager;
 use App\Filament\Resources\EdomSettings\RelationManagers\ResponsesRelationManager;
-use App\Filament\Resources\EdomSettings\Schemas\SettingEdomForm;
+use App\Filament\Resources\EdomSettings\Schemas\EdomSettingsForm;
 use App\Filament\Resources\EdomSettings\Tables\EdomSettingsTable;
-use App\Models\SettingEdom;
+use App\Models\EdomSettings;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
-class SettingEdomResource extends Resource
+class EdomSettingsResource extends Resource
 {
-    protected static ?string $model = SettingEdom::class;
+    protected static ?string $model = EdomSettings::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
-    protected static ?string $navigationLabel = 'EDOM Setting';
+    protected static ?string $navigationLabel = 'EdomSettings';
 
-    protected static ?string $modelLabel = 'EDOM Setting';
+    protected static ?string $modelLabel = 'EdomSettings';
 
-    protected static ?string $pluralModelLabel = 'EDOM Setting';
+    protected static ?string $pluralModelLabel = 'EdomSettings';
 
-    protected static ?string $slug = 'edom_setting';
+    protected static ?string $slug = 'edom_settings';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 
@@ -37,7 +37,7 @@ class SettingEdomResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return SettingEdomForm::configure($schema);
+        return EdomSettingsForm::configure($schema);
     }
 
     public static function table(Table $table): Table
@@ -58,8 +58,8 @@ class SettingEdomResource extends Resource
     {
         return [
             'index' => ListEdomSettings::route('/'),
-            'create' => CreateSettingEdom::route('/create'),
-            'edit' => EditSettingEdom::route('/{record}/edit'),
+            'create' => CreateEdomSettings::route('/create'),
+            'edit' => EditEdomSettings::route('/{record}/edit'),
         ];
     }
 }

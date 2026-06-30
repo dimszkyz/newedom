@@ -45,8 +45,8 @@ class CategoriesRelationManager extends RelationManager
                     ->visible(fn ($livewire) => $livewire->ownerRecord->isDraft()),
             ])
             ->actions([
-                EditAction::make()->slideOver()->visible(fn ($record) => $record->settingEdom?->isDraft()),
-                DeleteAction::make()->visible(fn ($record) => $record->settingEdom?->isDraft()),
+                EditAction::make()->slideOver()->visible(fn ($record) => $record->edomSettings?->isDraft()),
+                DeleteAction::make()->visible(fn ($record) => $record->edomSettings?->isDraft()),
             ]);
     }
 }

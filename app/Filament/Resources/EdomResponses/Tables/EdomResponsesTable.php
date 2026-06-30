@@ -15,9 +15,9 @@ class EdomResponsesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['settingEdom', 'details.questionOption'])->latest('submitted_at')->latest('id'))
+            ->modifyQueryUsing(fn ($query) => $query->with(['edomSettings', 'details.questionOption'])->latest('submitted_at')->latest('id'))
             ->columns([
-                TextColumn::make('settingEdom.name')->label('Setting EDOM')->placeholder('-')->searchable(),
+                TextColumn::make('edomSettings.name')->label('EdomSettings')->placeholder('-')->searchable(),
                 TextColumn::make('period.year')->label('Tahun')->placeholder('-'),
                 TextColumn::make('period.siakad_idsemester')->label('Semester')->placeholder('-'),
                 TextColumn::make('siakad_idmahasiswa')->label('ID Mahasiswa')->placeholder('-')->searchable(),
@@ -38,7 +38,7 @@ class EdomResponsesTable
                 TextColumn::make('submitted_at')->label('Dikirim')->dateTime('d M Y H:i')->sortable(),
             ])
             ->filters([
-                SelectFilter::make('settingEdom')->label('Setting EDOM')->relationship('settingEdom', 'name')->searchable()->preload(),
+                SelectFilter::make('edomSettings')->label('EdomSettings')->relationship('edomSettings', 'name')->searchable()->preload(),
             ])
             ->recordActions([ViewAction::make()->label('Lihat Hasil')])
             ->toolbarActions([

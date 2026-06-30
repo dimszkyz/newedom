@@ -26,14 +26,14 @@ class EdomResponse extends Model
         return $this->belongsTo(EdomPeriod::class, 'edom_period_id');
     }
 
-    public function settingEdom()
+    public function edomSettings()
     {
-        return $this->belongsTo(SettingEdom::class, 'edom_setting_id');
+        return $this->belongsTo(EdomSettings::class, 'edom_setting_id');
     }
 
     public function edom()
     {
-        return $this->settingEdom();
+        return $this->edomSettings();
     }
 
     public function details()

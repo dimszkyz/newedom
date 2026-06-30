@@ -63,10 +63,10 @@ class QuestionCategoriesRelationManager extends RelationManager
             ->actions([
                 EditAction::make()
                     ->slideOver()
-                    ->visible(fn ($record) => $record->settingEdom?->isDraft()),
+                    ->visible(fn ($record) => $record->edomSettings?->isDraft()),
 
                 DeleteAction::make()
-                    ->visible(fn ($record) => $record->settingEdom?->isDraft()),
+                    ->visible(fn ($record) => $record->edomSettings?->isDraft()),
             ]);
     }
 }

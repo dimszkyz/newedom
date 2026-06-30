@@ -6,7 +6,7 @@ use App\Models\EdomPeriod;
 use App\Models\EdomQuestion;
 use App\Models\EdomResponse;
 use App\Models\EdomResponseDetail;
-use App\Models\SettingEdom;
+use App\Models\EdomSettings;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -37,7 +37,7 @@ class EdomPublicController extends Controller
             }
         }
 
-        $activeQuery = SettingEdom::query()
+        $activeQuery = EdomSettings::query()
             ->with(['programStudis'])
             ->withCount(['categories', 'questions'])
             ->where('status', 'active')
@@ -62,14 +62,14 @@ class EdomPublicController extends Controller
             return $this->show($activeEdoms->first());
         }
 
-        $closedEdoms = SettingEdom::query()
+        $closedEdoms = EdomSettings::query()
             ->with(['programStudis'])
             ->where('status', 'closed')
             ->latest('id')
             ->limit(6)
             ->get();
 
-        $draftCount = SettingEdom::query()
+        $draftCount = EdomSettings::query()
             ->where('status', 'draft')
             ->count();
 
@@ -101,7 +101,7 @@ class EdomPublicController extends Controller
 
     public function show(mixed $edom): View
     {
-        $edom = $this->prepareSettingEdom($edom);
+        $edom = $this->prepareEdomSettings($edom);
 
         if (! $edom->isActive()) {
             return view('edom.status', [
@@ -118,7 +118,7 @@ class EdomPublicController extends Controller
 
         if ($student) {
             try {
-                $sections = $this->sectionsForSettingEdom($edom, $this->fetchStudentSections($student));
+                $sections = $this->sectionsForEdomSettings($edom, $this->fetchStudentSections($student));
             } catch (Throwable $exception) {
                 report($exception);
 
@@ -133,7 +133,7 @@ class EdomPublicController extends Controller
                 return view('edom.status', [
                     'edom' => $edom,
                     'statusTitle' => 'Tidak ada mata kuliah untuk EDOM ini',
-                    'statusMessage' => 'Data KRS dari SIAKAD tidak memiliki mata kuliah yang cocok dengan setting EDOM ini.',
+                    'statusMessage' => 'Data KRS dari SIAKAD tidak memiliki mata kuliah yang cocok dengan EdomSettings ini.',
                 ]);
             }
         }
@@ -148,7 +148,7 @@ class EdomPublicController extends Controller
 
     public function submit(Request $request, mixed $edom): RedirectResponse
     {
-        $edom = $this->prepareSettingEdom($edom);
+        $edom = $this->prepareEdomSettings($edom);
 
         if (! $edom->isActive()) {
             return redirect()->route('edom.home')->with('error', 'EDOM tidak sedang aktif.');
@@ -173,7 +173,7 @@ class EdomPublicController extends Controller
 
         try {
             $currentSections = $this->fetchStudentSections($student);
-            $settingSections = $this->sectionsForSettingEdom($edom, $currentSections);
+            $settingSections = $this->sectionsForEdomSettings($edom, $currentSections);
         } catch (Throwable $exception) {
             report($exception);
 
@@ -318,9 +318,9 @@ class EdomPublicController extends Controller
         return redirect()->route('edom.home')->with('success', 'Jawaban EDOM berhasil dikirim.');
     }
 
-    private function prepareSettingEdom(mixed $edom): Model
+    private function prepareEdomSettings(mixed $edom): Model
     {
-        $edom = $edom instanceof Model ? $edom : SettingEdom::query()->findOrFail($edom);
+        $edom = $edom instanceof Model ? $edom : EdomSettings::query()->findOrFail($edom);
 
         $edom->load([
             'programStudis',
@@ -364,7 +364,7 @@ class EdomPublicController extends Controller
         });
     }
 
-    private function sectionsForSettingEdom(Model $edom, array $sections): array
+    private function sectionsForEdomSettings(Model $edom, array $sections): array
     {
         $settingProgramStudiIds = $edom->programStudis
             ->pluck('id_unw_program_studi')

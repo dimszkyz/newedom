@@ -40,7 +40,7 @@
             </section>
 
             <section class="section">
-                <h2 class="section-title">Setting EDOM Aktif</h2>
+                <h2 class="section-title">EdomSettings Aktif</h2>
 
                 @if ($activeEdoms->isNotEmpty())
                     <div class="grid">
@@ -61,11 +61,11 @@
                 @else
                     <div class="empty">
                         @if ($student && ! $studentFetchError)
-                            Tidak ada setting EDOM aktif yang cocok dengan program studi pada KRS Anda.
+                            Tidak ada EdomSettings aktif yang cocok dengan program studi pada KRS Anda.
                         @elseif ($draftCount > 0)
-                            Belum ada setting EDOM yang aktif untuk saat ini.
+                            Belum ada EdomSettings yang aktif untuk saat ini.
                         @else
-                            Belum ada setting EDOM yang aktif untuk saat ini.
+                            Belum ada EdomSettings yang aktif untuk saat ini.
                         @endif
                     </div>
                 @endif
@@ -73,7 +73,7 @@
 
             @if ($closedEdoms->isNotEmpty())
                 <section class="section">
-                    <h2 class="section-title">Setting EDOM yang Sudah Ditutup</h2>
+                    <h2 class="section-title">EdomSettings yang Sudah Ditutup</h2>
                     <div class="grid">
                         @foreach ($closedEdoms as $edom)
                             <article class="card">

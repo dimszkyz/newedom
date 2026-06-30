@@ -6,13 +6,13 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
-class SettingEdomForm
+class EdomSettingsForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('Nama EDOM Setting')
+                ->label('Nama EdomSettings')
                 ->required()
                 ->maxLength(255),
 
