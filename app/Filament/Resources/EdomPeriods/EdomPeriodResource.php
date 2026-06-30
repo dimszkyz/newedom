@@ -19,7 +19,7 @@ class EdomPeriodResource extends Resource
     protected static ?string $navigationLabel = 'EDOM Periods';
     protected static ?string $modelLabel = 'EDOM Periods';
     protected static ?string $pluralModelLabel = 'EDOM Periods';
-    protected static ?string $slug = 'edom_periods';
+    protected static ?string $slug = 'edom-periods';
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
     public static function form(Schema $schema): Schema

@@ -25,7 +25,7 @@ class ProgramStudiResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Program Studi';
 
-    protected static ?string $slug = 'program_studi';
+    protected static ?string $slug = 'program-studi';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
 

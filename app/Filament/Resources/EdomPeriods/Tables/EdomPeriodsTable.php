@@ -11,6 +11,7 @@ use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use App\Filament\Resources\EdomPeriods\Schemas\EdomPeriodForm;
 
 class EdomPeriodsTable
 {
@@ -19,7 +20,16 @@ class EdomPeriodsTable
         return $table
             ->columns([
                 TextColumn::make('year')->label('Tahun Ajaran')->sortable(),
-                TextColumn::make('siakad_idsemester')->label('ID Semester')->sortable(),
+                TextColumn::make('siakad_idsemester')
+                    ->label('Semester')
+                    ->formatStateUsing(function (mixed $state): string {
+                        static $semesterOptions;
+
+                        $semesterOptions ??= EdomPeriodForm::semesterOptions();
+
+                        return $semesterOptions[(int) $state] ?? 'Semester ' . $state;
+                    })
+                    ->sortable(),
                 TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->recordActions([
