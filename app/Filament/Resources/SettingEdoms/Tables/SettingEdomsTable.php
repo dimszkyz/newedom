@@ -15,7 +15,7 @@ class SettingEdomsTable
     {
         return $table
             ->columns([
-                TextColumn::make('name')->label('Nama Setting EDOM')->searchable(),
+                TextColumn::make('name')->label('Nama EDOM Setting')->searchable(),
                 TextColumn::make('programStudis.nama')->label('Program Studi')->badge()->separator(),
                 TextColumn::make('categories_count')->counts('categories')->label('Kategori')->badge(),
                 TextColumn::make('questions_count')->counts('questions')->label('Pertanyaan')->badge(),

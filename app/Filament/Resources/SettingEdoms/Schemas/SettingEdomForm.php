@@ -12,7 +12,7 @@ class SettingEdomForm
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('Nama Setting EDOM')
+                ->label('Nama EDOM Setting')
                 ->required()
                 ->maxLength(255),
 

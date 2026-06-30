@@ -23,13 +23,13 @@ class SettingEdomResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
 
-    protected static ?string $navigationLabel = 'Setting EDOM';
+    protected static ?string $navigationLabel = 'EDOM Setting';
 
-    protected static ?string $modelLabel = 'Setting EDOM';
+    protected static ?string $modelLabel = 'EDOM Setting';
 
-    protected static ?string $pluralModelLabel = 'Setting EDOM';
+    protected static ?string $pluralModelLabel = 'EDOM Setting';
 
-    protected static ?string $slug = 'setting_edom';
+    protected static ?string $slug = 'edom_setting';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAcademicCap;
 

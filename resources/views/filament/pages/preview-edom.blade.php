@@ -14,7 +14,7 @@
 
                 <div class="grid gap-4 md:grid-cols-3">
                     <div>
-                        <div class="text-sm text-gray-500">Nama Setting EDOM</div>
+                        <div class="text-sm text-gray-500">Nama EDOM Setting</div>
                         <div class="font-semibold">{{ $edom->edom_name }}</div>
                     </div>
                     <div>
