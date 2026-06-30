@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     @php
-        $edom = $this->getSettingEdom();
+        $edom = $this->getEdomSettings();
     @endphp
 
     <div class="edom-preview-page">
@@ -10,11 +10,11 @@
 
         @if ($edom)
             <x-filament::section>
-                <x-slot name="heading">Informasi Detail Setting EDOM</x-slot>
+                <x-slot name="heading">Informasi Detail EdomSettings</x-slot>
 
                 <div class="grid gap-4 md:grid-cols-3">
                     <div>
-                        <div class="text-sm text-gray-500">Nama EDOM Setting</div>
+                        <div class="text-sm text-gray-500">Nama EdomSettings</div>
                         <div class="font-semibold">{{ $edom->edom_name }}</div>
                     </div>
                     <div>

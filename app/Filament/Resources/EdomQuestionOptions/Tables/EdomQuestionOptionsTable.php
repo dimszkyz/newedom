@@ -11,7 +11,7 @@ class EdomQuestionOptionsTable
     {
         return $table
             ->columns([
-                TextColumn::make('settingEdom.name')->label('Setting EDOM')->searchable(),
+                TextColumn::make('edomSettings.name')->label('EdomSettings')->searchable(),
                 TextColumn::make('name')->label('Opsi Jawaban')->searchable(),
                 TextColumn::make('score')->label('Nilai')->sortable(),
             ])

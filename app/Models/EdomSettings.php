@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class SettingEdom extends Model
+class EdomSettings extends Model
 {
     protected $table = 'edom_settings';
 

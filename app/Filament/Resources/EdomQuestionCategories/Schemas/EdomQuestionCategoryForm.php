@@ -12,8 +12,8 @@ class EdomQuestionCategoryForm
     {
         return $schema->components([
             Select::make('edom_setting_id')
-                ->label('Setting EDOM')
-                ->relationship('settingEdom', 'name')
+                ->label('EdomSettings')
+                ->relationship('edomSettings', 'name')
                 ->searchable()
                 ->preload()
                 ->required(),

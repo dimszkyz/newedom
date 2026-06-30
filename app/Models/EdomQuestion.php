@@ -20,9 +20,9 @@ class EdomQuestion extends Model
         return $this->belongsTo(EdomQuestionCategory::class, 'edom_question_category_id');
     }
 
-    public function settingEdom()
+    public function edomSettings()
     {
-        return $this->belongsTo(SettingEdom::class, 'edom_setting_id');
+        return $this->belongsTo(EdomSettings::class, 'edom_setting_id');
     }
 
     public function responseDetails()
