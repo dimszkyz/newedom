@@ -223,6 +223,68 @@ h1 {
     font-size: 14px;
 }
 
+.course-list {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #dbe3ef;
+    border-radius: 14px;
+    background: #ffffff;
+    list-style: none;
+}
+
+.course-list-item {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.course-list-item:last-child {
+    border-bottom: 0;
+}
+
+.course-list-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: #eef4ff;
+    color: #022B63;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.course-list-content h2 {
+    margin: 0 0 8px;
+    color: #102347;
+    font-size: 17px;
+}
+
+.course-list-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.course-list-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.course-list-actions .button {
+    white-space: nowrap;
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -278,10 +340,6 @@ h1 {
 .badge-pending {
     background: #fef3c7;
     color: #92400e;
-}
-
-.course-card .button {
-    margin-top: 4px;
 }
 
 .button {
@@ -917,6 +975,24 @@ h1 {
 
     .grid {
         grid-template-columns: 1fr;
+    }
+
+    .course-list-item {
+        grid-template-columns: 36px minmax(0, 1fr);
+        align-items: start;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .course-list-number {
+        width: 32px;
+        height: 32px;
+    }
+
+    .course-list-actions {
+        grid-column: 2;
+        justify-content: flex-start;
+        flex-wrap: wrap;
     }
 
     h1 {
