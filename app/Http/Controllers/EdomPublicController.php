@@ -64,6 +64,7 @@ class EdomPublicController extends Controller
 
                             return [
                                 'section' => $section,
+                                'section_key' => $this->sectionRouteKey($section),
                                 'completed' => $completionKey !== null
                                     && isset($completedSectionKeys[$completionKey]),
                             ];
@@ -154,9 +155,9 @@ class EdomPublicController extends Controller
             ]);
         }
 
-        $selectedSectionId = (int) $request->query('section');
+        $selectedSectionKey = trim((string) $request->query('section', ''));
 
-        if ($selectedSectionId <= 0) {
+        if ($selectedSectionKey === '') {
             return view('edom.status', [
                 'edom' => $edom,
                 'statusTitle' => 'Pilih mata kuliah dari daftar KRS',
@@ -165,9 +166,7 @@ class EdomPublicController extends Controller
         }
 
         $sections = collect($sections)
-            ->filter(fn (array $section): bool => $this->nullableInteger(
-                $section['idtawarmatakuliahdetail'] ?? null
-            ) === $selectedSectionId)
+            ->filter(fn (array $section): bool => $this->sectionRouteKey($section) === $selectedSectionKey)
             ->values()
             ->all();
 
@@ -254,7 +253,7 @@ class EdomPublicController extends Controller
                         'edom_setting_id' => $edom->id,
                         'siakad_idmahasiswa' => (string) $student['siakad_idmahasiswa'],
                         'siakad_idmatakuliah' => $this->nullableInteger($section['idmatakuliah'] ?? null),
-                        'siakad_idtawarmatakuliahdetail' => $this->nullableInteger($section['idtawarmatakuliahdetail'] ?? null),
+                        'siakad_idtawarmatakuliahdetail' => $this->persistedSectionDetailId($section),
                     ],
                     [
                         'submitted_at' => now(),
@@ -354,6 +353,10 @@ class EdomPublicController extends Controller
 
     private function scopeEdomSettingsForProgramStudi(Builder $query, array $programStudiIds): void
     {
+        if ($programStudiIds === []) {
+            return;
+        }
+
         $query->where(function (Builder $query) use ($programStudiIds) {
             $query->whereDoesntHave('programStudis')
                 ->orWhereHas('programStudis', function (Builder $query) use ($programStudiIds) {
@@ -375,6 +378,18 @@ class EdomPublicController extends Controller
             return array_values($sections);
         }
 
+        $sectionProgramStudiIds = collect($sections)
+            ->pluck('id_unw_program_studi')
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn (int $id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($sectionProgramStudiIds === []) {
+            return array_values($sections);
+        }
+
         return collect($sections)
             ->filter(fn (array $section) => in_array((int) ($section['id_unw_program_studi'] ?? 0), $settingProgramStudiIds, true))
             ->values()
@@ -383,24 +398,22 @@ class EdomPublicController extends Controller
 
     private function resolveSubmittedSections(array $submittedSections, array $authoritativeSections): array
     {
-        $authoritativeByDetailId = collect($authoritativeSections)
+        $authoritativeBySectionKey = collect($authoritativeSections)
             ->filter(function (array $section): bool {
-                return $this->nullableInteger($section['idtawarmatakuliahdetail'] ?? null) !== null
+                return $this->sectionRouteKey($section) !== null
                     && $this->nullableInteger($section['idmatakuliah'] ?? null) !== null;
             })
-            ->keyBy(fn (array $section): string => (string) $this->nullableInteger(
-                $section['idtawarmatakuliahdetail']
-            ));
+            ->keyBy(fn (array $section): string => (string) $this->sectionRouteKey($section));
 
         if (
-            $authoritativeByDetailId->count() !== count($authoritativeSections)
+            $authoritativeBySectionKey->count() !== count($authoritativeSections)
             || count($submittedSections) !== 1
         ) {
             $this->throwInvalidSections();
         }
 
         $resolvedSections = [];
-        $seenDetailIds = [];
+        $seenSectionKeys = [];
 
         foreach ($submittedSections as $sectionKey => $submittedSection) {
             if (
@@ -411,22 +424,22 @@ class EdomPublicController extends Controller
                 $this->throwInvalidSections();
             }
 
-            $detailId = $this->nullableInteger($submittedSection['idtawarmatakuliahdetail'] ?? null);
+            $submittedRouteKey = $this->sectionRouteKey($submittedSection);
             $courseId = $this->nullableInteger($submittedSection['idmatakuliah'] ?? null);
-            $authoritativeSection = $detailId === null
+            $authoritativeSection = $submittedRouteKey === null
                 ? null
-                : $authoritativeByDetailId->get((string) $detailId);
+                : $authoritativeBySectionKey->get($submittedRouteKey);
 
             if (
                 ! is_array($authoritativeSection)
                 || $courseId === null
                 || $courseId !== $this->nullableInteger($authoritativeSection['idmatakuliah'] ?? null)
-                || in_array($detailId, $seenDetailIds, true)
+                || in_array($submittedRouteKey, $seenSectionKeys, true)
             ) {
                 $this->throwInvalidSections();
             }
 
-            $seenDetailIds[] = $detailId;
+            $seenSectionKeys[] = $submittedRouteKey;
             $resolvedSections[$sectionKey] = $authoritativeSection;
         }
 
@@ -464,27 +477,62 @@ class EdomPublicController extends Controller
                 'siakad_idmatakuliah',
                 'siakad_idtawarmatakuliahdetail',
             ])
-            ->mapWithKeys(function (EdomResponse $response): array {
-                $key = $this->sectionCompletionKey($response->edom_setting_id, [
+            ->flatMap(function (EdomResponse $response): array {
+                $keys = [];
+                $detailKey = $this->sectionCompletionKey($response->edom_setting_id, [
                     'idmatakuliah' => $response->siakad_idmatakuliah,
                     'idtawarmatakuliahdetail' => $response->siakad_idtawarmatakuliahdetail,
                 ]);
+                $courseKey = $this->sectionCompletionKey($response->edom_setting_id, [
+                    'idmatakuliah' => $response->siakad_idmatakuliah,
+                ]);
 
-                return $key === null ? [] : [$key => true];
+                if ($detailKey !== null) {
+                    $keys[$detailKey] = true;
+                }
+
+                if ($courseKey !== null) {
+                    $keys[$courseKey] = true;
+                }
+
+                return $keys;
             })
             ->all();
     }
 
     private function sectionCompletionKey(int $edomSettingId, array $section): ?string
     {
-        $detailId = $this->nullableInteger($section['idtawarmatakuliahdetail'] ?? null);
+        $routeKey = $this->sectionRouteKey($section);
         $courseId = $this->nullableInteger($section['idmatakuliah'] ?? null);
 
-        if ($detailId === null || $courseId === null) {
+        if ($routeKey === null || $courseId === null) {
             return null;
         }
 
-        return $edomSettingId.':'.$detailId.':'.$courseId;
+        return $edomSettingId.':'.$routeKey.':'.$courseId;
+    }
+
+    private function sectionRouteKey(array $section): ?string
+    {
+        $detailId = $this->nullableInteger($section['idtawarmatakuliahdetail'] ?? null);
+
+        if ($detailId !== null) {
+            return 'd_'.$detailId;
+        }
+
+        $courseId = $this->nullableInteger($section['idmatakuliah'] ?? null);
+
+        if ($courseId !== null) {
+            return 'm_'.$courseId;
+        }
+
+        return null;
+    }
+
+    private function persistedSectionDetailId(array $section): ?int
+    {
+        return $this->nullableInteger($section['idtawarmatakuliahdetail'] ?? null)
+            ?? $this->nullableInteger($section['idmatakuliah'] ?? null);
     }
 
     private function studentHasCompletedAllApplicableEdoms(array $student, array $sections): bool
@@ -545,28 +593,31 @@ class EdomPublicController extends Controller
                 'siakad_idmatakuliah',
                 'siakad_idtawarmatakuliahdetail',
             ])
-            ->mapWithKeys(function (EdomResponse $response): array {
-                if (
-                    $response->siakad_idmatakuliah === null
-                    || $response->siakad_idtawarmatakuliahdetail === null
-                ) {
-                    return [];
+            ->flatMap(function (EdomResponse $response) use ($edom): array {
+                $keys = [];
+                $detailKey = $this->sectionCompletionKey($edom->id, [
+                    'idmatakuliah' => $response->siakad_idmatakuliah,
+                    'idtawarmatakuliahdetail' => $response->siakad_idtawarmatakuliahdetail,
+                ]);
+                $courseKey = $this->sectionCompletionKey($edom->id, [
+                    'idmatakuliah' => $response->siakad_idmatakuliah,
+                ]);
+
+                if ($detailKey !== null) {
+                    $keys[$detailKey] = true;
                 }
 
-                return [
-                    $response->siakad_idtawarmatakuliahdetail.':'.$response->siakad_idmatakuliah => true,
-                ];
+                if ($courseKey !== null) {
+                    $keys[$courseKey] = true;
+                }
+
+                return $keys;
             });
 
         foreach ($sections as $section) {
-            $detailId = $this->nullableInteger($section['idtawarmatakuliahdetail'] ?? null);
-            $courseId = $this->nullableInteger($section['idmatakuliah'] ?? null);
+            $completionKey = $this->sectionCompletionKey($edom->id, $section);
 
-            if (
-                $detailId === null
-                || $courseId === null
-                || ! $completedSections->has($detailId.':'.$courseId)
-            ) {
+            if ($completionKey === null || ! $completedSections->has($completionKey)) {
                 return false;
             }
         }
