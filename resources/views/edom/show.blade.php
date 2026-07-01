@@ -46,8 +46,10 @@
 
         $sectionKey = function (array $section, int $index): string {
             $detail = preg_replace('/[^A-Za-z0-9_-]/', '_', (string) ($section['idtawarmatakuliahdetail'] ?? ''));
+            $course = preg_replace('/[^A-Za-z0-9_-]/', '_', (string) ($section['idmatakuliah'] ?? ''));
+            $identity = $detail !== '' ? 'd_' . $detail : ($course !== '' ? 'm_' . $course : 'x');
 
-            return 's_' . $index . '_' . ($detail !== '' ? $detail : 'x');
+            return 's_' . $index . '_' . $identity;
         };
 
         $sectionLecturer = function (array $section): array {
