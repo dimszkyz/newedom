@@ -8,7 +8,6 @@ use App\Models\EdomResponse;
 use App\Models\EdomResponseDetail;
 use App\Models\EdomSettings;
 use App\Services\Siakad\UnwApiSiakad;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,29 +24,23 @@ class EdomPublicController extends Controller
         $student = session('edom_student');
         $studentSections = [];
         $studentFetchError = null;
-        $studentProgramStudiIds = [];
 
         if ($student) {
             try {
                 $studentSections = $this->fetchStudentSections($student);
-                $studentProgramStudiIds = $this->programStudiIdsFromSections($studentSections);
             } catch (Throwable $exception) {
                 report($exception);
                 $studentFetchError = 'Gagal mengambil data KRS dari SIAKAD. Periksa konfigurasi API SIAKAD atau coba beberapa saat lagi.';
             }
         }
 
-        $activeQuery = EdomSettings::query()
+        $activeEdoms = EdomSettings::query()
             ->with(['programStudis'])
             ->withCount(['categories', 'questions'])
             ->where('status', 'active')
-            ->latest('id');
+            ->latest('id')
+            ->get();
 
-        if ($student) {
-            $this->scopeEdomSettingsForProgramStudi($activeQuery, $studentProgramStudiIds);
-        }
-
-        $activeEdoms = $activeQuery->get();
         $studentEdomSections = collect();
 
         if ($student && ! $studentFetchError) {
@@ -340,60 +333,9 @@ class EdomPublicController extends Controller
         return collect($sections)->filter(fn ($section) => is_array($section))->values()->all();
     }
 
-    private function programStudiIdsFromSections(array $sections): array
-    {
-        return collect($sections)
-            ->pluck('id_unw_program_studi')
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id) => $id > 0)
-            ->unique()
-            ->values()
-            ->all();
-    }
-
-    private function scopeEdomSettingsForProgramStudi(Builder $query, array $programStudiIds): void
-    {
-        if ($programStudiIds === []) {
-            return;
-        }
-
-        $query->where(function (Builder $query) use ($programStudiIds) {
-            $query->whereDoesntHave('programStudis')
-                ->orWhereHas('programStudis', function (Builder $query) use ($programStudiIds) {
-                    $query->whereIn('program_studi.id_unw_program_studi', $programStudiIds);
-                });
-        });
-    }
-
     private function sectionsForEdomSettings(Model $edom, array $sections): array
     {
-        $settingProgramStudiIds = $edom->programStudis
-            ->pluck('id_unw_program_studi')
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id) => $id > 0)
-            ->values()
-            ->all();
-
-        if ($settingProgramStudiIds === []) {
-            return array_values($sections);
-        }
-
-        $sectionProgramStudiIds = collect($sections)
-            ->pluck('id_unw_program_studi')
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn (int $id) => $id > 0)
-            ->unique()
-            ->values()
-            ->all();
-
-        if ($sectionProgramStudiIds === []) {
-            return array_values($sections);
-        }
-
-        return collect($sections)
-            ->filter(fn (array $section) => in_array((int) ($section['id_unw_program_studi'] ?? 0), $settingProgramStudiIds, true))
-            ->values()
-            ->all();
+        return array_values($sections);
     }
 
     private function resolveSubmittedSections(array $submittedSections, array $authoritativeSections): array
@@ -543,14 +485,8 @@ class EdomPublicController extends Controller
 
         $applicableEdoms = EdomSettings::query()
             ->with('programStudis')
-            ->where('status', 'active');
-
-        $this->scopeEdomSettingsForProgramStudi(
-            $applicableEdoms,
-            $this->programStudiIdsFromSections($sections)
-        );
-
-        $applicableEdoms = $applicableEdoms->get();
+            ->where('status', 'active')
+            ->get();
 
         if ($applicableEdoms->isEmpty()) {
             return false;
