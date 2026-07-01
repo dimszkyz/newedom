@@ -81,7 +81,11 @@ class UnwProgramStudiSyncService
 
     private function unwProgramStudiId(mixed $item): ?int
     {
-        $id = data_get($item, 'unwProgramStudi.id', data_get($item, 'id_unw_program_studi'));
+        $id = data_get(
+            $item,
+            'unwProgramStudi.id',
+            data_get($item, 'unw_program_studi.id', data_get($item, 'id_unw_program_studi', data_get($item, 'id')))
+        );
 
         if (blank($id)) {
             return null;
@@ -92,6 +96,10 @@ class UnwProgramStudiSyncService
 
     private function unwProgramStudiName(mixed $item): string
     {
-        return trim((string) data_get($item, 'unwProgramStudi.nama', data_get($item, 'nama', '')));
+        return trim((string) data_get(
+            $item,
+            'unwProgramStudi.nama',
+            data_get($item, 'unw_program_studi.nama', data_get($item, 'nama', ''))
+        ));
     }
 }

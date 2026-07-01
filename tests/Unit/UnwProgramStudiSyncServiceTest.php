@@ -66,6 +66,52 @@ class UnwProgramStudiSyncServiceTest extends TestCase
         ]);
     }
 
+    public function test_sync_uses_flat_program_studi_id_and_name_from_current_api(): void
+    {
+        config()->set([
+            'services.unw_program_studi.url' => 'https://panel-web.test/api/unw-program-studi',
+            'services.unw_program_studi.verify_ssl' => false,
+        ]);
+
+        Http::fake([
+            'https://panel-web.test/api/unw-program-studi' => Http::response([
+                'data' => [
+                    [
+                        'id' => 21,
+                        'nama' => 'Manajemen Pendidikan',
+                        'slug' => 's2-manajemen-pendidikan',
+                        'jenjang_nama_singkat' => 'S2',
+                    ],
+                    [
+                        'id' => 2,
+                        'nama' => 'Keperawatan',
+                        'slug' => 's1-keperawatan',
+                        'jenjang_nama_singkat' => 'S1',
+                    ],
+                ],
+            ]),
+        ]);
+
+        $result = app(UnwProgramStudiSyncService::class)->sync();
+
+        $this->assertSame([
+            'created' => 2,
+            'updated' => 0,
+            'skipped' => 0,
+            'total' => 2,
+        ], $result);
+
+        $this->assertDatabaseHas('program_studi', [
+            'id_unw_program_studi' => 21,
+            'nama' => 'Manajemen Pendidikan',
+        ]);
+
+        $this->assertDatabaseHas('program_studi', [
+            'id_unw_program_studi' => 2,
+            'nama' => 'Keperawatan',
+        ]);
+    }
+
     public function test_sync_updates_existing_program_studi_by_unw_id(): void
     {
         config()->set([
