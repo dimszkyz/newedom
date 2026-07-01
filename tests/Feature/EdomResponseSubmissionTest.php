@@ -95,6 +95,8 @@ class EdomResponseSubmissionTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('Daftar Mata Kuliah KRS')
+            ->assertSee('class="course-list"', false)
+            ->assertDontSee('class="card course-card"', false)
             ->assertSee('TIF101')
             ->assertSee('Algoritma')
             ->assertSee('TIF102')

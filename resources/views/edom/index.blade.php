@@ -63,7 +63,7 @@
                                 <span class="badge badge-active">Aktif</span>
                             </div>
 
-                            <div class="grid">
+                            <ol class="course-list">
                                 @foreach ($group['sections'] as $item)
                                     @php
                                         $section = $item['section'];
@@ -72,33 +72,43 @@
                                             : [];
                                     @endphp
 
-                                    <article class="card course-card">
-                                        <span class="badge {{ $item['completed'] ? 'badge-completed' : 'badge-pending' }}">
-                                            {{ $item['completed'] ? 'Sudah Diisi' : 'Belum Diisi' }}
-                                        </span>
-                                        <h2>
-                                            {{ $section['kode'] ?? '-' }} -
-                                            {{ $section['nama'] ?? 'Mata kuliah tanpa nama' }}
-                                        </h2>
-                                        <p class="meta">
-                                            Dosen: {{ $lecturer['nama'] ?? '-' }}
-                                            @if (! empty($lecturer['nidn']))
-                                                ({{ $lecturer['nidn'] }})
-                                            @endif
-                                            <br>
-                                            ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }}<br>
-                                            ID Detail Penawaran:
-                                            {{ $section['idtawarmatakuliahdetail'] ?? '-' }}
-                                        </p>
-                                        <a class="button" href="{{ route('edom.fill', [
-                                            'edomSettings' => $edom,
-                                            'section' => $section['idtawarmatakuliahdetail'] ?? '',
-                                        ]) }}">
-                                            {{ $item['completed'] ? 'Perbarui Jawaban' : 'Isi EDOM' }}
-                                        </a>
-                                    </article>
+                                    <li class="course-list-item">
+                                        <div class="course-list-number">{{ $loop->iteration }}</div>
+
+                                        <div class="course-list-content">
+                                            <h2>
+                                                {{ $section['kode'] ?? '-' }} -
+                                                {{ $section['nama'] ?? 'Mata kuliah tanpa nama' }}
+                                            </h2>
+                                            <div class="course-list-meta">
+                                                <span>
+                                                    Dosen: {{ $lecturer['nama'] ?? '-' }}
+                                                    @if (! empty($lecturer['nidn']))
+                                                        ({{ $lecturer['nidn'] }})
+                                                    @endif
+                                                </span>
+                                                <span>ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }}</span>
+                                                <span>
+                                                    ID Detail Penawaran:
+                                                    {{ $section['idtawarmatakuliahdetail'] ?? '-' }}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="course-list-actions">
+                                            <span class="badge {{ $item['completed'] ? 'badge-completed' : 'badge-pending' }}">
+                                                {{ $item['completed'] ? 'Sudah Diisi' : 'Belum Diisi' }}
+                                            </span>
+                                            <a class="button" href="{{ route('edom.fill', [
+                                                'edomSettings' => $edom,
+                                                'section' => $section['idtawarmatakuliahdetail'] ?? '',
+                                            ]) }}">
+                                                {{ $item['completed'] ? 'Perbarui Jawaban' : 'Isi EDOM' }}
+                                            </a>
+                                        </div>
+                                    </li>
                                 @endforeach
-                            </div>
+                            </ol>
                         </div>
                     @empty
                         <div class="empty">
