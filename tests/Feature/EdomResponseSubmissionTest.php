@@ -40,13 +40,13 @@ class EdomResponseSubmissionTest extends TestCase
         $payload = [
             'edom_id' => $setting->id,
             'sections' => [
-                's_0_4567' => [
+                's_0_d_4567' => [
                     'idtawarmatakuliahdetail' => 4567,
                     'idmatakuliah' => 123,
                 ],
             ],
             'answers' => [
-                's_0_4567' => [
+                's_0_d_4567' => [
                     $question->id => $option->id,
                 ],
             ],
@@ -103,11 +103,11 @@ class EdomResponseSubmissionTest extends TestCase
             ->assertSee('Basis Data')
             ->assertSee(route('edom.fill', [
                 'edomSettings' => $setting,
-                'section' => 4567,
+                'section' => 'd_4567',
             ]), false)
             ->assertSee(route('edom.fill', [
                 'edomSettings' => $setting,
-                'section' => 8910,
+                'section' => 'd_8910',
             ]), false);
     }
 
@@ -127,7 +127,7 @@ class EdomResponseSubmissionTest extends TestCase
         $this->withSession(['edom_student' => $this->student()])
             ->get(route('edom.fill', [
                 'edomSettings' => $setting,
-                'section' => 4567,
+                'section' => 'd_4567',
             ]))
             ->assertOk()
             ->assertSee('TIF101 - Algoritma')
@@ -154,13 +154,13 @@ class EdomResponseSubmissionTest extends TestCase
             ->post(route('edom.home.submit'), [
                 'edom_id' => $setting->id,
                 'sections' => [
-                    's_0_4567' => [
+                    's_0_d_4567' => [
                         'idtawarmatakuliahdetail' => 4567,
                         'idmatakuliah' => 123,
                     ],
                 ],
                 'answers' => [
-                    's_0_4567' => [
+                    's_0_d_4567' => [
                         $question->id => $option->id,
                     ],
                 ],
@@ -173,13 +173,13 @@ class EdomResponseSubmissionTest extends TestCase
             ->post(route('edom.home.submit'), [
                 'edom_id' => $setting->id,
                 'sections' => [
-                    's_1_8910' => [
+                    's_1_d_8910' => [
                         'idtawarmatakuliahdetail' => 8910,
                         'idmatakuliah' => 456,
                     ],
                 ],
                 'answers' => [
-                    's_1_8910' => [
+                    's_1_d_8910' => [
                         $question->id => $option->id,
                     ],
                 ],
@@ -212,13 +212,13 @@ class EdomResponseSubmissionTest extends TestCase
             ->post(route('edom.home.submit'), [
                 'edom_id' => $setting->id,
                 'sections' => [
-                    's_0_4567' => [
+                    's_0_d_4567' => [
                         'idtawarmatakuliahdetail' => 9999,
                         'idmatakuliah' => 123,
                     ],
                 ],
                 'answers' => [
-                    's_0_4567' => [
+                    's_0_d_4567' => [
                         $question->id => $option->id,
                     ],
                 ],
@@ -230,7 +230,7 @@ class EdomResponseSubmissionTest extends TestCase
         $this->assertDatabaseCount('edom_response_detail', 0);
     }
 
-    public function test_scoped_setting_completes_after_all_of_its_krs_sections_are_submitted(): void
+    public function test_program_studi_scope_does_not_filter_krs_sections_from_api(): void
     {
         [$setting, $question, $option] = $this->createActiveSetting();
         $student = $this->student();
@@ -254,28 +254,25 @@ class EdomResponseSubmissionTest extends TestCase
             ->twice()
             ->with(18273, 2026, 2)
             ->andReturn([$matchingSection, $otherSection]);
-        $siakad->shouldReceive('complete')
-            ->once()
-            ->with(18273, 2026, 2)
-            ->andReturn(['completed' => true]);
+        $siakad->shouldNotReceive('complete');
         $this->app->instance(UnwApiSiakad::class, $siakad);
 
         $this->withSession(['edom_student' => $student])
             ->post(route('edom.home.submit'), [
                 'edom_id' => $setting->id,
                 'sections' => [
-                    's_0_4567' => [
+                    's_0_d_4567' => [
                         'idtawarmatakuliahdetail' => 4567,
                         'idmatakuliah' => 123,
                     ],
                 ],
                 'answers' => [
-                    's_0_4567' => [
+                    's_0_d_4567' => [
                         $question->id => $option->id,
                     ],
                 ],
             ])
-            ->assertRedirect('https://siakad.test/edom');
+            ->assertRedirect(route('edom.home'));
 
         $this->assertDatabaseCount('edom_response', 1);
         $this->assertDatabaseHas('edom_response', [
