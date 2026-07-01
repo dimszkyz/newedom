@@ -99,6 +99,30 @@ class UnwApiSiakadTest extends TestCase
         Http::assertSentCount(4);
     }
 
+    public function test_mahasiswa_uses_the_cached_bearer_token_and_repeats_array_query_keys(): void
+    {
+        $profiles = [
+            ['siakad_idmahasiswa' => 18273, 'npm' => '22.01.0001', 'nama' => 'Dimas Mahasiswa'],
+            ['siakad_idmahasiswa' => 18274, 'npm' => '22.01.0002', 'nama' => 'Mahasiswa Kedua'],
+        ];
+
+        Http::fake([
+            'https://siakad.test/login' => Http::response(['data' => ['token' => 'token-1']]),
+            'https://siakad.test/edom/mahasiswa*' => Http::response(['data' => $profiles]),
+        ]);
+
+        $this->assertSame(
+            $profiles,
+            app(UnwApiSiakad::class)->mahasiswa([18273, 18274])
+        );
+
+        Http::assertSent(fn (Request $request): bool => $request->url()
+            === 'https://siakad.test/edom/mahasiswa'
+            && $request['siakad_idmahasiswa'] === ['18273', '18274']
+            && $request->hasHeader('Authorization', 'Bearer token-1'));
+        Http::assertSentCount(2);
+    }
+
     private function section(): array
     {
         return [

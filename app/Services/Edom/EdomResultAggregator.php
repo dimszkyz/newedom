@@ -14,9 +14,7 @@ class EdomResultAggregator
      */
     private array $penawaranCache = [];
 
-    public function __construct(private readonly UnwApiSiakad $siakad)
-    {
-    }
+    public function __construct(private readonly UnwApiSiakad $siakad) {}
 
     /**
      * @return Collection<int, array<string, mixed>>
@@ -133,30 +131,6 @@ class EdomResultAggregator
         }
 
         return $sections->first(fn (array $section): bool => (string) data_get($section, 'idmatakuliah') === $courseId);
-    }
-
-    public function courseLabelFor(EdomResponse $row): string
-    {
-        $section = $this->findSection($row);
-        $kode = (string) data_get($section, 'kode', '');
-        $nama = (string) data_get($section, 'nama', '');
-
-        return trim($kode.' - '.$nama) ?: 'Mata kuliah #'.$row->siakad_idmatakuliah;
-    }
-
-    public function dosenNameFor(EdomResponse $row): string
-    {
-        return $this->dosenName(data_get($this->findSection($row), 'dosen'));
-    }
-
-    public function dosenTeamFor(EdomResponse $row): string
-    {
-        return $this->dosenTeam(data_get($this->findSection($row), 'dosen_team'));
-    }
-
-    public function sectionMissingFor(EdomResponse $row): bool
-    {
-        return $this->findSection($row) === null;
     }
 
     /**

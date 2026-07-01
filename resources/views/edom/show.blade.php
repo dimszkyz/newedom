@@ -170,7 +170,6 @@
                             </p>
                             <p class="edom-guide-text">
                                 ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }} ·
-                                Program Studi SIAKAD: {{ $section['id_unw_program_studi'] ?? '-' }} ·
                                 ID Detail Penawaran: {{ $section['idtawarmatakuliahdetail'] ?? '-' }}
                             </p>
                         </section>
@@ -179,7 +178,6 @@
                         <input type="hidden" name="sections[{{ $key }}][idmatakuliah]" value="{{ $section['idmatakuliah'] ?? '' }}">
                         <input type="hidden" name="sections[{{ $key }}][kode]" value="{{ $section['kode'] ?? '' }}">
                         <input type="hidden" name="sections[{{ $key }}][nama]" value="{{ $section['nama'] ?? '' }}">
-                        <input type="hidden" name="sections[{{ $key }}][id_unw_program_studi]" value="{{ $section['id_unw_program_studi'] ?? '' }}">
                         <input type="hidden" name="sections[{{ $key }}][dosen][nidn]" value="{{ $lecturer['nidn'] ?? '' }}">
                         <input type="hidden" name="sections[{{ $key }}][dosen][nama]" value="{{ $lecturer['nama'] ?? '' }}">
 

@@ -24,6 +24,8 @@ class EdomPublicController extends Controller
         $student = session('edom_student');
         $studentSections = [];
         $studentFetchError = null;
+        $studentProfile = null;
+        $studentProfileFetchError = null;
 
         if ($student) {
             try {
@@ -31,6 +33,17 @@ class EdomPublicController extends Controller
             } catch (Throwable $exception) {
                 report($exception);
                 $studentFetchError = 'Gagal mengambil data KRS dari SIAKAD. Periksa konfigurasi API SIAKAD atau coba beberapa saat lagi.';
+            }
+
+            try {
+                $studentProfile = $this->fetchStudentProfile($student);
+
+                if ($studentProfile === null) {
+                    $studentProfileFetchError = 'Data mahasiswa tidak ditemukan pada SIAKAD.';
+                }
+            } catch (Throwable $exception) {
+                report($exception);
+                $studentProfileFetchError = 'Gagal mengambil data mahasiswa dari SIAKAD.';
             }
         }
 
@@ -89,6 +102,8 @@ class EdomPublicController extends Controller
             'closedEdoms' => $closedEdoms,
             'draftCount' => $draftCount,
             'student' => $student,
+            'studentProfile' => $studentProfile,
+            'studentProfileFetchError' => $studentProfileFetchError,
             'studentSections' => $studentSections,
             'studentEdomSections' => $studentEdomSections,
             'studentFetchError' => $studentFetchError,
@@ -331,6 +346,19 @@ class EdomPublicController extends Controller
         );
 
         return collect($sections)->filter(fn ($section) => is_array($section))->values()->all();
+    }
+
+    private function fetchStudentProfile(array $student): ?array
+    {
+        $studentId = (string) $student['siakad_idmahasiswa'];
+        $profiles = app(UnwApiSiakad::class)->mahasiswa([$studentId]);
+
+        $profile = collect($profiles)->first(function (mixed $profile) use ($studentId): bool {
+            return is_array($profile)
+                && (string) ($profile['siakad_idmahasiswa'] ?? '') === $studentId;
+        });
+
+        return is_array($profile) ? $profile : null;
     }
 
     private function sectionsForEdomSettings(Model $edom, array $sections): array

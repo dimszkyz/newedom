@@ -85,6 +85,10 @@ class EdomResponseSubmissionTest extends TestCase
             ->once()
             ->with(18273, 2026, 2)
             ->andReturn($sections);
+        $siakad->shouldReceive('mahasiswa')
+            ->once()
+            ->with(['18273'])
+            ->andReturn([$this->studentProfile()]);
         $this->app->instance(UnwApiSiakad::class, $siakad);
 
         $this->withoutVite();
@@ -97,6 +101,8 @@ class EdomResponseSubmissionTest extends TestCase
             ->assertSee('Daftar Mata Kuliah KRS')
             ->assertSee('class="course-list"', false)
             ->assertDontSee('class="card course-card"', false)
+            ->assertSee('Dimas Mahasiswa')
+            ->assertSee('22.01.0001')
             ->assertSee('TIF101')
             ->assertSee('Algoritma')
             ->assertSee('TIF102')
@@ -109,6 +115,63 @@ class EdomResponseSubmissionTest extends TestCase
                 'edomSettings' => $setting,
                 'section' => 'd_8910',
             ]), false);
+    }
+
+    public function test_signed_handoff_opens_the_student_profile_and_krs_list(): void
+    {
+        $this->createActiveSetting();
+        config()->set('edom.hmac_siakad_secret', 'handoff-secret');
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with(18273, 2026, 2)
+            ->andReturn([$this->section()]);
+        $siakad->shouldReceive('mahasiswa')
+            ->once()
+            ->with(['18273'])
+            ->andReturn([$this->studentProfile()]);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->get(route('edom.enter', ['token' => $this->handoffToken()]))
+            ->assertRedirect(route('edom.home'))
+            ->assertSessionHas('edom_student.siakad_idmahasiswa', '18273')
+            ->assertSessionHas('edom_student.siakad_idtahunajaran', 2026)
+            ->assertSessionHas('edom_student.siakad_idsemester', 2);
+
+        $this->withoutVite();
+
+        $this->get(route('edom.home'))
+            ->assertOk()
+            ->assertSee('Dimas Mahasiswa')
+            ->assertSee('22.01.0001')
+            ->assertSee('TIF101')
+            ->assertSee('Algoritma');
+    }
+
+    public function test_student_profile_failure_does_not_hide_the_krs_course_list(): void
+    {
+        $this->createActiveSetting();
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with(18273, 2026, 2)
+            ->andReturn([$this->section()]);
+        $siakad->shouldReceive('mahasiswa')
+            ->once()
+            ->with(['18273'])
+            ->andThrow(new \RuntimeException('Mahasiswa endpoint unavailable'));
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withoutVite();
+
+        $this->withSession(['edom_student' => $this->student()])
+            ->get(route('edom.home'))
+            ->assertOk()
+            ->assertSee('Gagal mengambil data mahasiswa dari SIAKAD.')
+            ->assertSee('TIF101')
+            ->assertSee('Algoritma');
     }
 
     public function test_fill_page_only_renders_the_selected_krs_section(): void
@@ -429,6 +492,33 @@ class EdomResponseSubmissionTest extends TestCase
         ];
     }
 
+    private function studentProfile(): array
+    {
+        return [
+            'siakad_idmahasiswa' => 18273,
+            'npm' => '22.01.0001',
+            'nama' => 'Dimas Mahasiswa',
+        ];
+    }
+
+    private function handoffToken(): string
+    {
+        $payload = [
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idtahunajaran' => 2026,
+            'siakad_idsemester' => 2,
+            'return_url' => 'https://siakad.test/edom',
+            'exp' => now()->addMinutes(5)->timestamp,
+        ];
+        $encodedPayload = rtrim(strtr(
+            base64_encode(json_encode($payload, JSON_THROW_ON_ERROR)),
+            '+/',
+            '-_'
+        ), '=');
+
+        return $encodedPayload.'.'.hash_hmac('sha256', $encodedPayload, 'handoff-secret');
+    }
+
     private function section(): array
     {
         return [
@@ -441,7 +531,6 @@ class EdomResponseSubmissionTest extends TestCase
                 'nama' => 'Dosen Testing',
             ],
             'dosen_team' => [],
-            'id_unw_program_studi' => 14,
         ];
     }
 
@@ -457,7 +546,6 @@ class EdomResponseSubmissionTest extends TestCase
                 'nama' => 'Dosen Kedua',
             ],
             'dosen_team' => ['Dosen Pendamping'],
-            'id_unw_program_studi' => 14,
         ];
     }
 }
