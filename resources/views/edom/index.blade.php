@@ -5,6 +5,8 @@
 @section('content')
     @php
         $student = $student ?? null;
+        $studentProfile = $studentProfile ?? null;
+        $studentProfileFetchError = $studentProfileFetchError ?? null;
         $studentSections = collect($studentSections ?? []);
         $studentEdomSections = collect($studentEdomSections ?? []);
         $studentFetchError = $studentFetchError ?? null;
@@ -25,6 +27,35 @@
                             Jumlah mata kuliah dari KRS: {{ $studentSections->count() }}.
                         @endif
                     </div>
+
+                    @if ($studentProfile)
+                        <div class="student-profile" aria-label="Data mahasiswa dari SIAKAD">
+                            <div class="student-profile-primary">
+                                <span>Mahasiswa</span>
+                                <strong>{{ $studentProfile['nama'] ?? '-' }}</strong>
+                            </div>
+                            <dl class="student-profile-meta">
+                                <div>
+                                    <dt>NPM</dt>
+                                    <dd>{{ $studentProfile['npm'] ?? '-' }}</dd>
+                                </div>
+                                <div>
+                                    <dt>ID Mahasiswa</dt>
+                                    <dd>{{ $studentProfile['siakad_idmahasiswa'] ?? $student['siakad_idmahasiswa'] ?? '-' }}</dd>
+                                </div>
+                                <div>
+                                    <dt>Tahun Ajaran</dt>
+                                    <dd>{{ $student['siakad_idtahunajaran'] ?? '-' }}</dd>
+                                </div>
+                                <div>
+                                    <dt>Semester</dt>
+                                    <dd>{{ $student['siakad_idsemester'] ?? '-' }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    @elseif ($studentProfileFetchError)
+                        <div class="alert warning">{{ $studentProfileFetchError }}</div>
+                    @endif
                 @endif
 
                 @if ($studentFetchError)
@@ -116,7 +147,7 @@
                             @if ($studentFetchError)
                                 Daftar mata kuliah belum dapat dimuat dari SIAKAD.
                             @else
-                                Tidak ada mata kuliah KRS yang cocok dengan EdomSettings aktif.
+                                Tidak ada mata kuliah pada KRS atau belum ada EdomSettings aktif.
                             @endif
                         </div>
                     @endforelse
