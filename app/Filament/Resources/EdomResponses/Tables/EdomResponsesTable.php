@@ -19,8 +19,7 @@ class EdomResponsesTable
             ->columns([
                 TextColumn::make('edom_name')
                     ->label('EDOM')
-                    ->placeholder('-')
-                    ->searchable(),
+                    ->placeholder('-'),
                 TextColumn::make('periode')
                     ->label('Periode')
                     ->state(fn (EdomResponse $record): string => $record->siakad_idtahunajaran.' / Semester '.$record->siakad_idsemester)
@@ -46,8 +45,7 @@ class EdomResponsesTable
                     ->label('Pertanyaan')
                     ->placeholder('Pertanyaan tidak ditemukan')
                     ->limit(120)
-                    ->wrap()
-                    ->searchable(),
+                    ->wrap(),
                 TextColumn::make('respondent_count')
                     ->label('Responden')
                     ->numeric()
