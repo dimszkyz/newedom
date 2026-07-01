@@ -20,9 +20,8 @@ class EdomResponsesTable
                 TextColumn::make('edomSettings.name')->label('EdomSettings')->placeholder('-')->searchable(),
                 TextColumn::make('period.year')->label('Tahun')->placeholder('-'),
                 TextColumn::make('period.siakad_idsemester')->label('Semester')->placeholder('-'),
-                TextColumn::make('siakad_idmahasiswa')->label('ID Mahasiswa')->placeholder('-')->searchable(),
                 TextColumn::make('siakad_idmatakuliah')->label('ID Mata Kuliah')->placeholder('-'),
-                TextColumn::make('siakad_idtawarmatakuliahdetail')->label('ID Detail')->placeholder('-'),
+                TextColumn::make('siakad_idtawarmatakuliahdetail')->label('ID Detail Penawaran')->placeholder('-'),
                 TextColumn::make('details_count')->counts('details')->label('Jawaban')->badge(),
                 TextColumn::make('average_score')
                     ->label('Rata-rata Nilai')
@@ -40,7 +39,7 @@ class EdomResponsesTable
             ->filters([
                 SelectFilter::make('edomSettings')->label('EdomSettings')->relationship('edomSettings', 'name')->searchable()->preload(),
             ])
-            ->recordActions([ViewAction::make()->label('Lihat Hasil')])
+            ->recordActions([ViewAction::make()->label('Lihat Jawaban')])
             ->toolbarActions([
                 BulkActionGroup::make([DeleteBulkAction::make()]),
             ]);
