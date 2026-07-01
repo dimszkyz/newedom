@@ -67,6 +67,7 @@
                                 @foreach ($group['sections'] as $item)
                                     @php
                                         $section = $item['section'];
+                                        $sectionKey = $item['section_key'] ?? '';
                                         $lecturer = is_array($section['dosen'] ?? null)
                                             ? $section['dosen']
                                             : [];
@@ -101,7 +102,7 @@
                                             </span>
                                             <a class="button" href="{{ route('edom.fill', [
                                                 'edomSettings' => $edom,
-                                                'section' => $section['idtawarmatakuliahdetail'] ?? '',
+                                                'section' => $sectionKey,
                                             ]) }}">
                                                 {{ $item['completed'] ? 'Perbarui Jawaban' : 'Isi EDOM' }}
                                             </a>
