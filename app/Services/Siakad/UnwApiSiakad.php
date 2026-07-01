@@ -3,8 +3,10 @@
 namespace App\Services\Siakad;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class UnwApiSiakad
@@ -96,11 +98,31 @@ class UnwApiSiakad
         int|string $siakadIdTahunAjaran,
         int|string $siakadIdSemester
     ): array {
-        return $this->request('get', '/edom/krs', [
+        $payload = [
             'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
             'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
             'siakad_idsemester' => (int) $siakadIdSemester,
-        ]);
+        ];
+
+        try {
+            return $this->request('get', '/edom/krs', $payload);
+        } catch (RequestException $exception) {
+            if (! $this->isMissingProgramStudiColumnError($exception)) {
+                throw $exception;
+            }
+
+            Log::warning('Endpoint /edom/krs SIAKAD gagal karena kolom ps.id_unw_program_studi tidak tersedia. Memakai fallback /edom/penawaran.', [
+                'siakad_idmahasiswa' => $payload['siakad_idmahasiswa'],
+                'siakad_idtahunajaran' => $payload['siakad_idtahunajaran'],
+                'siakad_idsemester' => $payload['siakad_idsemester'],
+                'message' => $exception->getMessage(),
+            ]);
+
+            return $this->penawaran(
+                $payload['siakad_idtahunajaran'],
+                $payload['siakad_idsemester']
+            );
+        }
     }
 
     public function penawaran(int|string $siakadIdTahunAjaran, int|string $siakadIdSemester, int|string|null $idUnwProgramStudi = null): array
@@ -153,5 +175,20 @@ class UnwApiSiakad
         return $this->request('get', '/edom/mahasiswa', [
             'siakad_idmahasiswa' => $studentIds,
         ]);
+    }
+
+    private function isMissingProgramStudiColumnError(RequestException $exception): bool
+    {
+        $message = strtolower($exception->getMessage().' '.$this->requestExceptionBody($exception));
+
+        return str_contains($message, 'ps.id_unw_program_studi')
+            || str_contains($message, "unknown column 'ps.id_unw_program_studi'");
+    }
+
+    private function requestExceptionBody(RequestException $exception): string
+    {
+        $response = $exception->response ?? null;
+
+        return $response === null ? '' : (string) $response->body();
     }
 }

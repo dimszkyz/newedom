@@ -64,6 +64,50 @@ class UnwApiSiakadTest extends TestCase
         Http::assertSentCount(3);
     }
 
+    public function test_krs_falls_back_to_penawaran_when_backend_reports_missing_program_studi_column(): void
+    {
+        $section = array_merge($this->section(), [
+            'idtawarmatakuliahdetail' => 8910,
+            'idmatakuliah' => 456,
+            'kode' => 'API102',
+            'nama' => 'Fallback Penawaran',
+            'id_unw_program_studi' => 14,
+        ]);
+
+        Http::fake(function (Request $request) use ($section) {
+            if ($request->url() === 'https://siakad.test/login') {
+                return Http::response(['data' => ['token' => 'token-1']]);
+            }
+
+            if (str_starts_with($request->url(), 'https://siakad.test/edom/krs')) {
+                return Http::response([
+                    'message' => "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'ps.id_unw_program_studi' in 'field list'",
+                ], 500);
+            }
+
+            if (str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')) {
+                return Http::response(['data' => [$section]]);
+            }
+
+            return Http::response([], 404);
+        });
+
+        $this->assertSame([$section], app(UnwApiSiakad::class)->krs(18273, 2026, 2));
+
+        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/krs')
+            && $request->hasHeader('Authorization', 'Bearer token-1')
+            && (int) $request['siakad_idmahasiswa'] === 18273
+            && (int) $request['siakad_idtahunajaran'] === 2026
+            && (int) $request['siakad_idsemester'] === 2);
+
+        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')
+            && $request->hasHeader('Authorization', 'Bearer token-1')
+            && (int) $request['siakad_idtahunajaran'] === 2026
+            && (int) $request['siakad_idsemester'] === 2);
+
+        Http::assertSentCount(3);
+    }
+
     public function test_a_401_forgets_the_cached_token_and_retries_once(): void
     {
         $section = $this->section();
