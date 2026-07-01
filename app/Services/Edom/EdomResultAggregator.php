@@ -90,6 +90,52 @@ class EdomResultAggregator
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function sectionFor(
+        int|string $tahunAjaran,
+        int|string $semester,
+        int|string $idtawarmatakuliahdetail,
+        int|string $idmatakuliah
+    ): ?array {
+        $sections = $this->penawaran($tahunAjaran, $semester);
+        $detailId = (string) $idtawarmatakuliahdetail;
+        $courseId = (string) $idmatakuliah;
+
+        $section = $sections->first(fn (array $section): bool => (string) data_get($section, 'idtawarmatakuliahdetail') === $detailId);
+
+        if ($section !== null) {
+            return $section;
+        }
+
+        return $sections->first(fn (array $section): bool => (string) data_get($section, 'idmatakuliah') === $courseId);
+    }
+
+    public function courseLabelFor(EdomResponse $row): string
+    {
+        $section = $this->findSection($row);
+        $kode = (string) data_get($section, 'kode', '');
+        $nama = (string) data_get($section, 'nama', '');
+
+        return trim($kode.' - '.$nama) ?: 'Mata kuliah #'.$row->siakad_idmatakuliah;
+    }
+
+    public function dosenNameFor(EdomResponse $row): string
+    {
+        return $this->dosenName(data_get($this->findSection($row), 'dosen'));
+    }
+
+    public function dosenTeamFor(EdomResponse $row): string
+    {
+        return $this->dosenTeam(data_get($this->findSection($row), 'dosen_team'));
+    }
+
+    public function sectionMissingFor(EdomResponse $row): bool
+    {
+        return $this->findSection($row) === null;
+    }
+
+    /**
      * @return Collection<int, array<string, mixed>>
      */
     private function penawaran(int|string $tahunAjaran, int|string $semester): Collection
@@ -130,7 +176,7 @@ class EdomResultAggregator
             'siakad_idtawarmatakuliahdetail' => (int) $row->siakad_idtawarmatakuliahdetail,
             'kode' => (string) data_get($section, 'kode', '-'),
             'mata_kuliah' => (string) data_get($section, 'nama', 'Mata kuliah #'.$row->siakad_idmatakuliah),
-            'course_label' => trim((string) data_get($section, 'kode', '').' - '.(string) data_get($section, 'nama', '')) ?: 'Mata kuliah #'.$row->siakad_idmatakuliah,
+            'course_label' => $this->courseLabelFor($row),
             'dosen' => $this->dosenName(data_get($section, 'dosen')),
             'dosen_team' => $this->dosenTeam(data_get($section, 'dosen_team')),
             'id_unw_program_studi' => data_get($section, 'id_unw_program_studi'),
@@ -149,17 +195,12 @@ class EdomResultAggregator
      */
     private function findSection(EdomResponse $row): ?array
     {
-        $sections = $this->penawaran($row->siakad_idtahunajaran, $row->siakad_idsemester);
-        $detailId = (string) $row->siakad_idtawarmatakuliahdetail;
-        $courseId = (string) $row->siakad_idmatakuliah;
-
-        $section = $sections->first(fn (array $section): bool => (string) data_get($section, 'idtawarmatakuliahdetail') === $detailId);
-
-        if ($section !== null) {
-            return $section;
-        }
-
-        return $sections->first(fn (array $section): bool => (string) data_get($section, 'idmatakuliah') === $courseId);
+        return $this->sectionFor(
+            $row->siakad_idtahunajaran,
+            $row->siakad_idsemester,
+            $row->siakad_idtawarmatakuliahdetail,
+            $row->siakad_idmatakuliah,
+        );
     }
 
     private function dosenName(mixed $dosen): string
