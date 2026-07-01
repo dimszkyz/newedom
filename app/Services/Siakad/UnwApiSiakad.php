@@ -2,12 +2,14 @@
 
 namespace App\Services\Siakad;
 
+use App\Models\ProgramStudi;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use Throwable;
 
 class UnwApiSiakad
 {
@@ -118,10 +120,7 @@ class UnwApiSiakad
                 'message' => $exception->getMessage(),
             ]);
 
-            return $this->penawaran(
-                $payload['siakad_idtahunajaran'],
-                $payload['siakad_idsemester']
-            );
+            return $this->fallbackKrsFromPenawaran($payload, $exception);
         }
     }
 
@@ -175,6 +174,102 @@ class UnwApiSiakad
         return $this->request('get', '/edom/mahasiswa', [
             'siakad_idmahasiswa' => $studentIds,
         ]);
+    }
+
+    private function fallbackKrsFromPenawaran(array $payload, RequestException $originalException): array
+    {
+        $sections = [];
+        $lastException = $originalException;
+
+        foreach ($this->localProgramStudiIds() as $idUnwProgramStudi) {
+            try {
+                $sections = array_merge($sections, $this->penawaran(
+                    $payload['siakad_idtahunajaran'],
+                    $payload['siakad_idsemester'],
+                    $idUnwProgramStudi
+                ));
+            } catch (RequestException $exception) {
+                $lastException = $exception;
+
+                if (! $this->isMissingProgramStudiColumnError($exception)) {
+                    throw $exception;
+                }
+
+                Log::warning('Fallback /edom/penawaran dengan id_unw_program_studi lokal gagal.', [
+                    'siakad_idtahunajaran' => $payload['siakad_idtahunajaran'],
+                    'siakad_idsemester' => $payload['siakad_idsemester'],
+                    'id_unw_program_studi' => $idUnwProgramStudi,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
+        }
+
+        $sections = $this->uniqueSections($sections);
+
+        if ($sections !== []) {
+            return $sections;
+        }
+
+        try {
+            return $this->penawaran(
+                $payload['siakad_idtahunajaran'],
+                $payload['siakad_idsemester']
+            );
+        } catch (RequestException $exception) {
+            $lastException = $exception;
+
+            if (! $this->isMissingProgramStudiColumnError($exception)) {
+                throw $exception;
+            }
+
+            Log::warning('Fallback /edom/penawaran tanpa id_unw_program_studi gagal.', [
+                'siakad_idtahunajaran' => $payload['siakad_idtahunajaran'],
+                'siakad_idsemester' => $payload['siakad_idsemester'],
+                'message' => $exception->getMessage(),
+            ]);
+        }
+
+        throw $lastException;
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function localProgramStudiIds(): array
+    {
+        try {
+            return ProgramStudi::query()
+                ->whereNotNull('id_unw_program_studi')
+                ->orderBy('id_unw_program_studi')
+                ->pluck('id_unw_program_studi')
+                ->map(fn ($id): int => (int) $id)
+                ->filter(fn (int $id): bool => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return [];
+        }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $sections
+     * @return array<int, array<string, mixed>>
+     */
+    private function uniqueSections(array $sections): array
+    {
+        return collect($sections)
+            ->filter(fn ($section): bool => is_array($section))
+            ->unique(function (array $section): string {
+                $detailId = (string) ($section['idtawarmatakuliahdetail'] ?? '');
+                $courseId = (string) ($section['idmatakuliah'] ?? '');
+
+                return $detailId !== '' ? 'd:'.$detailId : 'm:'.$courseId;
+            })
+            ->values()
+            ->all();
     }
 
     private function isMissingProgramStudiColumnError(RequestException $exception): bool

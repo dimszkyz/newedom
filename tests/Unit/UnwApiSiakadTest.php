@@ -2,7 +2,9 @@
 
 namespace Tests\Unit;
 
+use App\Models\ProgramStudi;
 use App\Services\Siakad\UnwApiSiakad;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -10,6 +12,8 @@ use Tests\TestCase;
 
 class UnwApiSiakadTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -104,6 +108,48 @@ class UnwApiSiakadTest extends TestCase
             && $request->hasHeader('Authorization', 'Bearer token-1')
             && (int) $request['siakad_idtahunajaran'] === 2026
             && (int) $request['siakad_idsemester'] === 2);
+
+        Http::assertSentCount(3);
+    }
+
+    public function test_krs_fallback_uses_local_program_studi_ids_for_penawaran(): void
+    {
+        ProgramStudi::query()->create([
+            'id_unw_program_studi' => 17,
+            'nama' => 'Teknik Informatika',
+        ]);
+
+        $section = array_merge($this->section(), [
+            'id_unw_program_studi' => 17,
+        ]);
+
+        Http::fake(function (Request $request) use ($section) {
+            if ($request->url() === 'https://siakad.test/login') {
+                return Http::response(['data' => ['token' => 'token-1']]);
+            }
+
+            if (str_starts_with($request->url(), 'https://siakad.test/edom/krs')) {
+                return Http::response([
+                    'message' => "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'ps.id_unw_program_studi' in 'field list'",
+                ], 500);
+            }
+
+            if (str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')) {
+                return (int) $request['id_unw_program_studi'] === 17
+                    ? Http::response(['data' => [$section]])
+                    : Http::response(['data' => []]);
+            }
+
+            return Http::response([], 404);
+        });
+
+        $this->assertSame([$section], app(UnwApiSiakad::class)->krs(18273, 2026, 2));
+
+        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')
+            && $request->hasHeader('Authorization', 'Bearer token-1')
+            && (int) $request['siakad_idtahunajaran'] === 2026
+            && (int) $request['siakad_idsemester'] === 2
+            && (int) $request['id_unw_program_studi'] === 17);
 
         Http::assertSentCount(3);
     }
