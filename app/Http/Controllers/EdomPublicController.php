@@ -22,12 +22,25 @@ class EdomPublicController extends Controller
     public function index(Request $request): View
     {
         $student = session('edom_student');
+        $studentSemester = null;
+        $studentSemesterFetchError = null;
         $studentSections = [];
         $studentFetchError = null;
         $studentProfile = null;
         $studentProfileFetchError = null;
 
         if ($student) {
+            try {
+                $studentSemester = $this->fetchStudentSemester($student);
+
+                if ($studentSemester === null) {
+                    $studentSemesterFetchError = 'Data semester tidak ditemukan pada SIAKAD.';
+                }
+            } catch (Throwable $exception) {
+                report($exception);
+                $studentSemesterFetchError = 'Gagal mengambil data semester dari SIAKAD.';
+            }
+
             try {
                 $studentSections = $this->fetchStudentSections($student);
             } catch (Throwable $exception) {
@@ -102,6 +115,8 @@ class EdomPublicController extends Controller
             'closedEdoms' => $closedEdoms,
             'draftCount' => $draftCount,
             'student' => $student,
+            'studentSemester' => $studentSemester,
+            'studentSemesterFetchError' => $studentSemesterFetchError,
             'studentProfile' => $studentProfile,
             'studentProfileFetchError' => $studentProfileFetchError,
             'studentSections' => $studentSections,
@@ -346,6 +361,19 @@ class EdomPublicController extends Controller
         );
 
         return collect($sections)->filter(fn ($section) => is_array($section))->values()->all();
+    }
+
+    private function fetchStudentSemester(array $student): ?array
+    {
+        $semesterId = (string) $student['siakad_idsemester'];
+        $semesters = app(UnwApiSiakad::class)->semester();
+
+        $semester = collect($semesters)->first(function (mixed $semester) use ($semesterId): bool {
+            return is_array($semester)
+                && (string) ($semester['id'] ?? '') === $semesterId;
+        });
+
+        return is_array($semester) ? $semester : null;
     }
 
     private function fetchStudentProfile(array $student): ?array

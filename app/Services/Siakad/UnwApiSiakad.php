@@ -144,11 +144,14 @@ class UnwApiSiakad
 
     public function mahasiswa(array $siakadIdMahasiswa): array
     {
-        $query = collect($siakadIdMahasiswa)
+        $studentIds = collect($siakadIdMahasiswa)
             ->filter(fn ($id) => $id !== null && $id !== '')
-            ->map(fn ($id) => 'siakad_idmahasiswa[]='.rawurlencode((string) $id))
-            ->implode('&');
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
 
-        return $this->request('get', '/edom/mahasiswa'.($query === '' ? '' : '?'.$query));
+        return $this->request('get', '/edom/mahasiswa', [
+            'siakad_idmahasiswa' => $studentIds,
+        ]);
     }
 }

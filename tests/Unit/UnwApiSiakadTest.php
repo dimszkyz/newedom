@@ -116,11 +116,66 @@ class UnwApiSiakadTest extends TestCase
             app(UnwApiSiakad::class)->mahasiswa([18273, 18274])
         );
 
-        Http::assertSent(fn (Request $request): bool => $request->url()
-            === 'https://siakad.test/edom/mahasiswa'
-            && $request['siakad_idmahasiswa'] === ['18273', '18274']
+        Http::assertSent(fn (Request $request): bool => str_starts_with(
+            $request->url(),
+            'https://siakad.test/edom/mahasiswa'
+        )
+            && $request['siakad_idmahasiswa'] === [18273, 18274]
             && $request->hasHeader('Authorization', 'Bearer token-1'));
         Http::assertSentCount(2);
+    }
+
+    public function test_semester_krs_and_mahasiswa_share_one_backend_login_token(): void
+    {
+        $loginCalls = 0;
+
+        Http::fake(function (Request $request) use (&$loginCalls) {
+            if ($request->url() === 'https://siakad.test/login') {
+                $loginCalls++;
+
+                return Http::response(['data' => ['token' => 'shared-token']]);
+            }
+
+            if ($request->url() === 'https://siakad.test/edom/semester') {
+                return Http::response(['data' => [['id' => 2, 'nama' => 'Genap']]]);
+            }
+
+            if (str_starts_with($request->url(), 'https://siakad.test/edom/krs')) {
+                return Http::response(['data' => [$this->section()]]);
+            }
+
+            if (str_starts_with($request->url(), 'https://siakad.test/edom/mahasiswa')) {
+                return Http::response([
+                    'data' => [[
+                        'siakad_idmahasiswa' => 18273,
+                        'npm' => '22.01.0001',
+                        'nama' => 'Dimas Mahasiswa',
+                    ]],
+                ]);
+            }
+
+            return Http::response([], 404);
+        });
+
+        $api = app(UnwApiSiakad::class);
+
+        $this->assertSame([['id' => 2, 'nama' => 'Genap']], $api->semester());
+        $this->assertSame([$this->section()], $api->krs(18273, 2026, 2));
+        $this->assertSame(
+            [['siakad_idmahasiswa' => 18273, 'npm' => '22.01.0001', 'nama' => 'Dimas Mahasiswa']],
+            $api->mahasiswa([18273])
+        );
+        $this->assertSame(1, $loginCalls);
+
+        foreach (['semester', 'krs', 'mahasiswa'] as $path) {
+            Http::assertSent(fn (Request $request): bool => str_starts_with(
+                $request->url(),
+                "https://siakad.test/edom/{$path}"
+            )
+                && $request->hasHeader('Authorization', 'Bearer shared-token'));
+        }
+
+        Http::assertSentCount(4);
     }
 
     private function section(): array
