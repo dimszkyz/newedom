@@ -100,6 +100,21 @@ class UnwApiSiakadTest extends TestCase
         Http::assertSentCount(4);
     }
 
+    public function test_fake_krs_bypasses_the_remote_api_in_local_or_testing_environments(): void
+    {
+        $sections = [$this->section()];
+
+        config()->set([
+            'edom.fake_siakad.enabled' => true,
+            'edom.fake_siakad.krs' => $sections,
+        ]);
+        Http::fake();
+
+        $this->assertSame($sections, app(UnwApiSiakad::class)->krs(18273, 2026, 2));
+
+        Http::assertNothingSent();
+    }
+
     private function section(): array
     {
         return [
