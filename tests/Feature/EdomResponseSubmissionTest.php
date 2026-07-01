@@ -75,6 +75,123 @@ class EdomResponseSubmissionTest extends TestCase
         ]);
     }
 
+    public function test_student_home_lists_each_krs_section_instead_of_opening_the_form_automatically(): void
+    {
+        [$setting] = $this->createActiveSetting();
+        $sections = [$this->section(), $this->secondSection()];
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with(18273, 2026, 2)
+            ->andReturn($sections);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withoutVite();
+
+        $response = $this->withSession(['edom_student' => $this->student()])
+            ->get(route('edom.home'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Daftar Mata Kuliah KRS')
+            ->assertSee('TIF101')
+            ->assertSee('Algoritma')
+            ->assertSee('TIF102')
+            ->assertSee('Basis Data')
+            ->assertSee(route('edom.fill', [
+                'edomSettings' => $setting,
+                'section' => 4567,
+            ]), false)
+            ->assertSee(route('edom.fill', [
+                'edomSettings' => $setting,
+                'section' => 8910,
+            ]), false);
+    }
+
+    public function test_fill_page_only_renders_the_selected_krs_section(): void
+    {
+        [$setting] = $this->createActiveSetting();
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with(18273, 2026, 2)
+            ->andReturn([$this->section(), $this->secondSection()]);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withoutVite();
+
+        $this->withSession(['edom_student' => $this->student()])
+            ->get(route('edom.fill', [
+                'edomSettings' => $setting,
+                'section' => 4567,
+            ]))
+            ->assertOk()
+            ->assertSee('TIF101 - Algoritma')
+            ->assertDontSee('TIF102 - Basis Data');
+    }
+
+    public function test_student_can_submit_krs_sections_one_at_a_time_until_completion(): void
+    {
+        [$setting, $question, $option] = $this->createActiveSetting();
+        $student = $this->student();
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->times(4)
+            ->with(18273, 2026, 2)
+            ->andReturn([$this->section(), $this->secondSection()]);
+        $siakad->shouldReceive('complete')
+            ->once()
+            ->with(18273, 2026, 2)
+            ->andReturn(['completed' => true]);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withSession(['edom_student' => $student])
+            ->post(route('edom.home.submit'), [
+                'edom_id' => $setting->id,
+                'sections' => [
+                    's_0_4567' => [
+                        'idtawarmatakuliahdetail' => 4567,
+                        'idmatakuliah' => 123,
+                    ],
+                ],
+                'answers' => [
+                    's_0_4567' => [
+                        $question->id => $option->id,
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('edom.home'));
+
+        $this->assertDatabaseCount('edom_response', 1);
+
+        $this->withSession(['edom_student' => $student])
+            ->post(route('edom.home.submit'), [
+                'edom_id' => $setting->id,
+                'sections' => [
+                    's_1_8910' => [
+                        'idtawarmatakuliahdetail' => 8910,
+                        'idmatakuliah' => 456,
+                    ],
+                ],
+                'answers' => [
+                    's_1_8910' => [
+                        $question->id => $option->id,
+                    ],
+                ],
+            ])
+            ->assertRedirect('https://siakad.test/edom');
+
+        $this->assertDatabaseCount('edom_response', 2);
+        $this->assertDatabaseHas('edom_response', [
+            'edom_setting_id' => $setting->id,
+            'siakad_idmatakuliah' => 456,
+            'siakad_idtawarmatakuliahdetail' => 8910,
+        ]);
+    }
+
     public function test_student_submission_rejects_a_section_that_does_not_match_current_krs(): void
     {
         [$setting, $question, $option] = $this->createActiveSetting();
@@ -325,6 +442,22 @@ class EdomResponseSubmissionTest extends TestCase
                 'nama' => 'Dosen Testing',
             ],
             'dosen_team' => [],
+            'id_unw_program_studi' => 14,
+        ];
+    }
+
+    private function secondSection(): array
+    {
+        return [
+            'idtawarmatakuliahdetail' => 8910,
+            'idmatakuliah' => 456,
+            'kode' => 'TIF102',
+            'nama' => 'Basis Data',
+            'dosen' => [
+                'nidn' => '0687654321',
+                'nama' => 'Dosen Kedua',
+            ],
+            'dosen_team' => ['Dosen Pendamping'],
             'id_unw_program_studi' => 14,
         ];
     }
