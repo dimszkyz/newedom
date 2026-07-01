@@ -5,6 +5,8 @@
 @section('content')
     @php
         $student = $student ?? null;
+        $studentSemester = $studentSemester ?? null;
+        $studentSemesterFetchError = $studentSemesterFetchError ?? null;
         $studentProfile = $studentProfile ?? null;
         $studentProfileFetchError = $studentProfileFetchError ?? null;
         $studentSections = collect($studentSections ?? []);
@@ -19,10 +21,17 @@
                 <h1>EDOM Universitas Ngudi Waluyo</h1>
 
                 @if ($student)
+                    @php
+                        $semesterName = trim((string) ($studentSemester['nama'] ?? ''));
+                        $semesterLabel = $semesterName !== ''
+                            ? $semesterName
+                            : 'Semester ' . ($student['siakad_idsemester'] ?? '-');
+                    @endphp
+
                     <div class="alert success">
                         Sesi mahasiswa dari SIAKAD aktif untuk tahun ajaran
                         {{ $student['siakad_idtahunajaran'] ?? '-' }} dan semester
-                        {{ $student['siakad_idsemester'] ?? '-' }}.
+                        {{ $semesterLabel }}.
                         @if (! $studentFetchError)
                             Jumlah mata kuliah dari KRS: {{ $studentSections->count() }}.
                         @endif
@@ -49,12 +58,16 @@
                                 </div>
                                 <div>
                                     <dt>Semester</dt>
-                                    <dd>{{ $student['siakad_idsemester'] ?? '-' }}</dd>
+                                    <dd>{{ $semesterLabel }}</dd>
                                 </div>
                             </dl>
                         </div>
                     @elseif ($studentProfileFetchError)
                         <div class="alert warning">{{ $studentProfileFetchError }}</div>
+                    @endif
+
+                    @if ($studentSemesterFetchError)
+                        <div class="alert warning">{{ $studentSemesterFetchError }}</div>
                     @endif
                 @endif
 

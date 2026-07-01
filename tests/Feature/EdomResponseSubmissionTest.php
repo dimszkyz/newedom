@@ -81,6 +81,9 @@ class EdomResponseSubmissionTest extends TestCase
         $sections = [$this->section(), $this->secondSection()];
 
         $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('semester')
+            ->once()
+            ->andReturn($this->semesters());
         $siakad->shouldReceive('krs')
             ->once()
             ->with(18273, 2026, 2)
@@ -103,6 +106,7 @@ class EdomResponseSubmissionTest extends TestCase
             ->assertDontSee('class="card course-card"', false)
             ->assertSee('Dimas Mahasiswa')
             ->assertSee('22.01.0001')
+            ->assertSee('Genap')
             ->assertSee('TIF101')
             ->assertSee('Algoritma')
             ->assertSee('TIF102')
@@ -123,6 +127,9 @@ class EdomResponseSubmissionTest extends TestCase
         config()->set('edom.hmac_siakad_secret', 'handoff-secret');
 
         $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('semester')
+            ->once()
+            ->andReturn($this->semesters());
         $siakad->shouldReceive('krs')
             ->once()
             ->with(18273, 2026, 2)
@@ -145,6 +152,7 @@ class EdomResponseSubmissionTest extends TestCase
             ->assertOk()
             ->assertSee('Dimas Mahasiswa')
             ->assertSee('22.01.0001')
+            ->assertSee('Genap')
             ->assertSee('TIF101')
             ->assertSee('Algoritma');
     }
@@ -154,6 +162,9 @@ class EdomResponseSubmissionTest extends TestCase
         $this->createActiveSetting();
 
         $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('semester')
+            ->once()
+            ->andReturn($this->semesters());
         $siakad->shouldReceive('krs')
             ->once()
             ->with(18273, 2026, 2)
@@ -172,6 +183,35 @@ class EdomResponseSubmissionTest extends TestCase
             ->assertSee('Gagal mengambil data mahasiswa dari SIAKAD.')
             ->assertSee('TIF101')
             ->assertSee('Algoritma');
+    }
+
+    public function test_semester_failure_uses_the_session_id_without_hiding_student_and_krs_data(): void
+    {
+        $this->createActiveSetting();
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('semester')
+            ->once()
+            ->andThrow(new \RuntimeException('Semester endpoint unavailable'));
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with(18273, 2026, 2)
+            ->andReturn([$this->section()]);
+        $siakad->shouldReceive('mahasiswa')
+            ->once()
+            ->with(['18273'])
+            ->andReturn([$this->studentProfile()]);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withoutVite();
+
+        $this->withSession(['edom_student' => $this->student()])
+            ->get(route('edom.home'))
+            ->assertOk()
+            ->assertSee('Gagal mengambil data semester dari SIAKAD.')
+            ->assertSee('Semester 2')
+            ->assertSee('Dimas Mahasiswa')
+            ->assertSee('TIF101');
     }
 
     public function test_fill_page_only_renders_the_selected_krs_section(): void
@@ -498,6 +538,15 @@ class EdomResponseSubmissionTest extends TestCase
             'siakad_idmahasiswa' => 18273,
             'npm' => '22.01.0001',
             'nama' => 'Dimas Mahasiswa',
+        ];
+    }
+
+    private function semesters(): array
+    {
+        return [
+            ['id' => 1, 'kode' => 'GASAL', 'nama' => 'Gasal'],
+            ['id' => 2, 'kode' => 'GENAP', 'nama' => 'Genap'],
+            ['id' => 3, 'kode' => 'ANTARA', 'nama' => 'Antara'],
         ];
     }
 
