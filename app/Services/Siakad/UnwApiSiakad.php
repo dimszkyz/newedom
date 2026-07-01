@@ -109,6 +109,12 @@ class UnwApiSiakad
 
     public function penawaran(int|string $siakadIdTahunAjaran, int|string $siakadIdSemester, int|string|null $idUnwProgramStudi = null): array
     {
+        if ($this->isFake()) {
+            $sections = config('edom.fake_siakad.penawaran', config('edom.fake_siakad.krs', []));
+
+            return is_array($sections) ? $sections : [];
+        }
+
         $payload = [
             'siakad_idtahunajaran' => $siakadIdTahunAjaran,
             'siakad_idsemester' => $siakadIdSemester,
