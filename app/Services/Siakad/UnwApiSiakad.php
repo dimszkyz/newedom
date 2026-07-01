@@ -2,6 +2,9 @@
 
 namespace App\Services\Siakad;
 
+use App\Models\EdomPeriod;
+use App\Models\EdomResponse;
+use App\Models\LocalKrsSection;
 use App\Models\ProgramStudi;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -109,18 +112,34 @@ class UnwApiSiakad
         try {
             return $this->request('get', '/edom/krs', $payload);
         } catch (RequestException $exception) {
-            if (! $this->isMissingProgramStudiColumnError($exception)) {
-                throw $exception;
-            }
-
-            Log::warning('Endpoint /edom/krs SIAKAD gagal karena kolom ps.id_unw_program_studi tidak tersedia. Memakai fallback /edom/penawaran.', [
+            Log::warning('Endpoint /edom/krs SIAKAD gagal. Mencoba fallback data KRS.', [
                 'siakad_idmahasiswa' => $payload['siakad_idmahasiswa'],
                 'siakad_idtahunajaran' => $payload['siakad_idtahunajaran'],
                 'siakad_idsemester' => $payload['siakad_idsemester'],
                 'message' => $exception->getMessage(),
             ]);
 
-            return $this->fallbackKrsFromPenawaran($payload, $exception);
+            if ($this->isMissingProgramStudiColumnError($exception)) {
+                try {
+                    return $this->fallbackKrsFromPenawaran($payload, $exception);
+                } catch (RequestException $fallbackException) {
+                    $localSections = $this->localKrsSections($payload);
+
+                    if ($localSections !== []) {
+                        return $localSections;
+                    }
+
+                    throw $fallbackException;
+                }
+            }
+
+            $localSections = $this->localKrsSections($payload);
+
+            if ($localSections !== []) {
+                return $localSections;
+            }
+
+            throw $exception;
         }
     }
 
@@ -229,6 +248,12 @@ class UnwApiSiakad
             ]);
         }
 
+        $localSections = $this->localKrsSections($payload);
+
+        if ($localSections !== []) {
+            return $localSections;
+        }
+
         throw $lastException;
     }
 
@@ -252,6 +277,98 @@ class UnwApiSiakad
 
             return [];
         }
+    }
+
+    /**
+     * @param  array<string, int>  $payload
+     * @return array<int, array<string, mixed>>
+     */
+    private function localKrsSections(array $payload): array
+    {
+        try {
+            $sections = LocalKrsSection::query()
+                ->where('siakad_idmahasiswa', (string) $payload['siakad_idmahasiswa'])
+                ->where('siakad_idtahunajaran', (int) $payload['siakad_idtahunajaran'])
+                ->where('siakad_idsemester', (int) $payload['siakad_idsemester'])
+                ->orderBy('nama')
+                ->get()
+                ->map(fn (LocalKrsSection $section): array => $section->toSiakadSection())
+                ->values()
+                ->all();
+
+            if ($sections !== []) {
+                Log::warning('Memakai fallback KRS lokal dari tabel local_krs_sections.', [
+                    'siakad_idmahasiswa' => $payload['siakad_idmahasiswa'],
+                    'siakad_idtahunajaran' => $payload['siakad_idtahunajaran'],
+                    'siakad_idsemester' => $payload['siakad_idsemester'],
+                    'jumlah_data' => count($sections),
+                ]);
+
+                return $sections;
+            }
+
+            return $this->sectionsFromExistingResponses($payload);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return [];
+        }
+    }
+
+    /**
+     * @param  array<string, int>  $payload
+     * @return array<int, array<string, mixed>>
+     */
+    private function sectionsFromExistingResponses(array $payload): array
+    {
+        $period = EdomPeriod::query()
+            ->where('year', (int) $payload['siakad_idtahunajaran'])
+            ->where('siakad_idsemester', (int) $payload['siakad_idsemester'])
+            ->first();
+
+        if (! $period) {
+            return [];
+        }
+
+        $sections = EdomResponse::query()
+            ->where('edom_period_id', $period->id)
+            ->where('siakad_idmahasiswa', (string) $payload['siakad_idmahasiswa'])
+            ->get([
+                'siakad_idmatakuliah',
+                'siakad_idtawarmatakuliahdetail',
+            ])
+            ->map(function (EdomResponse $response): array {
+                $courseId = (int) $response->siakad_idmatakuliah;
+                $detailId = (int) $response->siakad_idtawarmatakuliahdetail;
+
+                return [
+                    'idtawarmatakuliahdetail' => $detailId > 0 ? $detailId : $courseId,
+                    'idmatakuliah' => $courseId,
+                    'kode' => 'MK'.$courseId,
+                    'nama' => 'Mata Kuliah '.$courseId,
+                    'dosen' => [
+                        'nidn' => null,
+                        'nama' => 'Dosen belum tersedia',
+                    ],
+                    'dosen_team' => [],
+                    'id_unw_program_studi' => null,
+                ];
+            })
+            ->values()
+            ->all();
+
+        $sections = $this->uniqueSections($sections);
+
+        if ($sections !== []) {
+            Log::warning('Memakai fallback KRS dari histori jawaban EDOM lokal.', [
+                'siakad_idmahasiswa' => $payload['siakad_idmahasiswa'],
+                'siakad_idtahunajaran' => $payload['siakad_idtahunajaran'],
+                'siakad_idsemester' => $payload['siakad_idsemester'],
+                'jumlah_data' => count($sections),
+            ]);
+        }
+
+        return $sections;
     }
 
     /**
