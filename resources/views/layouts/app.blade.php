@@ -23,3 +23,4 @@
     @yield('scripts')
 </body>
 </html>
+{{-- end --}}
