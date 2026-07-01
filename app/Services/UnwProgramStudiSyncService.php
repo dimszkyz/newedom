@@ -40,10 +40,10 @@ class UnwProgramStudiSyncService
         $skipped = 0;
 
         foreach ($items as $item) {
-            $externalId = data_get($item, 'id');
-            $nama = trim((string) data_get($item, 'nama'));
+            $externalId = $this->unwProgramStudiId($item);
+            $nama = $this->unwProgramStudiName($item);
 
-            if (blank($externalId) || $nama === '') {
+            if ($externalId === null || $nama === '') {
                 $skipped++;
 
                 continue;
@@ -77,5 +77,21 @@ class UnwProgramStudiSyncService
             'skipped' => $skipped,
             'total' => count($items),
         ];
+    }
+
+    private function unwProgramStudiId(mixed $item): ?int
+    {
+        $id = data_get($item, 'unwProgramStudi.id', data_get($item, 'id_unw_program_studi'));
+
+        if (blank($id)) {
+            return null;
+        }
+
+        return (int) $id;
+    }
+
+    private function unwProgramStudiName(mixed $item): string
+    {
+        return trim((string) data_get($item, 'unwProgramStudi.nama', data_get($item, 'nama', '')));
     }
 }
