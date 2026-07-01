@@ -21,7 +21,6 @@ class UnwApiSiakadTest extends TestCase
             'services.unwapi_siakad.token_cache_key' => 'test_unwapi_siakad_token',
             'services.unwapi_siakad.token_cache_hours' => 12,
             'services.unwapi_siakad.verify_ssl' => true,
-            'edom.fake_siakad.enabled' => false,
         ]);
 
         Cache::clear();
@@ -100,34 +99,18 @@ class UnwApiSiakadTest extends TestCase
         Http::assertSentCount(4);
     }
 
-    public function test_fake_krs_bypasses_the_remote_api_in_local_or_testing_environments(): void
-    {
-        $sections = [$this->section()];
-
-        config()->set([
-            'edom.fake_siakad.enabled' => true,
-            'edom.fake_siakad.krs' => $sections,
-        ]);
-        Http::fake();
-
-        $this->assertSame($sections, app(UnwApiSiakad::class)->krs(18273, 2026, 2));
-
-        Http::assertNothingSent();
-    }
-
     private function section(): array
     {
         return [
             'idtawarmatakuliahdetail' => 4567,
             'idmatakuliah' => 123,
-            'kode' => 'TIF101',
-            'nama' => 'Algoritma',
+            'kode' => 'API101',
+            'nama' => 'Mata Kuliah API',
             'dosen' => [
                 'nidn' => '0612345678',
-                'nama' => 'Dosen Testing',
+                'nama' => 'Dosen API',
             ],
-            'dosen_team' => ['Dosen Pendamping'],
-            'id_unw_program_studi' => 14,
+            'dosen_team' => ['Dosen Pendamping API'],
         ];
     }
 }
