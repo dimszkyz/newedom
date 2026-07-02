@@ -18,10 +18,27 @@ class DetailsRelationManager extends RelationManager
         return $table
             ->modifyQueryUsing(fn ($query) => $query->with(['question.category', 'questionOption'])->orderBy('id'))
             ->columns([
-                TextColumn::make('question.category.name')->label('Kategori')->badge()->wrap(),
-                TextColumn::make('question.statement')->label('Pernyataan')->limit(120)->wrap()->searchable(),
-                TextColumn::make('questionOption.name')->label('Pilihan')->placeholder('-')->badge(),
-                TextColumn::make('questionOption.score')->label('Nilai')->placeholder('-')->badge()->color('success'),
+                TextColumn::make('category_name_for_display')
+                    ->label('Kategori')
+                    ->state(fn (EdomResponseDetail $record): string => $record->category_name_for_display)
+                    ->badge()
+                    ->wrap(),
+                TextColumn::make('question_statement_for_display')
+                    ->label('Pernyataan')
+                    ->state(fn (EdomResponseDetail $record): string => $record->question_statement_for_display)
+                    ->limit(120)
+                    ->wrap(),
+                TextColumn::make('option_name_for_display')
+                    ->label('Pilihan')
+                    ->state(fn (EdomResponseDetail $record): ?string => $record->option_name_for_display)
+                    ->placeholder('-')
+                    ->badge(),
+                TextColumn::make('option_score_for_display')
+                    ->label('Nilai')
+                    ->state(fn (EdomResponseDetail $record): ?int => $record->option_score_for_display)
+                    ->placeholder('-')
+                    ->badge()
+                    ->color('success'),
                 TextColumn::make('answer_text')->label('Jawaban Teks')->placeholder('-')->limit(120)->wrap(),
             ])
             ->recordActions([])
