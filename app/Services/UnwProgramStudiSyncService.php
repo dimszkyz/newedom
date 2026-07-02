@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\ProgramStudi;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 class UnwProgramStudiSyncService
 {
@@ -40,33 +42,27 @@ class UnwProgramStudiSyncService
         $skipped = 0;
 
         foreach ($items as $item) {
-            $externalId = $this->unwProgramStudiId($item);
-            $nama = $this->unwProgramStudiName($item);
+            $payload = $this->payloadFromApiItem($item);
 
-            if ($externalId === null || $nama === '') {
+            if ($payload['id_unw_program_studi'] === null || $payload['nama'] === '') {
                 $skipped++;
 
                 continue;
             }
 
             $programStudi = ProgramStudi::query()
-                ->where('id_unw_program_studi', $externalId)
+                ->where('id_unw_program_studi', $payload['id_unw_program_studi'])
                 ->first();
 
             if ($programStudi) {
-                $programStudi->update([
-                    'nama' => $nama,
-                ]);
+                $programStudi->update($payload);
 
                 $updated++;
 
                 continue;
             }
 
-            ProgramStudi::query()->create([
-                'id_unw_program_studi' => $externalId,
-                'nama' => $nama,
-            ]);
+            ProgramStudi::query()->create($payload);
 
             $created++;
         }
@@ -79,6 +75,28 @@ class UnwProgramStudiSyncService
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function payloadFromApiItem(mixed $item): array
+    {
+        $faculty = data_get($item, 'unwFakultas', data_get($item, 'unw_fakultas', []));
+
+        return [
+            'id_unw_program_studi' => $this->unwProgramStudiId($item),
+            'nama' => $this->unwProgramStudiName($item),
+            'slug' => $this->nullableString(data_get($item, 'slug')),
+            'page_slug' => $this->nullableString(data_get($item, 'page_slug')),
+            'jenjang' => $this->nullableString(data_get($item, 'jenjang')),
+            'jenjang_nama_singkat' => $this->nullableString(data_get($item, 'jenjang_nama_singkat')),
+            'id_unw_fakultas' => $this->nullableInteger(data_get($faculty, 'id')),
+            'nama_fakultas' => $this->nullableString(data_get($faculty, 'nama')),
+            'page_slug_fakultas' => $this->nullableString(data_get($faculty, 'page_slug')),
+            'api_updated_at' => $this->nullableDate(data_get($item, 'updatedAt')),
+            'synced_at' => now(),
+        ];
+    }
+
     private function unwProgramStudiId(mixed $item): ?int
     {
         $id = data_get(
@@ -87,11 +105,7 @@ class UnwProgramStudiSyncService
             data_get($item, 'unw_program_studi.id', data_get($item, 'id_unw_program_studi', data_get($item, 'id')))
         );
 
-        if (blank($id)) {
-            return null;
-        }
-
-        return (int) $id;
+        return $this->nullableInteger($id);
     }
 
     private function unwProgramStudiName(mixed $item): string
@@ -101,5 +115,34 @@ class UnwProgramStudiSyncService
             'unwProgramStudi.nama',
             data_get($item, 'unw_program_studi.nama', data_get($item, 'nama', ''))
         ));
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function nullableInteger(mixed $value): ?int
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private function nullableDate(mixed $value): ?Carbon
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
     }
 }
