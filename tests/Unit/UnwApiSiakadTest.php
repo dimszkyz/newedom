@@ -3,10 +3,10 @@
 namespace Tests\Unit;
 
 use App\Models\LocalKrsSection;
-use App\Models\ProgramStudi;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -64,98 +64,13 @@ class UnwApiSiakadTest extends TestCase
             && $request->hasHeader('Authorization', 'Bearer token-1')
             && (int) $request['siakad_idmahasiswa'] === 18273
             && (int) $request['siakad_idtahunajaran'] === 2026
-            && (int) $request['siakad_idsemester'] === 2);
-
-        Http::assertSentCount(3);
-    }
-
-    public function test_krs_falls_back_to_penawaran_when_backend_reports_missing_program_studi_column(): void
-    {
-        $section = array_merge($this->section(), [
-            'idtawarmatakuliahdetail' => 8910,
-            'idmatakuliah' => 456,
-            'kode' => 'API102',
-            'nama' => 'Fallback Penawaran',
-            'id_unw_program_studi' => 14,
-        ]);
-
-        Http::fake(function (Request $request) use ($section) {
-            if ($request->url() === 'https://siakad.test/login') {
-                return Http::response(['data' => ['token' => 'token-1']]);
-            }
-
-            if (str_starts_with($request->url(), 'https://siakad.test/edom/krs')) {
-                return Http::response([
-                    'message' => "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'ps.id_unw_program_studi' in 'field list'",
-                ], 500);
-            }
-
-            if (str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')) {
-                return Http::response(['data' => [$section]]);
-            }
-
-            return Http::response([], 404);
-        });
-
-        $this->assertSame([$section], app(UnwApiSiakad::class)->krs(18273, 2026, 2));
-
-        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/krs')
-            && $request->hasHeader('Authorization', 'Bearer token-1')
-            && (int) $request['siakad_idmahasiswa'] === 18273
-            && (int) $request['siakad_idtahunajaran'] === 2026
-            && (int) $request['siakad_idsemester'] === 2);
-
-        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')
-            && $request->hasHeader('Authorization', 'Bearer token-1')
-            && (int) $request['siakad_idtahunajaran'] === 2026
-            && (int) $request['siakad_idsemester'] === 2);
-
-        Http::assertSentCount(3);
-    }
-
-    public function test_krs_fallback_uses_local_program_studi_ids_for_penawaran(): void
-    {
-        ProgramStudi::query()->create([
-            'id_unw_program_studi' => 17,
-            'nama' => 'Teknik Informatika',
-        ]);
-
-        $section = array_merge($this->section(), [
-            'id_unw_program_studi' => 17,
-        ]);
-
-        Http::fake(function (Request $request) use ($section) {
-            if ($request->url() === 'https://siakad.test/login') {
-                return Http::response(['data' => ['token' => 'token-1']]);
-            }
-
-            if (str_starts_with($request->url(), 'https://siakad.test/edom/krs')) {
-                return Http::response([
-                    'message' => "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'ps.id_unw_program_studi' in 'field list'",
-                ], 500);
-            }
-
-            if (str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')) {
-                return (int) $request['id_unw_program_studi'] === 17
-                    ? Http::response(['data' => [$section]])
-                    : Http::response(['data' => []]);
-            }
-
-            return Http::response([], 404);
-        });
-
-        $this->assertSame([$section], app(UnwApiSiakad::class)->krs(18273, 2026, 2));
-
-        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')
-            && $request->hasHeader('Authorization', 'Bearer token-1')
-            && (int) $request['siakad_idtahunajaran'] === 2026
             && (int) $request['siakad_idsemester'] === 2
-            && (int) $request['id_unw_program_studi'] === 17);
+            && ! array_key_exists('id_unw_program_studi', $request->data()));
 
         Http::assertSentCount(3);
     }
 
-    public function test_krs_uses_local_krs_sections_when_api_and_penawaran_fail(): void
+    public function test_krs_uses_local_krs_sections_when_api_fails_without_calling_penawaran(): void
     {
         LocalKrsSection::query()->create([
             'siakad_idmahasiswa' => '18273',
@@ -182,12 +97,6 @@ class UnwApiSiakadTest extends TestCase
                 ], 500);
             }
 
-            if (str_starts_with($request->url(), 'https://siakad.test/edom/penawaran')) {
-                return Http::response([
-                    'message' => "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'ps.id_unw_program_studi' in 'field list'",
-                ], 500);
-            }
-
             return Http::response([], 404);
         });
 
@@ -207,8 +116,36 @@ class UnwApiSiakadTest extends TestCase
         ], app(UnwApiSiakad::class)->krs(18273, 2026, 2));
 
         Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/krs'));
-        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/penawaran'));
-        Http::assertSentCount(3);
+        Http::assertNotSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/penawaran'));
+        Http::assertSentCount(2);
+    }
+
+    public function test_krs_rethrows_api_failure_without_calling_penawaran_when_local_data_is_empty(): void
+    {
+        Http::fake(function (Request $request) {
+            if ($request->url() === 'https://siakad.test/login') {
+                return Http::response(['data' => ['token' => 'token-1']]);
+            }
+
+            if (str_starts_with($request->url(), 'https://siakad.test/edom/krs')) {
+                return Http::response(['message' => 'KRS unavailable'], 500);
+            }
+
+            return Http::response([], 404);
+        });
+
+        $exception = null;
+
+        try {
+            app(UnwApiSiakad::class)->krs(18273, 2026, 2);
+        } catch (RequestException $requestException) {
+            $exception = $requestException;
+        }
+
+        $this->assertInstanceOf(RequestException::class, $exception);
+        $this->assertSame(500, $exception->response->status());
+        Http::assertNotSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/penawaran'));
+        Http::assertSentCount(2);
     }
 
     public function test_a_401_forgets_the_cached_token_and_retries_once(): void
