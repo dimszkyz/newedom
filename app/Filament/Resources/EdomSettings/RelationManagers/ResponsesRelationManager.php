@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EdomSettings\RelationManagers;
 
 use App\Filament\Resources\EdomResponses\EdomResponseResource;
 use App\Models\EdomResponse;
+use App\Services\Edom\EdomResponseMetadata;
 use Filament\Actions\ViewAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
@@ -18,21 +19,43 @@ class ResponsesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with('details')->latest('submitted_at')->latest('id'))
+            ->modifyQueryUsing(fn ($query) => $query
+                ->with(['period', 'details.questionOption'])
+                ->withCount('details')
+                ->latest('submitted_at')
+                ->latest('id'))
             ->columns([
-                TextColumn::make('course_snapshot')->label('Mata Kuliah dari KRS')->placeholder('-')->wrap(),
-                TextColumn::make('lecturer_name_snapshot')->label('Dosen')->placeholder('-')->searchable(),
-                TextColumn::make('details_count')->counts('details')->label('Jawaban')->badge(),
-                TextColumn::make('average_score')->label('Rata-rata Nilai')->state(function (EdomResponse $record): string {
-                    $average = $record->details->whereNotNull('score')->avg('score');
-
-                    return $average === null ? '-' : number_format((float) $average, 2, ',', '.');
-                })->badge()->color('success'),
-                TextColumn::make('submitted_at')->label('Dikirim')->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('student_name')
+                    ->label('Nama Mahasiswa')
+                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->studentNameFor($record))
+                    ->description(fn (EdomResponse $record): string => 'NIM: '.app(EdomResponseMetadata::class)->studentNimFor($record))
+                    ->wrap(),
+                TextColumn::make('course_label')
+                    ->label('Mata Kuliah')
+                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->courseLabelFor($record))
+                    ->wrap(),
+                TextColumn::make('semester_label')
+                    ->label('Semester')
+                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->semesterNameFor($record))
+                    ->description(fn (EdomResponse $record): string => 'Tahun ajaran: '.app(EdomResponseMetadata::class)->tahunAjaranFor($record))
+                    ->badge(),
+                TextColumn::make('details_count')
+                    ->counts('details')
+                    ->label('Jawaban')
+                    ->badge(),
+                TextColumn::make('average_score')
+                    ->label('Rata-rata Nilai')
+                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->formattedAverageScoreFor($record))
+                    ->badge()
+                    ->color('success'),
+                TextColumn::make('submitted_at')
+                    ->label('Waktu Submit')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
             ])
             ->recordActions([
                 ViewAction::make()
-                    ->label('Lihat Hasil')
+                    ->label('Lihat Detail')
                     ->url(fn (EdomResponse $record): string => EdomResponseResource::getUrl('view', ['record' => $record])),
             ])
             ->toolbarActions([]);

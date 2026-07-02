@@ -19,12 +19,12 @@ class EdomResponseResource extends Resource
     protected static ?string $model = EdomResponse::class;
     protected static string|\UnitEnum|null $navigationGroup = 'EDOM';
     protected static ?string $navigationLabel = 'EDOM Responses';
-    protected static ?string $modelLabel = 'EDOM Responses';
+    protected static ?string $modelLabel = 'EDOM Response';
     protected static ?string $pluralModelLabel = 'EDOM Responses';
     protected static ?string $slug = 'edom-response';
     protected static ?int $navigationSort = 20;
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
-    protected static ?string $recordTitleAttribute = 'siakad_idtawarmatakuliahdetail';
+    protected static ?string $recordTitleAttribute = 'siakad_idmahasiswa';
 
     public static function canCreate(): bool { return false; }
     public static function infolist(Schema $schema): Schema { return EdomResponseInfolist::configure($schema); }
