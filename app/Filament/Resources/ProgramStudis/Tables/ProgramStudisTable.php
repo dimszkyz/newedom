@@ -17,10 +17,20 @@ class ProgramStudisTable
                     ->sortable()
                     ->searchable(),
 
+                TextColumn::make('jenjang_nama_singkat')
+                    ->label('Jenjang')
+                    ->placeholder('-')
+                    ->searchable(),
+
                 TextColumn::make('nama')
-                    ->label('Nama Program Studi')
+                    ->label('Program Studi')
                     ->searchable()
                     ->sortable(),
+
+                TextColumn::make('unw_fakultas_nama')
+                    ->label('Fakultas')
+                    ->placeholder('-')
+                    ->searchable(),
 
                 TextColumn::make('updated_at')
                     ->label('Terakhir Diperbarui')
