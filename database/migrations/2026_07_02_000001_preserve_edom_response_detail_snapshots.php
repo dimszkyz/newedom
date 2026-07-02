@@ -37,7 +37,10 @@ return new class extends Migration
         });
 
         $this->backfillSnapshots();
-        $this->changeQuestionForeignKeyToNullOnDelete();
+
+        if (DB::getDriverName() !== 'sqlite') {
+            $this->changeQuestionForeignKeyToNullOnDelete();
+        }
     }
 
     public function down(): void
