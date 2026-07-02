@@ -68,12 +68,13 @@ class EdomReportResource extends Resource
                 TextColumn::make('course_count')
                     ->label('Jumlah Mata Kuliah')
                     ->state(fn (ProgramStudi $record): int => self::courseCountForProgramStudi($record))
-                    ->description('Berdasarkan idmatakuliah unik dari /edom/krs')
+                    ->description('Berdasarkan idmatakuliah unik dari edom_response')
                     ->badge()
                     ->color('info'),
                 TextColumn::make('response_count')
                     ->label('Jumlah Respons')
                     ->state(fn (ProgramStudi $record): int => self::responseCountForProgramStudi($record))
+                    ->description('Berdasarkan relasi edom_response.id_unw_program_studi')
                     ->badge()
                     ->color('success'),
             ])
@@ -109,12 +110,17 @@ class EdomReportResource extends Resource
     {
         $sectionId = (int) $response->siakad_idtawarmatakuliahdetail;
 
-        return $sectionId > 0 ? 'd_'.$sectionId : 'm_'.((int) $response->siakad_idmatakuliah);
+        return $sectionId > 0 ? 'd_'.$sectionId : static::courseKeyForCourseId($response->siakad_idmatakuliah);
+    }
+
+    public static function courseKeyForCourseId(int|string $courseId): string
+    {
+        return 'm_'.((int) $courseId);
     }
 
     public static function courseKeyForKrsSection(EdomKrsSection $section): string
     {
-        return 'm_'.((int) $section->idmatakuliah);
+        return static::courseKeyForCourseId($section->idmatakuliah);
     }
 
     public static function courseCountForProgramStudi(ProgramStudi $programStudi): int
@@ -123,27 +129,31 @@ class EdomReportResource extends Resource
             return 0;
         }
 
-        return EdomKrsSection::query()
+        return EdomResponse::query()
             ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
-            ->distinct('idmatakuliah')
-            ->count('idmatakuliah');
+            ->distinct('siakad_idmatakuliah')
+            ->count('siakad_idmatakuliah');
     }
 
     public static function responseCountForProgramStudi(ProgramStudi $programStudi): int
     {
-        $settingIds = static::settingIdsForProgramStudi($programStudi);
+        if ($programStudi->id_unw_program_studi === null) {
+            return 0;
+        }
 
-        return $settingIds->isEmpty() ? 0 : EdomResponse::query()->whereIn('edom_setting_id', $settingIds)->count();
+        return EdomResponse::query()
+            ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
+            ->count();
     }
 
     public static function responseCountForProgramStudiAndCourse(ProgramStudi $programStudi, string $courseKey): int
     {
-        $settingIds = static::settingIdsForProgramStudi($programStudi);
-        if ($settingIds->isEmpty()) {
+        if ($programStudi->id_unw_program_studi === null) {
             return 0;
         }
 
-        $query = EdomResponse::query()->whereIn('edom_setting_id', $settingIds);
+        $query = EdomResponse::query()
+            ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi);
 
         if (str_starts_with($courseKey, 'd_')) {
             $query->where('siakad_idtawarmatakuliahdetail', (int) substr($courseKey, 2));
