@@ -29,7 +29,7 @@ class ProgramStudiResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
 
-    protected static ?string $recordTitleAttribute = 'nama';
+    protected static ?string $recordTitleAttribute = 'display_name';
 
     public static function canCreate(): bool
     {
