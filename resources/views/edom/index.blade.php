@@ -78,8 +78,6 @@
     <main class="page">
         <div class="container">
             <section class="hero">
-                <p class="eyebrow">Evaluasi Dosen Oleh Mahasiswa</p>
-                <h1>EDOM Universitas Ngudi Waluyo</h1>
 
                 @if ($student)
                     @php
@@ -190,8 +188,6 @@
                                             <h2>{{ $sectionTitle($section) }}</h2>
                                             <div class="course-list-meta">
                                                 <span>Dosen: {{ $lecturerLabel }}</span>
-                                                <span>ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }}</span>
-                                                <span>ID Detail Penawaran: {{ $section['idtawarmatakuliahdetail'] ?? '-' }}</span>
                                                 @if ($teamLecturers !== [])
                                                     <span class="course-list-team">
                                                         Tim dosen: {{ implode(', ', $teamLecturers) }}

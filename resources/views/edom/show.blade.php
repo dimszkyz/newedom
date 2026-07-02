@@ -170,8 +170,6 @@
                                                 @if (! empty($lecturer['nidn']))
                                                     <span>NIDN: {{ $lecturer['nidn'] }}</span>
                                                 @endif
-                                                <span>ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }}</span>
-                                                <span>ID Detail Penawaran: {{ $section['idtawarmatakuliahdetail'] ?? '-' }}</span>
                                                 @if ($teamLecturers !== [])
                                                     <span class="course-list-team">
                                                         Tim dosen: {{ implode(', ', $teamLecturers) }}
