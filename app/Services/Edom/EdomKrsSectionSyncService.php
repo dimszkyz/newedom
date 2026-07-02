@@ -83,6 +83,8 @@ class EdomKrsSectionSyncService
             }
         });
 
+        $this->backfillResponseProgramStudiIds($studentId, $tahunAjaran, $semester);
+
         return $validSections->count();
     }
 
@@ -101,5 +103,33 @@ class EdomKrsSectionSyncService
         }
 
         return $this->syncStudentSections($studentId, $tahunAjaran, $semester, $sections);
+    }
+
+    private function backfillResponseProgramStudiIds(string $studentId, int $tahunAjaran, int $semester): void
+    {
+        $periodIds = DB::table('edom_periods')
+            ->where('year', $tahunAjaran)
+            ->where('siakad_idsemester', $semester)
+            ->pluck('id');
+
+        if ($periodIds->isEmpty()) {
+            return;
+        }
+
+        EdomKrsSection::query()
+            ->where('siakad_idmahasiswa', $studentId)
+            ->where('siakad_idtahunajaran', $tahunAjaran)
+            ->where('siakad_idsemester', $semester)
+            ->whereNotNull('id_unw_program_studi')
+            ->get(['idmatakuliah', 'id_unw_program_studi'])
+            ->unique(fn (EdomKrsSection $section): string => (string) $section->idmatakuliah)
+            ->each(function (EdomKrsSection $section) use ($studentId, $periodIds): void {
+                EdomResponse::query()
+                    ->whereIn('edom_period_id', $periodIds->all())
+                    ->where('siakad_idmahasiswa', $studentId)
+                    ->where('siakad_idmatakuliah', (int) $section->idmatakuliah)
+                    ->whereNull('id_unw_program_studi')
+                    ->update(['id_unw_program_studi' => (int) $section->id_unw_program_studi]);
+            });
     }
 }
