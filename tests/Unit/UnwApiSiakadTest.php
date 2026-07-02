@@ -2,9 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Models\LocalKrsSection;
 use App\Services\Siakad\UnwApiSiakad;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
@@ -13,8 +11,6 @@ use Tests\TestCase;
 
 class UnwApiSiakadTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -70,57 +66,7 @@ class UnwApiSiakadTest extends TestCase
         Http::assertSentCount(3);
     }
 
-    public function test_krs_uses_local_krs_sections_when_api_fails_without_calling_penawaran(): void
-    {
-        LocalKrsSection::query()->create([
-            'siakad_idmahasiswa' => '18273',
-            'siakad_idtahunajaran' => 2026,
-            'siakad_idsemester' => 2,
-            'id_unw_program_studi' => 21,
-            'idtawarmatakuliahdetail' => 4567,
-            'idmatakuliah' => 123,
-            'kode' => 'LOCAL101',
-            'nama' => 'Mata Kuliah Lokal',
-            'dosen_nidn' => '0612345678',
-            'dosen_nama' => 'Dosen Lokal',
-            'dosen_team' => ['Dosen Pendamping Lokal'],
-        ]);
-
-        Http::fake(function (Request $request) {
-            if ($request->url() === 'https://siakad.test/login') {
-                return Http::response(['data' => ['token' => 'token-1']]);
-            }
-
-            if (str_starts_with($request->url(), 'https://siakad.test/edom/krs')) {
-                return Http::response([
-                    'message' => "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'ps.id_unw_program_studi' in 'field list'",
-                ], 500);
-            }
-
-            return Http::response([], 404);
-        });
-
-        $this->assertSame([
-            [
-                'idtawarmatakuliahdetail' => 4567,
-                'idmatakuliah' => 123,
-                'kode' => 'LOCAL101',
-                'nama' => 'Mata Kuliah Lokal',
-                'dosen' => [
-                    'nidn' => '0612345678',
-                    'nama' => 'Dosen Lokal',
-                ],
-                'dosen_team' => ['Dosen Pendamping Lokal'],
-                'id_unw_program_studi' => 21,
-            ],
-        ], app(UnwApiSiakad::class)->krs(18273, 2026, 2));
-
-        Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/krs'));
-        Http::assertNotSent(fn (Request $request): bool => str_starts_with($request->url(), 'https://siakad.test/edom/penawaran'));
-        Http::assertSentCount(2);
-    }
-
-    public function test_krs_rethrows_api_failure_without_calling_penawaran_when_local_data_is_empty(): void
+    public function test_krs_rethrows_api_failure_without_calling_penawaran(): void
     {
         Http::fake(function (Request $request) {
             if ($request->url() === 'https://siakad.test/login') {
