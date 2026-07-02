@@ -18,9 +18,7 @@ class UnwProgramStudiSyncService
         }
 
         $response = Http::acceptJson()
-            ->withOptions([
-                'verify' => $verifySsl,
-            ])
+            ->withOptions(['verify' => $verifySsl])
             ->timeout(30)
             ->retry(2, 1000)
             ->get($url);
@@ -45,29 +43,35 @@ class UnwProgramStudiSyncService
 
             if ($externalId === null || $nama === '') {
                 $skipped++;
-
                 continue;
             }
+
+            $attributes = [
+                'id_unw_program_studi' => $externalId,
+                'nama' => $nama,
+                'slug' => data_get($item, 'slug'),
+                'page_slug' => data_get($item, 'page_slug'),
+                'jenjang' => data_get($item, 'jenjang', data_get($item, 'degree_level')),
+                'jenjang_nama_singkat' => data_get($item, 'jenjang_nama_singkat', data_get($item, 'degree_short_name')),
+                'unw_fakultas_id' => data_get($item, 'unwFakultas.id', data_get($item, 'unw_faculty_id')),
+                'unw_fakultas_nama' => data_get($item, 'unwFakultas.nama', data_get($item, 'faculty_name')),
+                'unw_fakultas_page_slug' => data_get($item, 'unwFakultas.page_slug', data_get($item, 'faculty_page_slug')),
+                'api_created_at' => data_get($item, 'createdAt'),
+                'api_updated_at' => data_get($item, 'updatedAt', data_get($item, 'api_updated_at')),
+                'synced_at' => now(),
+            ];
 
             $programStudi = ProgramStudi::query()
                 ->where('id_unw_program_studi', $externalId)
                 ->first();
 
             if ($programStudi) {
-                $programStudi->update([
-                    'nama' => $nama,
-                ]);
-
+                $programStudi->update($attributes);
                 $updated++;
-
                 continue;
             }
 
-            ProgramStudi::query()->create([
-                'id_unw_program_studi' => $externalId,
-                'nama' => $nama,
-            ]);
-
+            ProgramStudi::query()->create($attributes);
             $created++;
         }
 
@@ -99,7 +103,7 @@ class UnwProgramStudiSyncService
         return trim((string) data_get(
             $item,
             'unwProgramStudi.nama',
-            data_get($item, 'unw_program_studi.nama', data_get($item, 'nama', ''))
+            data_get($item, 'unw_program_studi.nama', data_get($item, 'nama', data_get($item, 'name', '')))
         ));
     }
 }
