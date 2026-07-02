@@ -90,29 +90,29 @@
         };
     @endphp
 
-    <main class="edom-public-main">
-        <div class="edom-public-container">
+    <main class="page">
+        <div class="container">
             <form method="POST" action="{{ route('edom.home.submit') }}" class="edom-form-card">
                 @csrf
                 <input type="hidden" name="edom_id" value="{{ $edom->id }}">
 
-                <section class="edom-intro-card" aria-labelledby="edom-intro-title">
-                    <h1 id="edom-intro-title" class="edom-intro-title">EVALUASI DOSEN OLEH MAHASISWA</h1>
-                    <p class="edom-intro-subtitle">{{ $edom->name }}</p>
+                <section class="hero" aria-labelledby="edom-intro-title">
+                    <p class="eyebrow">Evaluasi Dosen Oleh Mahasiswa</p>
+                    <h1 id="edom-intro-title">{{ $edom->name }}</h1>
 
                     @if ($student)
-                        <div class="edom-alert edom-alert-success">
+                        <div class="alert success">
                             Mode mahasiswa aktif. Periode SIAKAD:
                             {{ $student['siakad_idtahunajaran'] ?? '-' }} / Semester {{ $student['siakad_idsemester'] ?? '-' }}.
                             Jumlah mata kuliah yang akan dievaluasi: {{ $sections->count() }}.
                         </div>
                     @else
-                        <div class="edom-alert edom-alert-error">
+                        <div class="alert error">
                             Pengisian EDOM harus dibuka melalui SIAKAD.
                         </div>
                     @endif
 
-                    <div class="edom-guide-box">
+                    <div class="edom-guide-box" style="margin-top: 18px;">
                         <p class="edom-guide-title">
                             <span class="edom-guide-icon">i</span>
                             Petunjuk Pengisian
@@ -134,131 +134,145 @@
                 </section>
 
                 @if (session('success'))
-                    <div class="edom-alert edom-alert-success">{{ session('success') }}</div>
+                    <div class="alert success">{{ session('success') }}</div>
                 @endif
 
                 @if (session('error'))
-                    <div class="edom-alert edom-alert-error">{{ session('error') }}</div>
+                    <div class="alert error">{{ session('error') }}</div>
                 @endif
 
                 @if ($errors->any())
-                    <div class="edom-alert edom-alert-error">{{ $errors->first() }}</div>
+                    <div class="alert error">{{ $errors->first() }}</div>
                 @endif
 
                 @if ($student && $sections->isNotEmpty())
-                    @foreach ($sections as $sectionIndex => $section)
-                        @php
-                            $section = is_array($section) ? $section : [];
-                            $key = $sectionKey($section, $sectionIndex);
-                            $lecturer = $sectionLecturer($section);
-                            $teamLecturers = $sectionTeamLecturers($section);
-                            $questionNumber = 1;
-                        @endphp
+                    <section class="section">
+                        <h2 class="section-title">Mata Kuliah yang Dievaluasi</h2>
 
-                        <section class="edom-intro-card" aria-labelledby="section-title-{{ $key }}">
-                            <h2 id="section-title-{{ $key }}" class="edom-intro-title">
-                                {{ $sectionTitle($section) }}
-                            </h2>
-                            <p class="edom-intro-subtitle">
-                                Dosen: {{ $lecturer['nama'] ?? '-' }}
-                                @if (! empty($lecturer['nidn']))
-                                    (NIDN: {{ $lecturer['nidn'] }})
-                                @endif
-                                @if ($teamLecturers !== [])
-                                    <br>Tim dosen: {{ implode(', ', $teamLecturers) }}
-                                @endif
-                            </p>
-                        </section>
+                        @foreach ($sections as $sectionIndex => $section)
+                            @php
+                                $section = is_array($section) ? $section : [];
+                                $key = $sectionKey($section, $sectionIndex);
+                                $lecturer = $sectionLecturer($section);
+                                $teamLecturers = $sectionTeamLecturers($section);
+                                $questionNumber = 1;
+                            @endphp
 
-                        <input type="hidden" name="sections[{{ $key }}][idtawarmatakuliahdetail]" value="{{ $section['idtawarmatakuliahdetail'] ?? '' }}">
-                        <input type="hidden" name="sections[{{ $key }}][idmatakuliah]" value="{{ $section['idmatakuliah'] ?? '' }}">
-                        <input type="hidden" name="sections[{{ $key }}][kode]" value="{{ $section['kode'] ?? '' }}">
-                        <input type="hidden" name="sections[{{ $key }}][nama]" value="{{ $section['nama'] ?? '' }}">
-                        <input type="hidden" name="sections[{{ $key }}][dosen][nidn]" value="{{ $lecturer['nidn'] ?? '' }}">
-                        <input type="hidden" name="sections[{{ $key }}][dosen][nama]" value="{{ $lecturer['nama'] ?? '' }}">
+                            <div class="course-group">
+                                <div class="course-list" aria-labelledby="section-title-{{ $key }}">
+                                    <div class="course-list-item">
+                                        <div class="course-list-number">{{ $loop->iteration }}</div>
 
-                        <div class="edom-table-area">
-                            <div class="edom-table-wrap">
-                                <table class="edom-input-table">
-                                    <colgroup>
-                                        <col class="edom-col-number">
-                                        <col class="edom-col-statement">
-                                        @foreach ($options as $option)
-                                            <col class="edom-col-option">
-                                        @endforeach
-                                    </colgroup>
+                                        <div class="course-list-content">
+                                            <h2 id="section-title-{{ $key }}">{{ $sectionTitle($section) }}</h2>
+                                            <div class="course-list-meta">
+                                                <span>Dosen: {{ $lecturer['nama'] ?? '-' }}</span>
+                                                @if (! empty($lecturer['nidn']))
+                                                    <span>NIDN: {{ $lecturer['nidn'] }}</span>
+                                                @endif
+                                                <span>ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }}</span>
+                                                <span>ID Detail Penawaran: {{ $section['idtawarmatakuliahdetail'] ?? '-' }}</span>
+                                                @if ($teamLecturers !== [])
+                                                    <span class="course-list-team">
+                                                        Tim dosen: {{ implode(', ', $teamLecturers) }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                    <thead>
-                                        <tr>
-                                            <th>No.</th>
-                                            <th>Pernyataan Evaluasi</th>
-                                            @foreach ($options as $option)
-                                                <th>{{ $option->name }}</th>
-                                            @endforeach
-                                        </tr>
-                                    </thead>
+                                <input type="hidden" name="sections[{{ $key }}][idtawarmatakuliahdetail]" value="{{ $section['idtawarmatakuliahdetail'] ?? '' }}">
+                                <input type="hidden" name="sections[{{ $key }}][idmatakuliah]" value="{{ $section['idmatakuliah'] ?? '' }}">
+                                <input type="hidden" name="sections[{{ $key }}][kode]" value="{{ $section['kode'] ?? '' }}">
+                                <input type="hidden" name="sections[{{ $key }}][nama]" value="{{ $section['nama'] ?? '' }}">
+                                <input type="hidden" name="sections[{{ $key }}][dosen][nidn]" value="{{ $lecturer['nidn'] ?? '' }}">
+                                <input type="hidden" name="sections[{{ $key }}][dosen][nama]" value="{{ $lecturer['nama'] ?? '' }}">
 
-                                    <tbody>
-                                        @forelse ($edom->categories as $categoryIndex => $category)
-                                            <tr class="edom-category-row">
-                                                <td colspan="{{ $options->count() + 2 }}">
-                                                    {{ strtoupper($formatCategoryTitle($category->name, $categoryIndex)) }}
-                                                </td>
-                                            </tr>
+                                <div class="section edom-table-area">
+                                    <div class="edom-table-wrap">
+                                        <table class="edom-input-table">
+                                            <colgroup>
+                                                <col class="edom-col-number">
+                                                <col class="edom-col-statement">
+                                                @foreach ($options as $option)
+                                                    <col class="edom-col-option">
+                                                @endforeach
+                                            </colgroup>
 
-                                            @forelse ($category->questions as $question)
+                                            <thead>
                                                 <tr>
-                                                    <td class="edom-question-number">{{ $questionNumber++ }}</td>
-                                                    <td class="edom-question-text">{{ $question->statement }}</td>
+                                                    <th>No.</th>
+                                                    <th>Pernyataan Evaluasi</th>
+                                                    @foreach ($options as $option)
+                                                        <th>{{ $option->name }}</th>
+                                                    @endforeach
+                                                </tr>
+                                            </thead>
 
-                                                    @if (in_array(strtolower((string) $question->question_type), ["text", "essay", "esai", "uraian", "textarea"], true))
-                                                        <td colspan="{{ max($options->count(), 1) }}">
-                                                            <textarea
-                                                                {{-- name="texts[{{ $key }}][{{ $question->id }}]" --}}
-                                                                name="essays[{{ $key }}][{{ $question->id }}]"
-                                                                class="edom-essay-input"
-                                                                placeholder="Tulis jawaban Anda di sini..."
-                                                            >{{ old('essays.' . $key . '.' . $question->id) }}</textarea>
+                                            <tbody>
+                                                @forelse ($edom->categories as $categoryIndex => $category)
+                                                    <tr class="edom-category-row">
+                                                        <td colspan="{{ $options->count() + 2 }}">
+                                                            {{ strtoupper($formatCategoryTitle($category->name, $categoryIndex)) }}
                                                         </td>
-                                                    @elseif ($options->isNotEmpty())
-                                                        @foreach ($options as $option)
-                                                            <td class="edom-choice-cell">
-                                                                <label class="edom-choice-label" for="answer-{{ $key }}-{{ $question->id }}-{{ $option->id }}">
-                                                                    <input
-                                                                        type="radio"
-                                                                        id="answer-{{ $key }}-{{ $question->id }}-{{ $option->id }}"
-                                                                        name="answers[{{ $key }}][{{ $question->id }}]"
-                                                                        value="{{ $option->id }}"
-                                                                        class="edom-choice-input"
-                                                                        @checked(old('answers.' . $key . '.' . $question->id) == $option->id)
-                                                                        required
-                                                                    >
-                                                                </label>
+                                                    </tr>
+
+                                                    @forelse ($category->questions as $question)
+                                                        <tr>
+                                                            <td class="edom-question-number">{{ $questionNumber++ }}</td>
+                                                            <td class="edom-question-text">{{ $question->statement }}</td>
+
+                                                            @if (in_array(strtolower((string) $question->question_type), ["text", "essay", "esai", "uraian", "textarea"], true))
+                                                                <td colspan="{{ max($options->count(), 1) }}">
+                                                                    <textarea
+                                                                        {{-- name="texts[{{ $key }}][{{ $question->id }}]" --}}
+                                                                        name="essays[{{ $key }}][{{ $question->id }}]"
+                                                                        class="edom-essay-input"
+                                                                        placeholder="Tulis jawaban Anda di sini..."
+                                                                    >{{ old('essays.' . $key . '.' . $question->id) }}</textarea>
+                                                                </td>
+                                                            @elseif ($options->isNotEmpty())
+                                                                @foreach ($options as $option)
+                                                                    <td class="edom-choice-cell">
+                                                                        <label class="edom-choice-label" for="answer-{{ $key }}-{{ $question->id }}-{{ $option->id }}">
+                                                                            <input
+                                                                                type="radio"
+                                                                                id="answer-{{ $key }}-{{ $question->id }}-{{ $option->id }}"
+                                                                                name="answers[{{ $key }}][{{ $question->id }}]"
+                                                                                value="{{ $option->id }}"
+                                                                                class="edom-choice-input"
+                                                                                @checked(old('answers.' . $key . '.' . $question->id) == $option->id)
+                                                                                required
+                                                                            >
+                                                                        </label>
+                                                                    </td>
+                                                                @endforeach
+                                                            @else
+                                                                <td>Opsi jawaban belum tersedia.</td>
+                                                            @endif
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="{{ $options->count() + 2 }}" class="edom-empty-state">
+                                                                Belum ada pernyataan pada kategori ini.
                                                             </td>
-                                                        @endforeach
-                                                    @else
-                                                        <td>Opsi jawaban belum tersedia.</td>
-                                                    @endif
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="{{ $options->count() + 2 }}" class="edom-empty-state">
-                                                        Belum ada pernyataan pada kategori ini.
-                                                    </td>
-                                                </tr>
-                                            @endforelse
-                                        @empty
-                                            <tr>
-                                                <td colspan="{{ $options->count() + 2 }}" class="edom-empty-state">
-                                                    Belum ada kategori dan pernyataan EDOM yang bisa ditampilkan.
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
+                                                        </tr>
+                                                    @endforelse
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="{{ $options->count() + 2 }}" class="edom-empty-state">
+                                                            Belum ada kategori dan pernyataan EDOM yang bisa ditampilkan.
+                                                        </td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </section>
                 @endif
 
                 <div class="edom-action-bar">
