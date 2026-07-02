@@ -7,6 +7,7 @@ use App\Filament\Resources\EdomReports\Pages\ListEdomReports;
 use App\Filament\Resources\EdomReports\Pages\ViewEdomCourseReport;
 use App\Models\EdomResponse;
 use App\Models\ProgramStudi;
+use App\Services\Siakad\UnwApiSiakad;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Resources\Resource;
@@ -14,7 +15,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class EdomReportResource extends Resource
 {
@@ -120,18 +123,65 @@ class EdomReportResource extends Resource
 
     public static function courseCountForProgramStudi(ProgramStudi $programStudi): int
     {
+        $idUnwProgramStudi = $programStudi->id_unw_program_studi;
         $settingIds = static::settingIdsForProgramStudi($programStudi);
 
-        if ($settingIds->isEmpty()) {
+        if ($idUnwProgramStudi === null || $settingIds->isEmpty()) {
             return 0;
         }
 
-        return EdomResponse::query()
-            ->whereIn('edom_setting_id', $settingIds)
-            ->get(['siakad_idmatakuliah', 'siakad_idtawarmatakuliahdetail'])
-            ->map(fn (EdomResponse $response): string => static::courseKeyForResponse($response))
-            ->unique()
-            ->count();
+        return Cache::remember(
+            'edom-report:krs-course-count:program-studi:'.$programStudi->id,
+            now()->addMinutes(30),
+            function () use ($idUnwProgramStudi, $settingIds): int {
+                $studentPeriods = EdomResponse::query()
+                    ->join('edom_periods', 'edom_periods.id', '=', 'edom_response.edom_period_id')
+                    ->whereIn('edom_response.edom_setting_id', $settingIds)
+                    ->select([
+                        'edom_response.siakad_idmahasiswa',
+                        'edom_periods.year as siakad_idtahunajaran',
+                        'edom_periods.siakad_idsemester',
+                    ])
+                    ->distinct()
+                    ->get();
+
+                if ($studentPeriods->isEmpty()) {
+                    return 0;
+                }
+
+                $courseIds = collect();
+
+                foreach ($studentPeriods as $studentPeriod) {
+                    try {
+                        $sections = Cache::remember(
+                            'edom-report:krs:'
+                                .$studentPeriod->siakad_idmahasiswa.':'
+                                .$studentPeriod->siakad_idtahunajaran.':'
+                                .$studentPeriod->siakad_idsemester,
+                            now()->addMinutes(30),
+                            fn (): array => app(UnwApiSiakad::class)->krs(
+                                $studentPeriod->siakad_idmahasiswa,
+                                $studentPeriod->siakad_idtahunajaran,
+                                $studentPeriod->siakad_idsemester,
+                            )
+                        );
+                    } catch (Throwable $exception) {
+                        report($exception);
+
+                        continue;
+                    }
+
+                    collect($sections)
+                        ->filter(fn ($section): bool => is_array($section))
+                        ->filter(fn (array $section): bool => (string) data_get($section, 'id_unw_program_studi') === (string) $idUnwProgramStudi)
+                        ->pluck('idmatakuliah')
+                        ->filter(fn ($id): bool => $id !== null && $id !== '')
+                        ->each(fn ($id) => $courseIds->push((string) $id));
+                }
+
+                return $courseIds->unique()->count();
+            }
+        );
     }
 
     public static function responseCountForProgramStudi(ProgramStudi $programStudi): int
