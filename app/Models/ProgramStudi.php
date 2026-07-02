@@ -11,6 +11,22 @@ class ProgramStudi extends Model
     protected $fillable = [
         'id_unw_program_studi',
         'nama',
+        'slug',
+        'page_slug',
+        'jenjang',
+        'jenjang_nama_singkat',
+        'unw_fakultas_id',
+        'unw_fakultas_nama',
+        'unw_fakultas_page_slug',
+        'api_created_at',
+        'api_updated_at',
+        'synced_at',
+    ];
+
+    protected $casts = [
+        'api_created_at' => 'datetime',
+        'api_updated_at' => 'datetime',
+        'synced_at' => 'datetime',
     ];
 
     public function getNameAttribute(): ?string
@@ -25,7 +41,10 @@ class ProgramStudi extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return (string) ($this->nama ?? '-');
+        $degree = trim((string) ($this->jenjang_nama_singkat ?: $this->jenjang));
+        $name = trim((string) $this->nama);
+
+        return trim($degree.' '.$name) ?: '-';
     }
 
     public function edomSettings()
