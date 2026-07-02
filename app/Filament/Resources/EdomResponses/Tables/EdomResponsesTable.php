@@ -27,7 +27,6 @@ class EdomResponsesTable
                 TextColumn::make('student_name')
                     ->label('Nama Mahasiswa')
                     ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->studentNameFor($record))
-                    ->description(fn (EdomResponse $record): string => 'ID SIAKAD: '.$record->siakad_idmahasiswa)
                     ->wrap(),
                 TextColumn::make('student_nim')
                     ->label('NIM')
@@ -49,7 +48,7 @@ class EdomResponsesTable
                     ->wrap(),
                 TextColumn::make('course_label')
                     ->label('EDOM Mata Kuliah')
-                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->courseLabelFor($record))
+                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->courseNameFor($record))
                     ->description(function (EdomResponse $record): ?string {
                         $metadata = app(EdomResponseMetadata::class);
 

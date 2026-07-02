@@ -65,6 +65,14 @@ class EdomResponseMetadata
         return $this->aggregator->courseLabelFor($response);
     }
 
+    public function courseNameFor(EdomResponse $response): string
+    {
+        $section = $this->sectionFor($response);
+        $courseName = trim((string) data_get($section, 'nama', ''));
+
+        return $courseName !== '' ? $courseName : 'Mata kuliah #'.$response->siakad_idmatakuliah;
+    }
+
     public function dosenNameFor(EdomResponse $response): string
     {
         return $this->aggregator->dosenNameFor($response);
@@ -99,6 +107,26 @@ class EdomResponseMetadata
             ->avg();
 
         return $average === null ? null : round((float) $average, 2);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function sectionFor(EdomResponse $response): ?array
+    {
+        $year = $response->getAttribute('siakad_idtahunajaran') ?? $response->period?->year;
+        $semester = $response->getAttribute('siakad_idsemester') ?? $response->period?->siakad_idsemester;
+
+        if ($year === null || $year === '' || $semester === null || $semester === '') {
+            return null;
+        }
+
+        return $this->aggregator->sectionFor(
+            $year,
+            $semester,
+            $response->siakad_idtawarmatakuliahdetail,
+            $response->siakad_idmatakuliah,
+        );
     }
 
     /**
