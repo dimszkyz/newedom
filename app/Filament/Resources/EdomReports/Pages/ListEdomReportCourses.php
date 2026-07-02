@@ -102,15 +102,14 @@ class ListEdomReportCourses extends Page implements HasTable
             ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
             ->select([
                 'idmatakuliah',
-                'idtawarmatakuliahdetail',
             ])
             ->selectRaw('MIN(id) as id')
+            ->selectRaw('MIN(idtawarmatakuliahdetail) as idtawarmatakuliahdetail')
             ->selectRaw('MIN(kode) as kode')
             ->selectRaw('MIN(nama) as nama')
             ->selectRaw('COUNT(DISTINCT siakad_idmahasiswa) as krs_student_count')
             ->groupBy([
                 'idmatakuliah',
-                'idtawarmatakuliahdetail',
             ])
             ->orderBy('kode')
             ->orderBy('nama');

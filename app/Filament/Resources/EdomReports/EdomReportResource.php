@@ -8,7 +8,6 @@ use App\Filament\Resources\EdomReports\Pages\ViewEdomCourseReport;
 use App\Models\EdomKrsSection;
 use App\Models\EdomResponse;
 use App\Models\ProgramStudi;
-use App\Services\Edom\EdomKrsSectionSyncService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Resources\Resource;
@@ -21,18 +20,37 @@ use Illuminate\Support\Facades\DB;
 class EdomReportResource extends Resource
 {
     protected static ?string $model = ProgramStudi::class;
+
     protected static string|\UnitEnum|null $navigationGroup = 'EDOM';
+
     protected static ?string $navigationLabel = 'EDOM Reports';
+
     protected static ?string $modelLabel = 'EDOM Report';
+
     protected static ?string $pluralModelLabel = 'EDOM Reports';
+
     protected static ?string $slug = 'edom-reports';
+
     protected static ?int $navigationSort = 30;
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
+
     protected static ?string $recordTitleAttribute = 'nama';
 
-    public static function canCreate(): bool { return false; }
-    public static function canEdit(Model $record): bool { return false; }
-    public static function canDelete(Model $record): bool { return false; }
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
 
     public static function table(Table $table): Table
     {
@@ -50,6 +68,7 @@ class EdomReportResource extends Resource
                 TextColumn::make('course_count')
                     ->label('Jumlah Mata Kuliah')
                     ->state(fn (ProgramStudi $record): int => self::courseCountForProgramStudi($record))
+                    ->description('Berdasarkan idmatakuliah unik dari /edom/krs')
                     ->badge()
                     ->color('info'),
                 TextColumn::make('response_count')
@@ -89,19 +108,17 @@ class EdomReportResource extends Resource
     public static function courseKeyForResponse(EdomResponse $response): string
     {
         $sectionId = (int) $response->siakad_idtawarmatakuliahdetail;
+
         return $sectionId > 0 ? 'd_'.$sectionId : 'm_'.((int) $response->siakad_idmatakuliah);
     }
 
     public static function courseKeyForKrsSection(EdomKrsSection $section): string
     {
-        $sectionId = (int) $section->idtawarmatakuliahdetail;
-        return $sectionId > 0 ? 'd_'.$sectionId : 'm_'.((int) $section->idmatakuliah);
+        return 'm_'.((int) $section->idmatakuliah);
     }
 
     public static function courseCountForProgramStudi(ProgramStudi $programStudi): int
     {
-        app(EdomKrsSectionSyncService::class)->syncKnownStudentPeriods();
-
         if ($programStudi->id_unw_program_studi === null) {
             return 0;
         }
@@ -115,6 +132,7 @@ class EdomReportResource extends Resource
     public static function responseCountForProgramStudi(ProgramStudi $programStudi): int
     {
         $settingIds = static::settingIdsForProgramStudi($programStudi);
+
         return $settingIds->isEmpty() ? 0 : EdomResponse::query()->whereIn('edom_setting_id', $settingIds)->count();
     }
 

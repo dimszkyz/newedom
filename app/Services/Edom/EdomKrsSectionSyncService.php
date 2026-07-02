@@ -6,6 +6,7 @@ use App\Models\EdomKrsSection;
 use App\Models\EdomResponse;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class EdomKrsSectionSyncService
@@ -48,26 +49,29 @@ class EdomKrsSectionSyncService
 
     public function syncStudentSections(string $studentId, int $tahunAjaran, int $semester, array $sections): int
     {
-        $synced = 0;
+        $validSections = collect($sections)
+            ->filter(fn (mixed $section): bool => is_array($section)
+                && filled(data_get($section, 'idmatakuliah')))
+            ->values();
 
-        foreach ($sections as $section) {
-            if (! is_array($section) || blank(data_get($section, 'idmatakuliah'))) {
-                continue;
-            }
+        DB::transaction(function () use ($studentId, $tahunAjaran, $semester, $validSections): void {
+            EdomKrsSection::query()
+                ->where('siakad_idmahasiswa', $studentId)
+                ->where('siakad_idtahunajaran', $tahunAjaran)
+                ->where('siakad_idsemester', $semester)
+                ->delete();
 
-            $detailId = data_get($section, 'idtawarmatakuliahdetail');
-            $courseId = data_get($section, 'idmatakuliah');
-            $lecturer = data_get($section, 'dosen', []);
+            foreach ($validSections as $section) {
+                $detailId = data_get($section, 'idtawarmatakuliahdetail');
+                $courseId = data_get($section, 'idmatakuliah');
+                $lecturer = data_get($section, 'dosen', []);
 
-            EdomKrsSection::query()->updateOrCreate(
-                [
+                EdomKrsSection::query()->create([
                     'siakad_idmahasiswa' => $studentId,
                     'siakad_idtahunajaran' => $tahunAjaran,
                     'siakad_idsemester' => $semester,
                     'idtawarmatakuliahdetail' => blank($detailId) ? null : (int) $detailId,
                     'idmatakuliah' => (int) $courseId,
-                ],
-                [
                     'kode' => filled(data_get($section, 'kode')) ? (string) data_get($section, 'kode') : null,
                     'nama' => (string) data_get($section, 'nama', 'Mata kuliah #'.$courseId),
                     'dosen_nidn' => is_array($lecturer) && filled(data_get($lecturer, 'nidn')) ? (string) data_get($lecturer, 'nidn') : null,
@@ -75,13 +79,11 @@ class EdomKrsSectionSyncService
                     'dosen_team' => data_get($section, 'dosen_team'),
                     'id_unw_program_studi' => filled(data_get($section, 'id_unw_program_studi')) ? (int) data_get($section, 'id_unw_program_studi') : null,
                     'fetched_at' => now(),
-                ]
-            );
+                ]);
+            }
+        });
 
-            $synced++;
-        }
-
-        return $synced;
+        return $validSections->count();
     }
 
     private function syncStudentPeriod(string $studentId, int $tahunAjaran, int $semester): int
