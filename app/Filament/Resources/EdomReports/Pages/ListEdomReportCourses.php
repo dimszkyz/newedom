@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\EdomReports\Pages;
 
 use App\Filament\Resources\EdomReports\EdomReportResource;
-use App\Models\EdomResponse;
+use App\Models\EdomKrsSection;
 use App\Models\ProgramStudi;
-use App\Services\Edom\EdomResponseMetadata;
+use App\Services\Edom\EdomKrsSectionSyncService;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
@@ -27,6 +27,7 @@ class ListEdomReportCourses extends Page implements HasTable
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
+        app(EdomKrsSectionSyncService::class)->syncKnownStudentPeriods();
     }
 
     public function getTitle(): string
@@ -39,23 +40,30 @@ class ListEdomReportCourses extends Page implements HasTable
         return $table
             ->query($this->coursesQuery())
             ->columns([
-                TextColumn::make('course_name')
+                TextColumn::make('nama')
                     ->label('Mata Kuliah')
-                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->courseNameFor($record))
-                    ->description(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->courseLabelFor($record))
+                    ->description(fn (EdomKrsSection $record): string => $record->course_label)
                     ->wrap(),
-                TextColumn::make('siakad_idmatakuliah')
+                TextColumn::make('kode')
+                    ->label('Kode')
+                    ->badge()
+                    ->placeholder('-'),
+                TextColumn::make('idmatakuliah')
                     ->label('ID Mata Kuliah')
                     ->badge(),
-                TextColumn::make('siakad_idtawarmatakuliahdetail')
+                TextColumn::make('idtawarmatakuliahdetail')
                     ->label('ID Detail Penawaran')
                     ->badge(),
-                TextColumn::make('respondent_count')
-                    ->label('Mahasiswa')
+                TextColumn::make('krs_student_count')
+                    ->label('Mahasiswa KRS')
                     ->badge()
                     ->color('info'),
                 TextColumn::make('response_count')
                     ->label('Respons')
+                    ->state(fn (EdomKrsSection $record): int => EdomReportResource::responseCountForProgramStudiAndCourse(
+                        $this->record,
+                        EdomReportResource::courseKeyForKrsSection($record),
+                    ))
                     ->badge()
                     ->color('success'),
             ])
@@ -63,14 +71,14 @@ class ListEdomReportCourses extends Page implements HasTable
                 Action::make('report')
                     ->label('Lihat Report')
                     ->icon('heroicon-o-chart-bar-square')
-                    ->url(fn (EdomResponse $record): string => EdomReportResource::getUrl('course-report', [
+                    ->url(fn (EdomKrsSection $record): string => EdomReportResource::getUrl('course-report', [
                         'record' => $this->record,
-                        'courseKey' => EdomReportResource::courseKeyForResponse($record),
+                        'courseKey' => EdomReportResource::courseKeyForKrsSection($record),
                     ])),
             ])
-            ->recordUrl(fn (EdomResponse $record): string => EdomReportResource::getUrl('course-report', [
+            ->recordUrl(fn (EdomKrsSection $record): string => EdomReportResource::getUrl('course-report', [
                 'record' => $this->record,
-                'courseKey' => EdomReportResource::courseKeyForResponse($record),
+                'courseKey' => EdomReportResource::courseKeyForKrsSection($record),
             ]))
             ->toolbarActions([]);
     }
@@ -89,23 +97,22 @@ class ListEdomReportCourses extends Page implements HasTable
     {
         /** @var ProgramStudi $programStudi */
         $programStudi = $this->record;
-        $settingIds = EdomReportResource::settingIdsForProgramStudi($programStudi);
 
-        return EdomResponse::query()
-            ->whereIn('edom_setting_id', $settingIds->all())
+        return EdomKrsSection::query()
+            ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
             ->select([
-                'edom_response.siakad_idmatakuliah',
-                'edom_response.siakad_idtawarmatakuliahdetail',
+                'idmatakuliah',
+                'idtawarmatakuliahdetail',
             ])
-            ->selectRaw('MIN(edom_response.id) as id')
-            ->selectRaw('MIN(edom_response.edom_period_id) as edom_period_id')
-            ->selectRaw('MIN(edom_response.edom_setting_id) as edom_setting_id')
-            ->selectRaw('COUNT(*) as response_count')
-            ->selectRaw('COUNT(DISTINCT edom_response.siakad_idmahasiswa) as respondent_count')
+            ->selectRaw('MIN(id) as id')
+            ->selectRaw('MIN(kode) as kode')
+            ->selectRaw('MIN(nama) as nama')
+            ->selectRaw('COUNT(DISTINCT siakad_idmahasiswa) as krs_student_count')
             ->groupBy([
-                'edom_response.siakad_idmatakuliah',
-                'edom_response.siakad_idtawarmatakuliahdetail',
+                'idmatakuliah',
+                'idtawarmatakuliahdetail',
             ])
-            ->orderBy('edom_response.siakad_idmatakuliah');
+            ->orderBy('kode')
+            ->orderBy('nama');
     }
 }
