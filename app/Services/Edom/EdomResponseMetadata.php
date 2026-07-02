@@ -102,7 +102,7 @@ class EdomResponseMetadata
             : $response->details()->with('questionOption')->get();
 
         $average = $details
-            ->map(fn ($detail) => $detail->questionOption?->score)
+            ->map(fn ($detail) => $detail->option_score_for_display)
             ->filter(fn ($score): bool => $score !== null && $score !== '')
             ->avg();
 
