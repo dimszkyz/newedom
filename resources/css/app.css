@@ -327,6 +327,10 @@ h1 {
     line-height: 1.5;
 }
 
+.course-list-team {
+    flex-basis: 100%;
+}
+
 .course-list-actions {
     display: flex;
     align-items: center;

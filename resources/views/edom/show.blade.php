@@ -169,7 +169,7 @@
                                 @endif
                             </p>
                             <p class="edom-guide-text">
-                                ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }} ·
+                                ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }} &middot;
                                 ID Detail Penawaran: {{ $section['idtawarmatakuliahdetail'] ?? '-' }}
                             </p>
                         </section>

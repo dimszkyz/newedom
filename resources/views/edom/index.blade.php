@@ -12,6 +12,58 @@
         $studentSections = collect($studentSections ?? []);
         $studentEdomSections = collect($studentEdomSections ?? []);
         $studentFetchError = $studentFetchError ?? null;
+
+        $formatLecturer = function (mixed $lecturer): ?string {
+            if (is_string($lecturer)) {
+                $name = trim($lecturer);
+
+                return $name !== '' ? $name : null;
+            }
+
+            if (! is_array($lecturer)) {
+                return null;
+            }
+
+            $name = trim((string) ($lecturer['nama'] ?? ''));
+            $nidn = trim((string) ($lecturer['nidn'] ?? ''));
+
+            if ($name === '') {
+                return $nidn !== '' ? $nidn : null;
+            }
+
+            return $nidn !== '' ? $name . ' (' . $nidn . ')' : $name;
+        };
+
+        $sectionTeamLecturers = function (array $section) use ($formatLecturer): array {
+            $team = $section['dosen_team'] ?? [];
+
+            if (is_string($team)) {
+                $team = [$team];
+            } elseif (
+                is_array($team)
+                && (array_key_exists('nama', $team) || array_key_exists('nidn', $team))
+            ) {
+                $team = [$team];
+            }
+
+            if (! is_array($team)) {
+                return [];
+            }
+
+            return collect($team)
+                ->map($formatLecturer)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+        };
+
+        $sectionTitle = function (array $section): string {
+            $code = trim((string) ($section['kode'] ?? ''));
+            $name = trim((string) ($section['nama'] ?? ''));
+
+            return trim($code . ' - ' . $name, ' -') ?: 'Mata kuliah tanpa nama';
+        };
     @endphp
 
     <main class="page">
@@ -24,13 +76,15 @@
                     @php
                         $semesterName = trim((string) ($studentSemester['nama'] ?? ''));
                         $semesterLabel = $semesterName !== ''
-                            ? $semesterName
+                            ? (preg_match('/^semester\b/i', $semesterName)
+                                ? $semesterName
+                                : 'Semester ' . $semesterName)
                             : 'Semester ' . ($student['siakad_idsemester'] ?? '-');
                     @endphp
 
                     <div class="alert success">
                         Sesi mahasiswa dari SIAKAD aktif untuk tahun ajaran
-                        {{ $student['siakad_idtahunajaran'] ?? '-' }} dan semester
+                        {{ $student['siakad_idtahunajaran'] ?? '-' }} dan
                         {{ $semesterLabel }}.
                         @if (! $studentFetchError)
                             Jumlah mata kuliah dari KRS: {{ $studentSections->count() }}.
@@ -100,6 +154,7 @@
                                 <div>
                                     <h3>{{ $edom->name }}</h3>
                                     <p>
+                                        {{ $group['sections']->count() }} mata kuliah &middot;
                                         {{ $edom->questions_count }} pernyataan dalam
                                         {{ $edom->categories_count }} kategori
                                     </p>
@@ -115,28 +170,24 @@
                                         $lecturer = is_array($section['dosen'] ?? null)
                                             ? $section['dosen']
                                             : [];
+                                        $lecturerLabel = $formatLecturer($lecturer) ?? 'Belum tersedia';
+                                        $teamLecturers = $sectionTeamLecturers($section);
                                     @endphp
 
                                     <li class="course-list-item">
                                         <div class="course-list-number">{{ $loop->iteration }}</div>
 
                                         <div class="course-list-content">
-                                            <h2>
-                                                {{ $section['kode'] ?? '-' }} -
-                                                {{ $section['nama'] ?? 'Mata kuliah tanpa nama' }}
-                                            </h2>
+                                            <h2>{{ $sectionTitle($section) }}</h2>
                                             <div class="course-list-meta">
-                                                <span>
-                                                    Dosen: {{ $lecturer['nama'] ?? '-' }}
-                                                    @if (! empty($lecturer['nidn']))
-                                                        ({{ $lecturer['nidn'] }})
-                                                    @endif
-                                                </span>
+                                                <span>Dosen: {{ $lecturerLabel }}</span>
                                                 <span>ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }}</span>
-                                                <span>
-                                                    ID Detail Penawaran:
-                                                    {{ $section['idtawarmatakuliahdetail'] ?? '-' }}
-                                                </span>
+                                                <span>ID Detail Penawaran: {{ $section['idtawarmatakuliahdetail'] ?? '-' }}</span>
+                                                @if ($teamLecturers !== [])
+                                                    <span class="course-list-team">
+                                                        Tim dosen: {{ implode(', ', $teamLecturers) }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         </div>
 

@@ -121,6 +121,57 @@ class EdomResponseSubmissionTest extends TestCase
             ]), false);
     }
 
+    public function test_student_home_renders_the_real_krs_response_shape(): void
+    {
+        $this->createActiveSetting();
+        $student = [
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idtahunajaran' => 2025,
+            'siakad_idsemester' => 1,
+            'return_url' => 'https://siakad.test/edom',
+        ];
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('semester')
+            ->once()
+            ->andReturn([
+                ['id' => 1, 'kode' => 'GASAL', 'nama' => 'Semester Gasal'],
+            ]);
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with(18273, 2025, 1)
+            ->andReturn($this->realKrsSections());
+        $siakad->shouldReceive('mahasiswa')
+            ->once()
+            ->with(['18273'])
+            ->andReturn([$this->studentProfile()]);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withoutVite();
+
+        $response = $this->withSession(['edom_student' => $student])
+            ->get(route('edom.home'));
+
+        $response
+            ->assertOk()
+            ->assertSee('tahun ajaran')
+            ->assertSee('2025')
+            ->assertSee('Semester Gasal')
+            ->assertDontSee('semester Semester Gasal')
+            ->assertSee('Jumlah mata kuliah dari KRS: 8')
+            ->assertSee('8 mata kuliah')
+            ->assertSee('24KK01 - Hukum Kesehatan Dan Digital')
+            ->assertSee('ID Mata Kuliah: 3926')
+            ->assertSee('ID Detail Penawaran: 22489')
+            ->assertSee('Dr. Hargianti Dini Iswandari, drg., M.M (0602047902)')
+            ->assertSee('24KU14 A - Perbuatan Melawan Hukum Korporasi')
+            ->assertSee('Dr. Hani Irhamdessetya S.H.,M.H')
+            ->assertSee('Tim dosen: Dr. Arista Candra Irawati, SH., MH. Adv. (0609077101), Dr. Hani Irhamdessetya S.H.,M.H')
+            ->assertSee('24KK10 - Ujian Usulan Penelitian Tesis')
+            ->assertSee('ID Mata Kuliah: 3928')
+            ->assertSee('ID Detail Penawaran: 22491');
+    }
+
     public function test_signed_handoff_opens_the_student_profile_and_krs_list(): void
     {
         $this->createActiveSetting();
@@ -595,6 +646,176 @@ class EdomResponseSubmissionTest extends TestCase
                 'nama' => 'Dosen Kedua',
             ],
             'dosen_team' => ['Dosen Pendamping'],
+        ];
+    }
+
+    private function realKrsSections(): array
+    {
+        return [
+            [
+                'idtawarmatakuliahdetail' => 22489,
+                'idmatakuliah' => 3926,
+                'kode' => '24KK01',
+                'nama' => 'Hukum Kesehatan Dan Digital',
+                'dosen' => [
+                    'nidn' => '0602047902',
+                    'nama' => 'Dr. Hargianti Dini Iswandari, drg., M.M',
+                ],
+                'dosen_team' => [
+                    [
+                        'nidn' => '0602047902',
+                        'nama' => 'Dr. Hargianti Dini Iswandari, drg., M.M',
+                    ],
+                ],
+                'id_unw_program_studi' => 22,
+            ],
+            [
+                'idtawarmatakuliahdetail' => 22494,
+                'idmatakuliah' => 3931,
+                'kode' => '24KK02',
+                'nama' => 'Hukum Pembuktian Tindak Pidana Digital',
+                'dosen' => [
+                    'nidn' => '0609077101',
+                    'nama' => 'Dr. Arista Candra Irawati, SH., MH. Adv.',
+                ],
+                'dosen_team' => [
+                    [
+                        'nidn' => '0609077101',
+                        'nama' => 'Dr. Arista Candra Irawati, SH., MH. Adv.',
+                    ],
+                    [
+                        'nidn' => '',
+                        'nama' => 'Dr. Hani Irhamdessetya S.H.,M.H',
+                    ],
+                ],
+                'id_unw_program_studi' => 22,
+            ],
+            [
+                'idtawarmatakuliahdetail' => 22490,
+                'idmatakuliah' => 3927,
+                'kode' => '24KU09',
+                'nama' => 'Hukum Tata Kelola Lingkungan',
+                'dosen' => [
+                    'nidn' => '0609077101',
+                    'nama' => 'Dr. Arista Candra Irawati, SH., MH. Adv.',
+                ],
+                'dosen_team' => [
+                    [
+                        'nidn' => '0609077101',
+                        'nama' => 'Dr. Arista Candra Irawati, SH., MH. Adv.',
+                    ],
+                    [
+                        'nidn' => '0000',
+                        'nama' => 'Prof. Dr. Drs. Sudijono Sastroatmodjo, M.Si',
+                    ],
+                    [
+                        'nidn' => '',
+                        'nama' => 'Prof. Dr. Edy Lisdiyono, S.H., M.Hum.',
+                    ],
+                ],
+                'id_unw_program_studi' => 22,
+            ],
+            [
+                'idtawarmatakuliahdetail' => 22495,
+                'idmatakuliah' => 3932,
+                'kode' => '24KU10',
+                'nama' => 'Kebijakan Hukum Pertanahan',
+                'dosen' => [
+                    'nidn' => '00',
+                    'nama' => 'Dr. Vincentius Simon Suyanto, S.H., M.Kn.',
+                ],
+                'dosen_team' => [
+                    [
+                        'nidn' => '00',
+                        'nama' => 'Dr. Vincentius Simon Suyanto, S.H., M.Kn.',
+                    ],
+                    [
+                        'nidn' => '0000',
+                        'nama' => 'Prof. Dr. Drs. Sudijono Sastroatmodjo, M.Si',
+                    ],
+                ],
+                'id_unw_program_studi' => 22,
+            ],
+            [
+                'idtawarmatakuliahdetail' => 23689,
+                'idmatakuliah' => 4099,
+                'kode' => '24KU14 A',
+                'nama' => 'Perbuatan Melawan Hukum Korporasi',
+                'dosen' => [
+                    'nidn' => '',
+                    'nama' => 'Dr. Hani Irhamdessetya S.H.,M.H',
+                ],
+                'dosen_team' => [
+                    [
+                        'nidn' => '0609077101',
+                        'nama' => 'Dr. Arista Candra Irawati, SH., MH. Adv.',
+                    ],
+                    [
+                        'nidn' => '',
+                        'nama' => 'Dr. Hani Irhamdessetya S.H.,M.H',
+                    ],
+                ],
+                'id_unw_program_studi' => 22,
+            ],
+            [
+                'idtawarmatakuliahdetail' => 22492,
+                'idmatakuliah' => 3929,
+                'kode' => '24KU07',
+                'nama' => 'Reforma Hukum Ketenagakerjaan',
+                'dosen' => [
+                    'nidn' => '0626029701',
+                    'nama' => 'Dr. Ar-Rahiim Innash, S.H.,M.Kn',
+                ],
+                'dosen_team' => [
+                    [
+                        'nidn' => '0626029701',
+                        'nama' => 'Dr. Ar-Rahiim Innash, S.H.,M.Kn',
+                    ],
+                    [
+                        'nidn' => '0615087004',
+                        'nama' => 'Dr.Kustiyono,S.Kom,S.E,M.Kom,Ak,CNHRP,CPHRM,CTLP',
+                    ],
+                ],
+                'id_unw_program_studi' => 22,
+            ],
+            [
+                'idtawarmatakuliahdetail' => 22493,
+                'idmatakuliah' => 3930,
+                'kode' => '24KU08',
+                'nama' => 'Sistem Peradilan Pidana Indonesia',
+                'dosen' => [
+                    'nidn' => '',
+                    'nama' => 'Dr. Hani Irhamdessetya S.H.,M.H',
+                ],
+                'dosen_team' => [
+                    [
+                        'nidn' => '',
+                        'nama' => 'Dr. Hani Irhamdessetya S.H.,M.H',
+                    ],
+                    [
+                        'nidn' => '0602047902',
+                        'nama' => 'Dr. Hargianti Dini Iswandari, drg., M.M',
+                    ],
+                ],
+                'id_unw_program_studi' => 22,
+            ],
+            [
+                'idtawarmatakuliahdetail' => 22491,
+                'idmatakuliah' => 3928,
+                'kode' => '24KK10',
+                'nama' => 'Ujian Usulan Penelitian Tesis',
+                'dosen' => [
+                    'nidn' => '0609077101',
+                    'nama' => 'Dr. Arista Candra Irawati, SH., MH. Adv.',
+                ],
+                'dosen_team' => [
+                    [
+                        'nidn' => '0609077101',
+                        'nama' => 'Dr. Arista Candra Irawati, SH., MH. Adv.',
+                    ],
+                ],
+                'id_unw_program_studi' => 22,
+            ],
         ];
     }
 }
