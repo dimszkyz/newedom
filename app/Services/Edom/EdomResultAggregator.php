@@ -37,13 +37,13 @@ class EdomResultAggregator
                 'edom_response.siakad_idmatakuliah',
                 'edom_response.siakad_idtawarmatakuliahdetail',
                 'edom_questions.edom_question_category_id',
-                'edom_question_categories.name as category_name',
                 'edom_response_detail.edom_question_id',
-                'edom_questions.statement as question_statement',
             ])
+            ->selectRaw('COALESCE(edom_response_detail.category_name_snapshot, edom_question_categories.name) as category_name')
+            ->selectRaw('COALESCE(edom_response_detail.question_statement_snapshot, edom_questions.statement) as question_statement')
             ->selectRaw('COUNT(DISTINCT edom_response.id) as respondent_count')
             ->selectRaw('COUNT(edom_response_detail.id) as answer_count')
-            ->selectRaw('AVG(edom_question_options.score) as average_score')
+            ->selectRaw('AVG(COALESCE(edom_response_detail.option_score_snapshot, edom_question_options.score)) as average_score')
             ->groupBy([
                 'edom_response.edom_period_id',
                 'edom_periods.year',
@@ -53,16 +53,18 @@ class EdomResultAggregator
                 'edom_response.siakad_idmatakuliah',
                 'edom_response.siakad_idtawarmatakuliahdetail',
                 'edom_questions.edom_question_category_id',
-                'edom_question_categories.name',
                 'edom_response_detail.edom_question_id',
+                'edom_response_detail.category_name_snapshot',
+                'edom_question_categories.name',
+                'edom_response_detail.question_statement_snapshot',
                 'edom_questions.statement',
             ])
             ->orderBy('edom_periods.year')
             ->orderBy('edom_periods.siakad_idsemester')
             ->orderBy('edom_settings.name')
             ->orderBy('edom_response.siakad_idtawarmatakuliahdetail')
-            ->orderBy('edom_question_categories.name')
-            ->orderBy('edom_questions.statement')
+            ->orderBy('category_name')
+            ->orderBy('question_statement')
             ->get()
             ->map(fn (EdomResponse $row): array => $this->toSummaryRow($row))
             ->values();
