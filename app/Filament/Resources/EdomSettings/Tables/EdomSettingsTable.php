@@ -8,12 +8,14 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class EdomSettingsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('programStudis'))
             ->columns([
                 TextColumn::make('name')->label('Nama EdomSettings')->searchable(),
                 TextColumn::make('program_studi_preview')
