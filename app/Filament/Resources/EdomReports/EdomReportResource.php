@@ -10,7 +10,6 @@ use App\Models\ProgramStudi;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Resources\Resource;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,7 +32,7 @@ class EdomReportResource extends Resource
 
     protected static ?int $navigationSort = 30;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBarSquare;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
     protected static ?string $recordTitleAttribute = 'nama';
 
