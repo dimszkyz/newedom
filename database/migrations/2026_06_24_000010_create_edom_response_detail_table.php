@@ -16,14 +16,21 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->foreignId('edom_question_id')
+                ->nullable()
                 ->constrained('edom_questions')
-                ->cascadeOnDelete();
+                ->nullOnDelete();
+
+            $table->string('category_name_snapshot')->nullable();
+            $table->text('question_statement_snapshot')->nullable();
+            $table->string('question_type_snapshot')->nullable();
 
             $table->foreignId('edom_option_id')
                 ->nullable()
                 ->constrained('edom_question_options')
                 ->nullOnDelete();
 
+            $table->string('option_name_snapshot')->nullable();
+            $table->integer('option_score_snapshot')->nullable();
             $table->text('answer_text')->nullable();
             $table->timestamps();
 
