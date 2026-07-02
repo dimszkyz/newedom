@@ -18,11 +18,15 @@ class EdomKrsReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_report_course_count_uses_distinct_course_ids_from_krs_api(): void
+    public function test_report_counts_responses_and_courses_from_edom_response_program_studi_id(): void
     {
         $programStudi = ProgramStudi::query()->create([
             'id_unw_program_studi' => 22,
             'nama' => 'Magister Hukum',
+        ]);
+        $otherProgramStudi = ProgramStudi::query()->create([
+            'id_unw_program_studi' => 33,
+            'nama' => 'Magister Manajemen',
         ]);
         $period = EdomPeriod::query()->create([
             'year' => 2025,
@@ -32,12 +36,32 @@ class EdomKrsReportTest extends TestCase
             'name' => 'EDOM 2025',
             'status' => 'active',
         ]);
+
         EdomResponse::query()->create([
             'edom_period_id' => $period->id,
             'edom_setting_id' => $setting->id,
             'siakad_idmahasiswa' => '18273',
             'siakad_idmatakuliah' => 3926,
             'siakad_idtawarmatakuliahdetail' => 22489,
+            'id_unw_program_studi' => 22,
+            'submitted_at' => now(),
+        ]);
+        EdomResponse::query()->create([
+            'edom_period_id' => $period->id,
+            'edom_setting_id' => $setting->id,
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idmatakuliah' => 3931,
+            'siakad_idtawarmatakuliahdetail' => 22494,
+            'id_unw_program_studi' => 22,
+            'submitted_at' => now(),
+        ]);
+        EdomResponse::query()->create([
+            'edom_period_id' => $period->id,
+            'edom_setting_id' => $setting->id,
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idmatakuliah' => 4099,
+            'siakad_idtawarmatakuliahdetail' => 23689,
+            'id_unw_program_studi' => 33,
             'submitted_at' => now(),
         ]);
 
@@ -46,9 +70,9 @@ class EdomKrsReportTest extends TestCase
             ->once()
             ->with('18273', 2025, 1)
             ->andReturn([
-                $this->section(22489, 3926, '24KK01', 'Hukum Kesehatan Dan Digital'),
-                $this->section(32489, 3926, '24KK01 B', 'Hukum Kesehatan Dan Digital'),
-                $this->section(22494, 3931, '24KK02', 'Hukum Pembuktian Tindak Pidana Digital'),
+                $this->section(22489, 3926, '24KK01', 'Hukum Kesehatan Dan Digital', 22),
+                $this->section(22494, 3931, '24KK02', 'Hukum Pembuktian Tindak Pidana Digital', 22),
+                $this->section(23689, 4099, '24KU14 A', 'Perbuatan Melawan Hukum Korporasi', 33),
             ]);
         $this->app->instance(UnwApiSiakad::class, $siakad);
 
@@ -58,6 +82,10 @@ class EdomKrsReportTest extends TestCase
         $this->assertSame(3, $result['synced_sections']);
         $this->assertDatabaseCount('edom_krs_sections', 3);
         $this->assertSame(2, EdomReportResource::courseCountForProgramStudi($programStudi));
+        $this->assertSame(2, EdomReportResource::responseCountForProgramStudi($programStudi));
+        $this->assertSame(1, EdomReportResource::responseCountForProgramStudiAndCourse($programStudi, 'm_3926'));
+        $this->assertSame(1, EdomReportResource::courseCountForProgramStudi($otherProgramStudi));
+        $this->assertSame(1, EdomReportResource::responseCountForProgramStudi($otherProgramStudi));
 
         $course = EdomKrsSection::query()->where('idmatakuliah', 3926)->firstOrFail();
         $this->assertSame('m_3926', EdomReportResource::courseKeyForKrsSection($course));
@@ -94,7 +122,7 @@ class EdomKrsReportTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function section(int $detailId, int $courseId, string $code, string $name): array
+    private function section(int $detailId, int $courseId, string $code, string $name, int $programStudiId = 22): array
     {
         return [
             'idtawarmatakuliahdetail' => $detailId,
@@ -111,7 +139,7 @@ class EdomKrsReportTest extends TestCase
                     'nama' => 'Dosen Pengampu',
                 ],
             ],
-            'id_unw_program_studi' => 22,
+            'id_unw_program_studi' => $programStudiId,
         ];
     }
 }
