@@ -43,7 +43,6 @@ class EdomKrsReportTest extends TestCase
             'siakad_idmahasiswa' => '18273',
             'siakad_idmatakuliah' => 3926,
             'siakad_idtawarmatakuliahdetail' => 22489,
-            'id_unw_program_studi' => 22,
             'submitted_at' => now(),
         ]);
         EdomResponse::query()->create([
@@ -52,7 +51,6 @@ class EdomKrsReportTest extends TestCase
             'siakad_idmahasiswa' => '18273',
             'siakad_idmatakuliah' => 3931,
             'siakad_idtawarmatakuliahdetail' => 22494,
-            'id_unw_program_studi' => 22,
             'submitted_at' => now(),
         ]);
         EdomResponse::query()->create([
@@ -61,7 +59,6 @@ class EdomKrsReportTest extends TestCase
             'siakad_idmahasiswa' => '18273',
             'siakad_idmatakuliah' => 4099,
             'siakad_idtawarmatakuliahdetail' => 23689,
-            'id_unw_program_studi' => 33,
             'submitted_at' => now(),
         ]);
 
@@ -81,6 +78,14 @@ class EdomKrsReportTest extends TestCase
         $this->assertSame(1, $result['student_periods']);
         $this->assertSame(3, $result['synced_sections']);
         $this->assertDatabaseCount('edom_krs_sections', 3);
+        $this->assertDatabaseHas('edom_response', [
+            'siakad_idmatakuliah' => 3926,
+            'id_unw_program_studi' => 22,
+        ]);
+        $this->assertDatabaseHas('edom_response', [
+            'siakad_idmatakuliah' => 4099,
+            'id_unw_program_studi' => 33,
+        ]);
         $this->assertSame(2, EdomReportResource::courseCountForProgramStudi($programStudi));
         $this->assertSame(2, EdomReportResource::responseCountForProgramStudi($programStudi));
         $this->assertSame(1, EdomReportResource::responseCountForProgramStudiAndCourse($programStudi, 'm_3926'));
