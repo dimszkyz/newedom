@@ -119,6 +119,37 @@ class EdomKrsReportTest extends TestCase
         ]);
     }
 
+    public function test_edom_response_fills_program_studi_id_from_cached_krs_section(): void
+    {
+        $period = EdomPeriod::query()->create([
+            'year' => 2025,
+            'siakad_idsemester' => 1,
+        ]);
+        $setting = EdomSettings::query()->create([
+            'name' => 'EDOM 2025',
+            'status' => 'active',
+        ]);
+
+        app(EdomKrsSectionSyncService::class)->syncStudentSections('18273', 2025, 1, [
+            $this->section(22489, 3926, '24KK01', 'Hukum Kesehatan Dan Digital', 22),
+        ]);
+
+        $response = EdomResponse::query()->create([
+            'edom_period_id' => $period->id,
+            'edom_setting_id' => $setting->id,
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idmatakuliah' => 3926,
+            'siakad_idtawarmatakuliahdetail' => 22489,
+            'submitted_at' => now(),
+        ]);
+
+        $this->assertSame(22, $response->refresh()->id_unw_program_studi);
+        $this->assertDatabaseHas('edom_response', [
+            'id' => $response->id,
+            'id_unw_program_studi' => 22,
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
