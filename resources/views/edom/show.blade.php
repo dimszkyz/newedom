@@ -118,7 +118,7 @@
                             Petunjuk Pengisian
                         </p>
                         <p class="edom-guide-text">
-                            Pilihlah satu jawaban yang paling mencerminkan kondisi nyata di kelas. Pertanyaan akan ditampilkan untuk setiap mata kuliah dari KRS SIAKAD.
+                            Pilihlah satu jawaban yang paling mencerminkan kondisi nyata di kelas dengan memberikan tanda centang atau klik pada salah satu skala berikut.
                         </p>
 
                         @if ($options->isNotEmpty())
