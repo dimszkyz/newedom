@@ -20,48 +20,34 @@ class EdomKrsSectionSyncService
      */
     public function syncKnownStudentPeriods(): array
     {
-        return Cache::remember('edom-report:krs-sections:last-sync-result', now()->addMinutes(30), function (): array {
-            $studentPeriods = EdomResponse::query()
-                ->join('edom_periods', 'edom_periods.id', '=', 'edom_response.edom_period_id')
-                ->select([
-                    'edom_response.siakad_idmahasiswa',
-                    'edom_periods.year as siakad_idtahunajaran',
-                    'edom_periods.siakad_idsemester',
-                ])
-                ->distinct()
-                ->get();
+        $studentPeriods = EdomResponse::query()
+            ->join('edom_periods', 'edom_periods.id', '=', 'edom_response.edom_period_id')
+            ->select([
+                'edom_response.siakad_idmahasiswa',
+                'edom_periods.year as siakad_idtahunajaran',
+                'edom_periods.siakad_idsemester',
+            ])
+            ->distinct()
+            ->get();
 
-            $syncedSections = 0;
+        $syncedSections = 0;
 
-            foreach ($studentPeriods as $studentPeriod) {
-                $syncedSections += $this->syncStudentPeriod(
-                    (string) $studentPeriod->siakad_idmahasiswa,
-                    (int) $studentPeriod->siakad_idtahunajaran,
-                    (int) $studentPeriod->siakad_idsemester,
-                );
-            }
-
-            return [
-                'student_periods' => $studentPeriods->count(),
-                'synced_sections' => $syncedSections,
-            ];
-        });
-    }
-
-    private function syncStudentPeriod(string $studentId, int $tahunAjaran, int $semester): int
-    {
-        try {
-            $sections = Cache::remember(
-                'edom-report:krs:'.$studentId.':'.$tahunAjaran.':'.$semester,
-                now()->addMinutes(30),
-                fn (): array => $this->siakad->krs($studentId, $tahunAjaran, $semester),
+        foreach ($studentPeriods as $studentPeriod) {
+            $syncedSections += $this->syncStudentPeriod(
+                (string) $studentPeriod->siakad_idmahasiswa,
+                (int) $studentPeriod->siakad_idtahunajaran,
+                (int) $studentPeriod->siakad_idsemester,
             );
-        } catch (Throwable $exception) {
-            report($exception);
-
-            return 0;
         }
 
+        return [
+            'student_periods' => $studentPeriods->count(),
+            'synced_sections' => $syncedSections,
+        ];
+    }
+
+    public function syncStudentSections(string $studentId, int $tahunAjaran, int $semester, array $sections): int
+    {
         $synced = 0;
 
         foreach ($sections as $section) {
@@ -96,5 +82,22 @@ class EdomKrsSectionSyncService
         }
 
         return $synced;
+    }
+
+    private function syncStudentPeriod(string $studentId, int $tahunAjaran, int $semester): int
+    {
+        try {
+            $sections = Cache::remember(
+                'edom-report:krs:'.$studentId.':'.$tahunAjaran.':'.$semester,
+                now()->addMinutes(30),
+                fn (): array => $this->siakad->krs($studentId, $tahunAjaran, $semester),
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return 0;
+        }
+
+        return $this->syncStudentSections($studentId, $tahunAjaran, $semester, $sections);
     }
 }
