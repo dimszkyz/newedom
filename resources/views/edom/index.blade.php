@@ -64,6 +64,15 @@
 
             return trim($code . ' - ' . $name, ' -') ?: 'Mata kuliah tanpa nama';
         };
+
+        $programStudiLabels = function ($programStudis): string {
+            $labels = collect($programStudis)
+                ->map(fn ($programStudi): string => $programStudi->display_name)
+                ->filter()
+                ->values();
+
+            return $labels->join(', ') ?: 'Semua Program Studi';
+        };
     @endphp
 
     <main class="page">
@@ -222,7 +231,7 @@
                                 <span class="badge badge-active">Aktif</span>
                                 <h2>{{ $edom->edom_name }}</h2>
                                 <p class="meta">
-                                    {{ $edom->programStudis->pluck('nama')->join(', ') ?: 'Semua Program Studi' }}<br>
+                                    {{ $programStudiLabels($edom->programStudis) }}<br>
                                     {{ $edom->questions_count }} pernyataan dalam {{ $edom->categories_count }} kategori
                                 </p>
                                 <span class="button button-muted">Buka melalui SIAKAD</span>
@@ -248,7 +257,7 @@
                             <article class="card">
                                 <span class="badge badge-closed">Ditutup</span>
                                 <h2>{{ $edom->edom_name }}</h2>
-                                <p class="meta">{{ $edom->programStudis->pluck('nama')->join(', ') ?: 'Semua Program Studi' }}</p>
+                                <p class="meta">{{ $programStudiLabels($edom->programStudis) }}</p>
                                 <span class="button button-muted">Pengisian Ditutup</span>
                             </article>
                         @endforeach
