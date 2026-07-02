@@ -19,7 +19,9 @@
                     </div>
                     <div>
                         <div class="text-sm text-gray-500">Program Studi</div>
-                        <div class="font-semibold">{{ $edom->programStudis->pluck('name')->join(', ') ?: '-' }}</div>
+                        <div class="font-semibold">
+                            {{ $edom->programStudis->map(fn ($programStudi) => $programStudi->display_name)->join(', ') ?: '-' }}
+                        </div>
                     </div>
                     <div>
                         <div class="text-sm text-gray-500">Status</div>
