@@ -54,11 +54,13 @@ class UnwProgramStudiSyncServiceTest extends TestCase
         $this->assertDatabaseHas('program_studi', [
             'id_unw_program_studi' => 21,
             'nama' => 'S2 - Manajemen Pendidikan',
+            'slug' => 's2-manajemen-pendidikan',
         ]);
 
         $this->assertDatabaseHas('program_studi', [
             'id_unw_program_studi' => 2,
             'nama' => 'S1 - Keperawatan',
+            'slug' => 's1-keperawatan',
         ]);
 
         $this->assertDatabaseMissing('program_studi', [
@@ -66,7 +68,7 @@ class UnwProgramStudiSyncServiceTest extends TestCase
         ]);
     }
 
-    public function test_sync_uses_flat_program_studi_id_and_name_from_current_api(): void
+    public function test_sync_uses_flat_program_studi_fields_from_current_api(): void
     {
         config()->set([
             'services.unw_program_studi.url' => 'https://panel-web.test/api/unw-program-studi',
@@ -80,13 +82,28 @@ class UnwProgramStudiSyncServiceTest extends TestCase
                         'id' => 21,
                         'nama' => 'Manajemen Pendidikan',
                         'slug' => 's2-manajemen-pendidikan',
+                        'page_slug' => 's2-manajemen-pendidikan',
+                        'jenjang' => 'Magister',
                         'jenjang_nama_singkat' => 'S2',
+                        'unwFakultas' => [
+                            'id' => 4,
+                            'nama' => 'Pascasarjana',
+                            'page_slug' => 'pascasarjana',
+                        ],
+                        'updatedAt' => '2025-12-31T08:36:47.000000Z',
                     ],
                     [
                         'id' => 2,
                         'nama' => 'Keperawatan',
                         'slug' => 's1-keperawatan',
+                        'page_slug' => 's1-keperawatan',
+                        'jenjang' => 'Sarjana',
                         'jenjang_nama_singkat' => 'S1',
+                        'unwFakultas' => [
+                            'id' => 1,
+                            'nama' => 'Fakultas Kesehatan',
+                            'page_slug' => 'fakultas-kesehatan',
+                        ],
                     ],
                 ],
             ]),
@@ -104,11 +121,25 @@ class UnwProgramStudiSyncServiceTest extends TestCase
         $this->assertDatabaseHas('program_studi', [
             'id_unw_program_studi' => 21,
             'nama' => 'Manajemen Pendidikan',
+            'slug' => 's2-manajemen-pendidikan',
+            'page_slug' => 's2-manajemen-pendidikan',
+            'jenjang' => 'Magister',
+            'jenjang_nama_singkat' => 'S2',
+            'id_unw_fakultas' => 4,
+            'nama_fakultas' => 'Pascasarjana',
+            'page_slug_fakultas' => 'pascasarjana',
         ]);
+
+        $programStudi = ProgramStudi::query()
+            ->where('id_unw_program_studi', 21)
+            ->firstOrFail();
+
+        $this->assertSame('S2 - Manajemen Pendidikan', $programStudi->display_name);
 
         $this->assertDatabaseHas('program_studi', [
             'id_unw_program_studi' => 2,
             'nama' => 'Keperawatan',
+            'jenjang_nama_singkat' => 'S1',
         ]);
     }
 
@@ -122,18 +153,18 @@ class UnwProgramStudiSyncServiceTest extends TestCase
         ProgramStudi::query()->create([
             'id_unw_program_studi' => 21,
             'nama' => 'Manajemen Pendidikan',
+            'slug' => 'old-slug',
         ]);
 
         Http::fake([
             'https://panel-web.test/api/unw-program-studi' => Http::response([
                 'data' => [
                     [
-                        'id' => 33,
+                        'id' => 21,
+                        'nama' => 'Manajemen Pendidikan',
                         'slug' => 's2-manajemen-pendidikan',
-                        'unwProgramStudi' => [
-                            'id' => 21,
-                            'nama' => 'S2 - Manajemen Pendidikan',
-                        ],
+                        'jenjang' => 'Magister',
+                        'jenjang_nama_singkat' => 'S2',
                     ],
                 ],
             ]),
@@ -150,7 +181,9 @@ class UnwProgramStudiSyncServiceTest extends TestCase
 
         $this->assertDatabaseHas('program_studi', [
             'id_unw_program_studi' => 21,
-            'nama' => 'S2 - Manajemen Pendidikan',
+            'nama' => 'Manajemen Pendidikan',
+            'slug' => 's2-manajemen-pendidikan',
+            'jenjang_nama_singkat' => 'S2',
         ]);
     }
 }

@@ -19,6 +19,7 @@ class EdomSettingsForm
             Select::make('programStudis')
                 ->label('Program Studi')
                 ->relationship('programStudis', 'nama')
+                ->getOptionLabelFromRecordUsing(fn ($record): string => $record->display_name)
                 ->multiple()
                 ->searchable()
                 ->preload()
