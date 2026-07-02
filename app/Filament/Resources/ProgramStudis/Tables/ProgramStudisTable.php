@@ -14,7 +14,7 @@ class ProgramStudisTable
             ->defaultSort('nama')
             ->columns([
                 TextColumn::make('id_unw_program_studi')
-                    ->label('id_unw_program_studi')
+                    ->label('id')
                     ->sortable()
                     ->searchable(),
 

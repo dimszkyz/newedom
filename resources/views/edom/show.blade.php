@@ -168,10 +168,6 @@
                                     <br>Tim dosen: {{ implode(', ', $teamLecturers) }}
                                 @endif
                             </p>
-                            <p class="edom-guide-text">
-                                ID Mata Kuliah: {{ $section['idmatakuliah'] ?? '-' }} &middot;
-                                ID Detail Penawaran: {{ $section['idtawarmatakuliahdetail'] ?? '-' }}
-                            </p>
                         </section>
 
                         <input type="hidden" name="sections[{{ $key }}][idtawarmatakuliahdetail]" value="{{ $section['idtawarmatakuliahdetail'] ?? '' }}">
