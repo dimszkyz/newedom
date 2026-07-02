@@ -193,12 +193,33 @@ class EdomResultAggregator
      */
     private function findSection(EdomResponse $row): ?array
     {
+        $tahunAjaran = $this->tahunAjaranFor($row);
+        $semester = $this->semesterFor($row);
+
+        if ($tahunAjaran === null || $semester === null) {
+            return null;
+        }
+
         return $this->sectionFor(
-            $row->siakad_idtahunajaran,
-            $row->siakad_idsemester,
+            $tahunAjaran,
+            $semester,
             $row->siakad_idtawarmatakuliahdetail,
             $row->siakad_idmatakuliah,
         );
+    }
+
+    private function tahunAjaranFor(EdomResponse $row): int|string|null
+    {
+        $value = $row->getAttribute('siakad_idtahunajaran') ?? $row->period?->year;
+
+        return $value === null || $value === '' ? null : $value;
+    }
+
+    private function semesterFor(EdomResponse $row): int|string|null
+    {
+        $value = $row->getAttribute('siakad_idsemester') ?? $row->period?->siakad_idsemester;
+
+        return $value === null || $value === '' ? null : $value;
     }
 
     private function dosenName(mixed $dosen): string
@@ -214,7 +235,17 @@ class EdomResultAggregator
     {
         if (is_array($dosenTeam)) {
             return collect($dosenTeam)
-                ->filter(fn ($name): bool => is_string($name) && trim($name) !== '')
+                ->map(function ($name): ?string {
+                    if (is_array($name)) {
+                        $lecturerName = trim((string) data_get($name, 'nama', ''));
+                        $nidn = trim((string) data_get($name, 'nidn', ''));
+
+                        return trim($lecturerName.($nidn !== '' ? ' ('.$nidn.')' : '')) ?: null;
+                    }
+
+                    return is_string($name) && trim($name) !== '' ? trim($name) : null;
+                })
+                ->filter()
                 ->implode(', ');
         }
 
