@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\EdomReports\Pages;
 
 use App\Filament\Resources\EdomReports\EdomReportResource;
-use App\Models\EdomKrsSection;
+use App\Models\EdomResponse;
 use App\Models\ProgramStudi;
 use App\Services\Edom\EdomKrsSectionSyncService;
 use Filament\Actions\Action;
@@ -42,27 +42,28 @@ class ListEdomReportCourses extends Page implements HasTable
             ->columns([
                 TextColumn::make('nama')
                     ->label('Mata Kuliah')
-                    ->description(fn (EdomKrsSection $record): string => $record->course_label)
+                    ->state(fn (EdomResponse $record): string => $this->courseNameFor($record))
+                    ->description(fn (EdomResponse $record): string => $this->courseLabelFor($record))
                     ->wrap(),
                 TextColumn::make('kode')
                     ->label('Kode')
                     ->badge()
                     ->placeholder('-'),
-                TextColumn::make('idmatakuliah')
+                TextColumn::make('siakad_idmatakuliah')
                     ->label('ID Mata Kuliah')
                     ->badge(),
-                TextColumn::make('idtawarmatakuliahdetail')
+                TextColumn::make('siakad_idtawarmatakuliahdetail')
                     ->label('ID Detail Penawaran')
                     ->badge(),
-                TextColumn::make('krs_student_count')
-                    ->label('Mahasiswa KRS')
+                TextColumn::make('respondent_count')
+                    ->label('Mahasiswa Mengisi')
                     ->badge()
                     ->color('info'),
                 TextColumn::make('response_count')
                     ->label('Respons')
-                    ->state(fn (EdomKrsSection $record): int => EdomReportResource::responseCountForProgramStudiAndCourse(
+                    ->state(fn (EdomResponse $record): int => EdomReportResource::responseCountForProgramStudiAndCourse(
                         $this->record,
-                        EdomReportResource::courseKeyForKrsSection($record),
+                        EdomReportResource::courseKeyForCourseId($record->siakad_idmatakuliah),
                     ))
                     ->badge()
                     ->color('success'),
@@ -71,14 +72,14 @@ class ListEdomReportCourses extends Page implements HasTable
                 Action::make('report')
                     ->label('Lihat Report')
                     ->icon('heroicon-o-chart-bar-square')
-                    ->url(fn (EdomKrsSection $record): string => EdomReportResource::getUrl('course-report', [
+                    ->url(fn (EdomResponse $record): string => EdomReportResource::getUrl('course-report', [
                         'record' => $this->record,
-                        'courseKey' => EdomReportResource::courseKeyForKrsSection($record),
+                        'courseKey' => EdomReportResource::courseKeyForCourseId($record->siakad_idmatakuliah),
                     ])),
             ])
-            ->recordUrl(fn (EdomKrsSection $record): string => EdomReportResource::getUrl('course-report', [
+            ->recordUrl(fn (EdomResponse $record): string => EdomReportResource::getUrl('course-report', [
                 'record' => $this->record,
-                'courseKey' => EdomReportResource::courseKeyForKrsSection($record),
+                'courseKey' => EdomReportResource::courseKeyForCourseId($record->siakad_idmatakuliah),
             ]))
             ->toolbarActions([]);
     }
@@ -98,20 +99,48 @@ class ListEdomReportCourses extends Page implements HasTable
         /** @var ProgramStudi $programStudi */
         $programStudi = $this->record;
 
-        return EdomKrsSection::query()
-            ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
+        if ($programStudi->id_unw_program_studi === null) {
+            return EdomResponse::query()->whereRaw('1 = 0');
+        }
+
+        return EdomResponse::query()
+            ->leftJoin('edom_periods', 'edom_periods.id', '=', 'edom_response.edom_period_id')
+            ->leftJoin('edom_krs_sections', function ($join): void {
+                $join->on('edom_krs_sections.siakad_idmahasiswa', '=', 'edom_response.siakad_idmahasiswa')
+                    ->on('edom_krs_sections.siakad_idtahunajaran', '=', 'edom_periods.year')
+                    ->on('edom_krs_sections.siakad_idsemester', '=', 'edom_periods.siakad_idsemester')
+                    ->on('edom_krs_sections.idmatakuliah', '=', 'edom_response.siakad_idmatakuliah');
+            })
+            ->where('edom_response.id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
             ->select([
-                'idmatakuliah',
+                'edom_response.siakad_idmatakuliah',
             ])
-            ->selectRaw('MIN(id) as id')
-            ->selectRaw('MIN(idtawarmatakuliahdetail) as idtawarmatakuliahdetail')
-            ->selectRaw('MIN(kode) as kode')
-            ->selectRaw('MIN(nama) as nama')
-            ->selectRaw('COUNT(DISTINCT siakad_idmahasiswa) as krs_student_count')
+            ->selectRaw('MIN(edom_response.id) as id')
+            ->selectRaw('MIN(edom_response.siakad_idtawarmatakuliahdetail) as siakad_idtawarmatakuliahdetail')
+            ->selectRaw('MIN(edom_krs_sections.kode) as kode')
+            ->selectRaw('MIN(edom_krs_sections.nama) as nama')
+            ->selectRaw('COUNT(DISTINCT edom_response.siakad_idmahasiswa) as respondent_count')
+            ->selectRaw('COUNT(DISTINCT edom_response.id) as response_count')
             ->groupBy([
-                'idmatakuliah',
+                'edom_response.siakad_idmatakuliah',
             ])
             ->orderBy('kode')
-            ->orderBy('nama');
+            ->orderBy('nama')
+            ->orderBy('edom_response.siakad_idmatakuliah');
+    }
+
+    private function courseNameFor(EdomResponse $record): string
+    {
+        $name = trim((string) $record->getAttribute('nama'));
+
+        return $name !== '' ? $name : 'Mata kuliah #'.$record->siakad_idmatakuliah;
+    }
+
+    private function courseLabelFor(EdomResponse $record): string
+    {
+        $code = trim((string) $record->getAttribute('kode'));
+        $name = $this->courseNameFor($record);
+
+        return trim($code.' - '.$name, ' -') ?: 'Mata kuliah #'.$record->siakad_idmatakuliah;
     }
 }
