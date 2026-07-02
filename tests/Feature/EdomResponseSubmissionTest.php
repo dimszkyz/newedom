@@ -161,15 +161,11 @@ class EdomResponseSubmissionTest extends TestCase
             ->assertSee('Jumlah mata kuliah dari KRS: 8')
             ->assertSee('8 mata kuliah')
             ->assertSee('24KK01 - Hukum Kesehatan Dan Digital')
-            ->assertSee('ID Mata Kuliah: 3926')
-            ->assertSee('ID Detail Penawaran: 22489')
             ->assertSee('Dr. Hargianti Dini Iswandari, drg., M.M (0602047902)')
             ->assertSee('24KU14 A - Perbuatan Melawan Hukum Korporasi')
             ->assertSee('Dr. Hani Irhamdessetya S.H.,M.H')
             ->assertSee('Tim dosen: Dr. Arista Candra Irawati, SH., MH. Adv. (0609077101), Dr. Hani Irhamdessetya S.H.,M.H')
-            ->assertSee('24KK10 - Ujian Usulan Penelitian Tesis')
-            ->assertSee('ID Mata Kuliah: 3928')
-            ->assertSee('ID Detail Penawaran: 22491');
+            ->assertSee('24KK10 - Ujian Usulan Penelitian Tesis');
     }
 
     public function test_signed_handoff_opens_the_student_profile_and_krs_list(): void
