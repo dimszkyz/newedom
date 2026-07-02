@@ -5,9 +5,10 @@ namespace App\Filament\Resources\EdomReports;
 use App\Filament\Resources\EdomReports\Pages\ListEdomReportCourses;
 use App\Filament\Resources\EdomReports\Pages\ListEdomReports;
 use App\Filament\Resources\EdomReports\Pages\ViewEdomCourseReport;
+use App\Models\EdomKrsSection;
 use App\Models\EdomResponse;
 use App\Models\ProgramStudi;
-use App\Services\Siakad\UnwApiSiakad;
+use App\Services\Edom\EdomKrsSectionSyncService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Resources\Resource;
@@ -15,44 +16,23 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Throwable;
 
 class EdomReportResource extends Resource
 {
     protected static ?string $model = ProgramStudi::class;
-
     protected static string|\UnitEnum|null $navigationGroup = 'EDOM';
-
     protected static ?string $navigationLabel = 'EDOM Reports';
-
     protected static ?string $modelLabel = 'EDOM Report';
-
     protected static ?string $pluralModelLabel = 'EDOM Reports';
-
     protected static ?string $slug = 'edom-reports';
-
     protected static ?int $navigationSort = 30;
-
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
-
     protected static ?string $recordTitleAttribute = 'nama';
 
-    public static function canCreate(): bool
-    {
-        return false;
-    }
-
-    public static function canEdit(Model $record): bool
-    {
-        return false;
-    }
-
-    public static function canDelete(Model $record): bool
-    {
-        return false;
-    }
+    public static function canCreate(): bool { return false; }
+    public static function canEdit(Model $record): bool { return false; }
+    public static function canDelete(Model $record): bool { return false; }
 
     public static function table(Table $table): Table
     {
@@ -66,11 +46,7 @@ class EdomReportResource extends Resource
                     ->sortable(query: fn (Builder $query, string $direction): Builder => $query
                         ->orderBy('jenjang_nama_singkat', $direction)
                         ->orderBy('nama', $direction)),
-                TextColumn::make('nama_fakultas')
-                    ->label('Fakultas')
-                    ->placeholder('-')
-                    ->searchable()
-                    ->wrap(),
+                TextColumn::make('nama_fakultas')->label('Fakultas')->placeholder('-')->searchable()->wrap(),
                 TextColumn::make('course_count')
                     ->label('Jumlah Mata Kuliah')
                     ->state(fn (ProgramStudi $record): int => self::courseCountForProgramStudi($record))
@@ -113,87 +89,52 @@ class EdomReportResource extends Resource
     public static function courseKeyForResponse(EdomResponse $response): string
     {
         $sectionId = (int) $response->siakad_idtawarmatakuliahdetail;
+        return $sectionId > 0 ? 'd_'.$sectionId : 'm_'.((int) $response->siakad_idmatakuliah);
+    }
 
-        if ($sectionId > 0) {
-            return 'd_'.$sectionId;
-        }
-
-        return 'm_'.((int) $response->siakad_idmatakuliah);
+    public static function courseKeyForKrsSection(EdomKrsSection $section): string
+    {
+        $sectionId = (int) $section->idtawarmatakuliahdetail;
+        return $sectionId > 0 ? 'd_'.$sectionId : 'm_'.((int) $section->idmatakuliah);
     }
 
     public static function courseCountForProgramStudi(ProgramStudi $programStudi): int
     {
-        $idUnwProgramStudi = $programStudi->id_unw_program_studi;
-        $settingIds = static::settingIdsForProgramStudi($programStudi);
+        app(EdomKrsSectionSyncService::class)->syncKnownStudentPeriods();
 
-        if ($idUnwProgramStudi === null || $settingIds->isEmpty()) {
+        if ($programStudi->id_unw_program_studi === null) {
             return 0;
         }
 
-        return Cache::remember(
-            'edom-report:krs-course-count:program-studi:'.$programStudi->id,
-            now()->addMinutes(30),
-            function () use ($idUnwProgramStudi, $settingIds): int {
-                $studentPeriods = EdomResponse::query()
-                    ->join('edom_periods', 'edom_periods.id', '=', 'edom_response.edom_period_id')
-                    ->whereIn('edom_response.edom_setting_id', $settingIds)
-                    ->select([
-                        'edom_response.siakad_idmahasiswa',
-                        'edom_periods.year as siakad_idtahunajaran',
-                        'edom_periods.siakad_idsemester',
-                    ])
-                    ->distinct()
-                    ->get();
-
-                if ($studentPeriods->isEmpty()) {
-                    return 0;
-                }
-
-                $courseIds = collect();
-
-                foreach ($studentPeriods as $studentPeriod) {
-                    try {
-                        $sections = Cache::remember(
-                            'edom-report:krs:'
-                                .$studentPeriod->siakad_idmahasiswa.':'
-                                .$studentPeriod->siakad_idtahunajaran.':'
-                                .$studentPeriod->siakad_idsemester,
-                            now()->addMinutes(30),
-                            fn (): array => app(UnwApiSiakad::class)->krs(
-                                $studentPeriod->siakad_idmahasiswa,
-                                $studentPeriod->siakad_idtahunajaran,
-                                $studentPeriod->siakad_idsemester,
-                            )
-                        );
-                    } catch (Throwable $exception) {
-                        report($exception);
-
-                        continue;
-                    }
-
-                    collect($sections)
-                        ->filter(fn ($section): bool => is_array($section))
-                        ->filter(fn (array $section): bool => (string) data_get($section, 'id_unw_program_studi') === (string) $idUnwProgramStudi)
-                        ->pluck('idmatakuliah')
-                        ->filter(fn ($id): bool => $id !== null && $id !== '')
-                        ->each(fn ($id) => $courseIds->push((string) $id));
-                }
-
-                return $courseIds->unique()->count();
-            }
-        );
+        return EdomKrsSection::query()
+            ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
+            ->distinct('idmatakuliah')
+            ->count('idmatakuliah');
     }
 
     public static function responseCountForProgramStudi(ProgramStudi $programStudi): int
     {
         $settingIds = static::settingIdsForProgramStudi($programStudi);
+        return $settingIds->isEmpty() ? 0 : EdomResponse::query()->whereIn('edom_setting_id', $settingIds)->count();
+    }
 
+    public static function responseCountForProgramStudiAndCourse(ProgramStudi $programStudi, string $courseKey): int
+    {
+        $settingIds = static::settingIdsForProgramStudi($programStudi);
         if ($settingIds->isEmpty()) {
             return 0;
         }
 
-        return EdomResponse::query()
-            ->whereIn('edom_setting_id', $settingIds)
-            ->count();
+        $query = EdomResponse::query()->whereIn('edom_setting_id', $settingIds);
+
+        if (str_starts_with($courseKey, 'd_')) {
+            $query->where('siakad_idtawarmatakuliahdetail', (int) substr($courseKey, 2));
+        } elseif (str_starts_with($courseKey, 'm_')) {
+            $query->where('siakad_idmatakuliah', (int) substr($courseKey, 2));
+        } else {
+            return 0;
+        }
+
+        return $query->count();
     }
 }
