@@ -2,6 +2,7 @@
 
 namespace App\Services\Edom;
 
+use App\Models\EdomKrsSection;
 use App\Models\EdomResponse;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Support\Facades\Cache;
@@ -18,6 +19,11 @@ class EdomResponseMetadata
      * @var array<string, string>|null
      */
     private ?array $semesterLabels = null;
+
+    /**
+     * @var array<string, array<int, string>>
+     */
+    private array $studentGroupCourseLabels = [];
 
     public function __construct(
         private readonly UnwApiSiakad $siakad,
@@ -65,12 +71,88 @@ class EdomResponseMetadata
         return $this->aggregator->courseLabelFor($response);
     }
 
+    public function krsCourseLabelFor(EdomResponse $response): string
+    {
+        $period = $response->period;
+
+        if ($period) {
+            $section = EdomKrsSection::query()
+                ->where('siakad_idmahasiswa', (string) $response->siakad_idmahasiswa)
+                ->where('siakad_idtahunajaran', (int) $period->year)
+                ->where('siakad_idsemester', (int) $period->siakad_idsemester)
+                ->where('idmatakuliah', (int) $response->siakad_idmatakuliah)
+                ->when(
+                    filled($response->siakad_idtawarmatakuliahdetail),
+                    fn ($query) => $query->orderByRaw(
+                        'CASE WHEN idtawarmatakuliahdetail = ? THEN 0 ELSE 1 END',
+                        [(int) $response->siakad_idtawarmatakuliahdetail]
+                    )
+                )
+                ->first();
+
+            if ($section) {
+                return $section->course_label;
+            }
+        }
+
+        return $this->courseLabelFor($response);
+    }
+
     public function courseNameFor(EdomResponse $response): string
     {
         $section = $this->sectionFor($response);
         $courseName = trim((string) data_get($section, 'nama', ''));
 
         return $courseName !== '' ? $courseName : 'Mata kuliah #'.$response->siakad_idmatakuliah;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function courseLabelsForStudentGroup(EdomResponse $response): array
+    {
+        $groupKey = $this->studentGroupKey($response);
+
+        if (array_key_exists($groupKey, $this->studentGroupCourseLabels)) {
+            return $this->studentGroupCourseLabels[$groupKey];
+        }
+
+        $responses = EdomResponse::query()
+            ->where('siakad_idmahasiswa', $response->siakad_idmahasiswa)
+            ->where('edom_period_id', $response->edom_period_id)
+            ->where('edom_setting_id', $response->edom_setting_id)
+            ->with('period')
+            ->orderBy('siakad_idmatakuliah')
+            ->get()
+            ->unique(fn (EdomResponse $item): string => (string) $item->siakad_idmatakuliah)
+            ->values();
+
+        $period = $response->period;
+        $cachedSections = EdomKrsSection::query()
+            ->where('siakad_idmahasiswa', (string) $response->siakad_idmahasiswa)
+            ->when($period, fn ($query) => $query
+                ->where('siakad_idtahunajaran', (int) $period->year)
+                ->where('siakad_idsemester', (int) $period->siakad_idsemester))
+            ->whereIn('idmatakuliah', $responses->pluck('siakad_idmatakuliah')->all())
+            ->orderBy('id')
+            ->get()
+            ->unique(fn (EdomKrsSection $section): string => (string) $section->idmatakuliah)
+            ->keyBy(fn (EdomKrsSection $section): string => (string) $section->idmatakuliah);
+
+        return $this->studentGroupCourseLabels[$groupKey] = $responses
+            ->map(function (EdomResponse $item) use ($cachedSections): string {
+                $section = $cachedSections->get((string) $item->siakad_idmatakuliah);
+
+                return $section?->course_label ?: $this->krsCourseLabelFor($item);
+            })
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public function courseCountForStudentGroup(EdomResponse $response): int
+    {
+        return count($this->courseLabelsForStudentGroup($response));
     }
 
     public function dosenNameFor(EdomResponse $response): string
@@ -168,6 +250,15 @@ class EdomResponseMetadata
         $semester = $response->getAttribute('siakad_idsemester') ?? $response->period?->siakad_idsemester;
 
         return $semester === null || $semester === '' ? null : $semester;
+    }
+
+    private function studentGroupKey(EdomResponse $response): string
+    {
+        return implode(':', [
+            (string) $response->siakad_idmahasiswa,
+            (string) $response->edom_period_id,
+            (string) $response->edom_setting_id,
+        ]);
     }
 
     /**
