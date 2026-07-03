@@ -67,6 +67,7 @@ class EdomResponseSubmissionTest extends TestCase
             'siakad_idmahasiswa' => '18273',
             'siakad_idmatakuliah' => 123,
             'siakad_idtawarmatakuliahdetail' => 4567,
+            'id_unw_program_studi' => 14,
         ]);
         $this->assertDatabaseHas('edom_response_detail', [
             'edom_question_id' => $question->id,
@@ -627,6 +628,7 @@ class EdomResponseSubmissionTest extends TestCase
                 'nama' => 'Dosen Testing',
             ],
             'dosen_team' => [],
+            'id_unw_program_studi' => 14,
         ];
     }
 
@@ -642,6 +644,7 @@ class EdomResponseSubmissionTest extends TestCase
                 'nama' => 'Dosen Kedua',
             ],
             'dosen_team' => ['Dosen Pendamping'],
+            'id_unw_program_studi' => 14,
         ];
     }
 

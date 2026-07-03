@@ -3,8 +3,10 @@
 namespace App\Services\Edom;
 
 use App\Models\EdomKrsSection;
+use App\Models\EdomPeriod;
 use App\Models\EdomResponse;
 use App\Services\Siakad\UnwApiSiakad;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -81,9 +83,65 @@ class EdomKrsSectionSyncService
                     'fetched_at' => now(),
                 ]);
             }
+
+            $this->syncResponseProgramStudi(
+                $studentId,
+                $tahunAjaran,
+                $semester,
+                $validSections,
+            );
         });
 
         return $validSections->count();
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $sections
+     */
+    private function syncResponseProgramStudi(
+        string $studentId,
+        int $tahunAjaran,
+        int $semester,
+        Collection $sections,
+    ): void {
+        $periodId = EdomPeriod::query()
+            ->where('year', $tahunAjaran)
+            ->where('siakad_idsemester', $semester)
+            ->value('id');
+
+        if ($periodId === null) {
+            return;
+        }
+
+        $responses = EdomResponse::query()
+            ->where('edom_period_id', $periodId)
+            ->where('siakad_idmahasiswa', $studentId)
+            ->get([
+                'id',
+                'siakad_idmatakuliah',
+                'siakad_idtawarmatakuliahdetail',
+            ]);
+
+        foreach ($responses as $response) {
+            $matchingSections = $sections->filter(
+                fn (array $section): bool => (int) data_get($section, 'idmatakuliah')
+                    === (int) $response->siakad_idmatakuliah
+            );
+            $section = $matchingSections->first(
+                fn (array $section): bool => filled(data_get($section, 'idtawarmatakuliahdetail'))
+                    && (int) data_get($section, 'idtawarmatakuliahdetail')
+                        === (int) $response->siakad_idtawarmatakuliahdetail
+            ) ?? $matchingSections->first();
+            $programStudiId = data_get($section, 'id_unw_program_studi');
+
+            if (! filled($programStudiId)) {
+                continue;
+            }
+
+            EdomResponse::query()
+                ->whereKey($response->id)
+                ->update(['id_unw_program_studi' => (int) $programStudiId]);
+        }
     }
 
     private function syncStudentPeriod(string $studentId, int $tahunAjaran, int $semester): int

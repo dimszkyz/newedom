@@ -15,7 +15,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class EdomReportResource extends Resource
 {
@@ -74,6 +73,7 @@ class EdomReportResource extends Resource
                 TextColumn::make('response_count')
                     ->label('Jumlah Respons')
                     ->state(fn (ProgramStudi $record): int => self::responseCountForProgramStudi($record))
+                    ->description('Berdasarkan prodi mata kuliah saat mahasiswa submit')
                     ->badge()
                     ->color('success'),
             ])
@@ -94,15 +94,6 @@ class EdomReportResource extends Resource
             'courses' => ListEdomReportCourses::route('/{record}/courses'),
             'course-report' => ViewEdomCourseReport::route('/{record}/courses/{courseKey}'),
         ];
-    }
-
-    public static function settingIdsForProgramStudi(ProgramStudi $programStudi)
-    {
-        return DB::table('edom_settings_program_studi')
-            ->where('program_studi_id', $programStudi->id)
-            ->pluck('edom_setting_id')
-            ->map(fn ($id): int => (int) $id)
-            ->values();
     }
 
     public static function courseKeyForResponse(EdomResponse $response): string
@@ -131,19 +122,12 @@ class EdomReportResource extends Resource
 
     public static function responseCountForProgramStudi(ProgramStudi $programStudi): int
     {
-        $settingIds = static::settingIdsForProgramStudi($programStudi);
-
-        return $settingIds->isEmpty() ? 0 : EdomResponse::query()->whereIn('edom_setting_id', $settingIds)->count();
+        return static::responsesForProgramStudi($programStudi)->count();
     }
 
     public static function responseCountForProgramStudiAndCourse(ProgramStudi $programStudi, string $courseKey): int
     {
-        $settingIds = static::settingIdsForProgramStudi($programStudi);
-        if ($settingIds->isEmpty()) {
-            return 0;
-        }
-
-        $query = EdomResponse::query()->whereIn('edom_setting_id', $settingIds);
+        $query = static::responsesForProgramStudi($programStudi);
 
         if (str_starts_with($courseKey, 'd_')) {
             $query->where('siakad_idtawarmatakuliahdetail', (int) substr($courseKey, 2));
@@ -154,5 +138,19 @@ class EdomReportResource extends Resource
         }
 
         return $query->count();
+    }
+
+    public static function responsesForProgramStudi(ProgramStudi $programStudi): Builder
+    {
+        $query = EdomResponse::query();
+
+        if ($programStudi->id_unw_program_studi === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(
+            'id_unw_program_studi',
+            (int) $programStudi->id_unw_program_studi,
+        );
     }
 }

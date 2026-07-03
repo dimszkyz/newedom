@@ -204,14 +204,8 @@ class ViewEdomCourseReport extends Page implements HasTable
     {
         /** @var ProgramStudi $programStudi */
         $programStudi = $this->record;
-        $settingIds = EdomReportResource::settingIdsForProgramStudi($programStudi);
 
-        if ($settingIds->isEmpty()) {
-            return collect();
-        }
-
-        $query = EdomResponse::query()
-            ->whereIn('edom_setting_id', $settingIds->all())
+        $query = EdomReportResource::responsesForProgramStudi($programStudi)
             ->with(['period', 'edomSettings']);
 
         if (str_starts_with($this->courseKey, 'd_')) {

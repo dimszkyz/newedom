@@ -32,7 +32,7 @@ class EdomKrsReportTest extends TestCase
             'name' => 'EDOM 2025',
             'status' => 'active',
         ]);
-        EdomResponse::query()->create([
+        $response = EdomResponse::query()->create([
             'edom_period_id' => $period->id,
             'edom_setting_id' => $setting->id,
             'siakad_idmahasiswa' => '18273',
@@ -57,10 +57,70 @@ class EdomKrsReportTest extends TestCase
         $this->assertSame(1, $result['student_periods']);
         $this->assertSame(3, $result['synced_sections']);
         $this->assertDatabaseCount('edom_krs_sections', 3);
+        $this->assertDatabaseHas('edom_response', [
+            'id' => $response->id,
+            'id_unw_program_studi' => 22,
+        ]);
         $this->assertSame(2, EdomReportResource::courseCountForProgramStudi($programStudi));
+        $this->assertSame(1, EdomReportResource::responseCountForProgramStudi($programStudi));
 
         $course = EdomKrsSection::query()->where('idmatakuliah', 3926)->firstOrFail();
         $this->assertSame('m_3926', EdomReportResource::courseKeyForKrsSection($course));
+    }
+
+    public function test_response_counts_are_scoped_by_submitted_program_studi_and_course(): void
+    {
+        $magisterHukum = ProgramStudi::query()->create([
+            'id_unw_program_studi' => 22,
+            'nama' => 'Hukum',
+            'jenjang_nama_singkat' => 'S2',
+        ]);
+        $keperawatan = ProgramStudi::query()->create([
+            'id_unw_program_studi' => 1,
+            'nama' => 'Keperawatan',
+            'jenjang_nama_singkat' => 'D3',
+        ]);
+        $period = EdomPeriod::query()->create([
+            'year' => 2025,
+            'siakad_idsemester' => 1,
+        ]);
+        $setting = EdomSettings::query()->create([
+            'name' => 'EDOM Bersama',
+            'status' => 'active',
+        ]);
+
+        foreach ([3926, 3931, 3927] as $courseId) {
+            EdomResponse::query()->create([
+                'edom_period_id' => $period->id,
+                'edom_setting_id' => $setting->id,
+                'siakad_idmahasiswa' => '18273',
+                'siakad_idmatakuliah' => $courseId,
+                'siakad_idtawarmatakuliahdetail' => $courseId + 18000,
+                'id_unw_program_studi' => 22,
+                'submitted_at' => now(),
+            ]);
+        }
+
+        EdomResponse::query()->create([
+            'edom_period_id' => $period->id,
+            'edom_setting_id' => $setting->id,
+            'siakad_idmahasiswa' => '20001',
+            'siakad_idmatakuliah' => 5001,
+            'siakad_idtawarmatakuliahdetail' => 25001,
+            'id_unw_program_studi' => 1,
+            'submitted_at' => now(),
+        ]);
+
+        $this->assertSame(3, EdomReportResource::responseCountForProgramStudi($magisterHukum));
+        $this->assertSame(1, EdomReportResource::responseCountForProgramStudi($keperawatan));
+        $this->assertSame(
+            1,
+            EdomReportResource::responseCountForProgramStudiAndCourse($magisterHukum, 'm_3926'),
+        );
+        $this->assertSame(
+            0,
+            EdomReportResource::responseCountForProgramStudiAndCourse($keperawatan, 'm_3926'),
+        );
     }
 
     public function test_sync_replaces_stale_krs_courses_for_the_same_student_period(): void

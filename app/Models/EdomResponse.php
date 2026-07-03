@@ -14,10 +14,12 @@ class EdomResponse extends Model
         'siakad_idmahasiswa',
         'siakad_idmatakuliah',
         'siakad_idtawarmatakuliahdetail',
+        'id_unw_program_studi',
         'submitted_at',
     ];
 
     protected $casts = [
+        'id_unw_program_studi' => 'integer',
         'submitted_at' => 'datetime',
     ];
 

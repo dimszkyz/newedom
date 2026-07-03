@@ -270,6 +270,15 @@ class EdomPublicController extends Controller
             $period = $this->firstOrCreatePeriod($student);
 
             foreach ($submittedSections as $sectionKey => $section) {
+                $responseValues = [
+                    'submitted_at' => now(),
+                ];
+                $programStudiId = $this->nullableInteger($section['id_unw_program_studi'] ?? null);
+
+                if ($programStudiId !== null) {
+                    $responseValues['id_unw_program_studi'] = $programStudiId;
+                }
+
                 $response = EdomResponse::updateOrCreate(
                     [
                         'edom_period_id' => $period->id,
@@ -278,9 +287,7 @@ class EdomPublicController extends Controller
                         'siakad_idmatakuliah' => $this->nullableInteger($section['idmatakuliah'] ?? null),
                         'siakad_idtawarmatakuliahdetail' => $this->persistedSectionDetailId($section),
                     ],
-                    [
-                        'submitted_at' => now(),
-                    ]
+                    $responseValues
                 );
 
                 foreach ($questions as $question) {
