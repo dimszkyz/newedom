@@ -19,6 +19,8 @@ use Throwable;
 
 class EdomPublicController extends Controller
 {
+    private const RESPONSE_UPDATE_LOCKED_MESSAGE = 'Periode EDOM telah ditutup di SIAKAD. Jawaban yang sudah tersimpan tidak dapat diperbarui, tetapi mata kuliah yang belum diisi masih dapat dikerjakan.';
+
     public function index(Request $request): View
     {
         $student = session('edom_student');
@@ -70,22 +72,25 @@ class EdomPublicController extends Controller
         $studentEdomSections = collect();
 
         if ($student && ! $studentFetchError) {
+            $responseUpdatesLocked = $this->studentPeriodLocksResponseUpdates($student);
             $completedSectionKeys = $this->completedSectionKeys(
                 $student,
                 $activeEdoms->pluck('id')->map(fn ($id) => (int) $id)->all()
             );
 
             $studentEdomSections = $activeEdoms
-                ->map(function (EdomSettings $edom) use ($studentSections, $completedSectionKeys): array {
+                ->map(function (EdomSettings $edom) use ($studentSections, $completedSectionKeys, $responseUpdatesLocked): array {
                     $sections = collect($this->sectionsForEdomSettings($edom, $studentSections))
-                        ->map(function (array $section) use ($edom, $completedSectionKeys): array {
+                        ->map(function (array $section) use ($edom, $completedSectionKeys, $responseUpdatesLocked): array {
                             $completionKey = $this->sectionCompletionKey($edom->id, $section);
+                            $completed = $completionKey !== null
+                                && isset($completedSectionKeys[$completionKey]);
 
                             return [
                                 'section' => $section,
                                 'section_key' => $this->sectionRouteKey($section),
-                                'completed' => $completionKey !== null
-                                    && isset($completedSectionKeys[$completionKey]),
+                                'completed' => $completed,
+                                'update_locked' => $completed && $responseUpdatesLocked,
                             ];
                         })
                         ->values();
@@ -93,6 +98,7 @@ class EdomPublicController extends Controller
                     return [
                         'edom' => $edom,
                         'sections' => $sections,
+                        'response_updates_locked' => $responseUpdatesLocked,
                     ];
                 })
                 ->filter(fn (array $group): bool => $group['sections']->isNotEmpty())
@@ -201,6 +207,17 @@ class EdomPublicController extends Controller
             ]);
         }
 
+        if (
+            $this->studentPeriodLocksResponseUpdates($student)
+            && $this->studentHasCompletedSection($student, $edom, $sections[0])
+        ) {
+            return view('edom.status', [
+                'edom' => $edom,
+                'statusTitle' => 'Jawaban EDOM terkunci',
+                'statusMessage' => self::RESPONSE_UPDATE_LOCKED_MESSAGE,
+            ]);
+        }
+
         return view('edom.show', compact('edom', 'student', 'sections'));
     }
 
@@ -252,6 +269,17 @@ class EdomPublicController extends Controller
             $settingSections
         );
 
+        if (
+            $this->studentPeriodLocksResponseUpdates($student)
+            && collect($submittedSections)->contains(
+                fn (array $section): bool => $this->studentHasCompletedSection($student, $edom, $section)
+            )
+        ) {
+            return redirect()
+                ->route('edom.home')
+                ->with('error', self::RESPONSE_UPDATE_LOCKED_MESSAGE);
+        }
+
         $rules = [];
 
         foreach ($submittedSections as $sectionKey => $section) {
@@ -270,6 +298,23 @@ class EdomPublicController extends Controller
             $period = $this->firstOrCreatePeriod($student);
 
             foreach ($submittedSections as $sectionKey => $section) {
+                $responseIdentity = [
+                    'edom_period_id' => $period->id,
+                    'edom_setting_id' => $edom->id,
+                    'siakad_idmahasiswa' => (string) $student['siakad_idmahasiswa'],
+                    'siakad_idmatakuliah' => $this->nullableInteger($section['idmatakuliah'] ?? null),
+                    'siakad_idtawarmatakuliahdetail' => $this->persistedSectionDetailId($section),
+                ];
+
+                if (
+                    $period->locksResponseUpdates()
+                    && EdomResponse::query()->where($responseIdentity)->exists()
+                ) {
+                    throw ValidationException::withMessages([
+                        'sections' => self::RESPONSE_UPDATE_LOCKED_MESSAGE,
+                    ]);
+                }
+
                 $responseValues = [
                     'submitted_at' => now(),
                 ];
@@ -280,13 +325,7 @@ class EdomPublicController extends Controller
                 }
 
                 $response = EdomResponse::updateOrCreate(
-                    [
-                        'edom_period_id' => $period->id,
-                        'edom_setting_id' => $edom->id,
-                        'siakad_idmahasiswa' => (string) $student['siakad_idmahasiswa'],
-                        'siakad_idmatakuliah' => $this->nullableInteger($section['idmatakuliah'] ?? null),
-                        'siakad_idtawarmatakuliahdetail' => $this->persistedSectionDetailId($section),
-                    ],
+                    $responseIdentity,
                     $responseValues
                 );
 
@@ -503,6 +542,26 @@ class EdomPublicController extends Controller
                 return $keys;
             })
             ->all();
+    }
+
+    private function studentHasCompletedSection(array $student, Model $edom, array $section): bool
+    {
+        $completionKey = $this->sectionCompletionKey((int) $edom->id, $section);
+
+        if ($completionKey === null) {
+            return false;
+        }
+
+        return isset($this->completedSectionKeys($student, [(int) $edom->id])[$completionKey]);
+    }
+
+    private function studentPeriodLocksResponseUpdates(array $student): bool
+    {
+        return EdomPeriod::query()
+            ->where('year', (int) $student['siakad_idtahunajaran'])
+            ->where('siakad_idsemester', (int) $student['siakad_idsemester'])
+            ->first()
+            ?->locksResponseUpdates() ?? false;
     }
 
     private function sectionCompletionKey(int $edomSettingId, array $section): ?string

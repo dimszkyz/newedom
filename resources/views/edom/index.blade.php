@@ -200,12 +200,18 @@
                                             <span class="badge {{ $item['completed'] ? 'badge-completed' : 'badge-pending' }}">
                                                 {{ $item['completed'] ? 'Sudah Diisi' : 'Belum Diisi' }}
                                             </span>
-                                            <a class="button" href="{{ route('edom.fill', [
-                                                'edomSettings' => $edom,
-                                                'section' => $sectionKey,
-                                            ]) }}">
-                                                {{ $item['completed'] ? 'Perbarui Jawaban' : 'Isi EDOM' }}
-                                            </a>
+                                            @if ($item['update_locked'] ?? false)
+                                                <span class="button button-muted" aria-disabled="true">
+                                                    Jawaban Terkunci
+                                                </span>
+                                            @else
+                                                <a class="button" href="{{ route('edom.fill', [
+                                                    'edomSettings' => $edom,
+                                                    'section' => $sectionKey,
+                                                ]) }}">
+                                                    {{ $item['completed'] ? 'Perbarui Jawaban' : 'Isi EDOM' }}
+                                                </a>
+                                            @endif
                                         </div>
                                     </li>
                                 @endforeach

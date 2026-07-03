@@ -122,6 +122,152 @@ class EdomResponseSubmissionTest extends TestCase
             ]), false);
     }
 
+    public function test_closed_siakad_period_locks_existing_answers_but_keeps_unfilled_courses_available(): void
+    {
+        [$setting] = $this->createActiveSetting();
+        $period = EdomPeriod::query()->create([
+            'year' => 2026,
+            'siakad_idsemester' => 2,
+            'is_open_in_siakad' => false,
+        ]);
+        EdomResponse::query()->create([
+            'edom_period_id' => $period->id,
+            'edom_setting_id' => $setting->id,
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idmatakuliah' => 123,
+            'siakad_idtawarmatakuliahdetail' => 4567,
+            'id_unw_program_studi' => 14,
+            'submitted_at' => now(),
+        ]);
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('semester')
+            ->once()
+            ->andReturn($this->semesters());
+        $siakad->shouldReceive('krs')
+            ->twice()
+            ->with(18273, 2026, 2)
+            ->andReturn([$this->section(), $this->secondSection()]);
+        $siakad->shouldReceive('mahasiswa')
+            ->once()
+            ->with(['18273'])
+            ->andReturn([$this->studentProfile()]);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withoutVite();
+
+        $this->withSession(['edom_student' => $this->student()])
+            ->get(route('edom.home'))
+            ->assertOk()
+            ->assertSee('Jawaban Terkunci')
+            ->assertDontSee('Perbarui Jawaban')
+            ->assertSee('Isi EDOM');
+
+        $this->withSession(['edom_student' => $this->student()])
+            ->get(route('edom.fill', [
+                'edomSettings' => $setting,
+                'section' => 'd_4567',
+            ]))
+            ->assertOk()
+            ->assertSee('Jawaban EDOM terkunci')
+            ->assertSee('mata kuliah yang belum diisi masih dapat dikerjakan');
+    }
+
+    public function test_closed_siakad_period_rejects_an_existing_answer_update(): void
+    {
+        [$setting, $question, $option] = $this->createActiveSetting();
+        $period = EdomPeriod::query()->create([
+            'year' => 2026,
+            'siakad_idsemester' => 2,
+            'is_open_in_siakad' => false,
+        ]);
+        EdomResponse::query()->create([
+            'edom_period_id' => $period->id,
+            'edom_setting_id' => $setting->id,
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idmatakuliah' => 123,
+            'siakad_idtawarmatakuliahdetail' => 4567,
+            'id_unw_program_studi' => 14,
+            'submitted_at' => now()->subDay(),
+        ]);
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with(18273, 2026, 2)
+            ->andReturn([$this->section()]);
+        $siakad->shouldNotReceive('complete');
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withSession(['edom_student' => $this->student()])
+            ->post(route('edom.home.submit'), [
+                'edom_id' => $setting->id,
+                'sections' => [
+                    's_0_d_4567' => [
+                        'idtawarmatakuliahdetail' => 4567,
+                        'idmatakuliah' => 123,
+                    ],
+                ],
+                'answers' => [
+                    's_0_d_4567' => [
+                        $question->id => $option->id,
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('edom.home'))
+            ->assertSessionHas('error', fn (string $message): bool => str_contains(
+                $message,
+                'Jawaban yang sudah tersimpan tidak dapat diperbarui',
+            ));
+
+        $this->assertDatabaseCount('edom_response', 1);
+        $this->assertDatabaseCount('edom_response_detail', 0);
+    }
+
+    public function test_closed_siakad_period_still_accepts_a_new_course_response(): void
+    {
+        [$setting, $question, $option] = $this->createActiveSetting();
+        EdomPeriod::query()->create([
+            'year' => 2026,
+            'siakad_idsemester' => 2,
+            'is_open_in_siakad' => false,
+        ]);
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->twice()
+            ->with(18273, 2026, 2)
+            ->andReturn([$this->section(), $this->secondSection()]);
+        $siakad->shouldNotReceive('complete');
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $this->withSession(['edom_student' => $this->student()])
+            ->post(route('edom.home.submit'), [
+                'edom_id' => $setting->id,
+                'sections' => [
+                    's_0_d_4567' => [
+                        'idtawarmatakuliahdetail' => 4567,
+                        'idmatakuliah' => 123,
+                    ],
+                ],
+                'answers' => [
+                    's_0_d_4567' => [
+                        $question->id => $option->id,
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('edom.home'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('edom_response', [
+            'edom_setting_id' => $setting->id,
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idmatakuliah' => 123,
+            'siakad_idtawarmatakuliahdetail' => 4567,
+        ]);
+        $this->assertDatabaseCount('edom_response_detail', 1);
+    }
+
     public function test_student_home_renders_the_real_krs_response_shape(): void
     {
         $this->createActiveSetting();
