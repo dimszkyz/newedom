@@ -18,55 +18,49 @@ class EdomResponsesTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => self::applyStudentGrouping($query))
+            ->modifyQueryUsing(fn(Builder $query): Builder => self::applyStudentGrouping($query))
             ->columns([
                 TextColumn::make('student_name')
                     ->label('Nama Mahasiswa')
-                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->studentNameFor($record))
-                    ->url(fn (EdomResponse $record): string => self::studentDetailUrl($record))
+                    ->state(fn(EdomResponse $record): string => app(EdomResponseMetadata::class)->studentNameFor($record))
+                    ->url(fn(EdomResponse $record): string => self::studentDetailUrl($record))
                     ->color('primary')
                     ->wrap(),
                 TextColumn::make('student_nim')
                     ->label('NIM')
-                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->studentNimFor($record))
+                    ->state(fn(EdomResponse $record): string => app(EdomResponseMetadata::class)->studentNimFor($record))
                     ->placeholder('-'),
                 TextColumn::make('semester_label')
                     ->label('Semester')
-                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->semesterNameFor($record))
-                    ->description(fn (EdomResponse $record): string => 'Tahun ajaran: '.app(EdomResponseMetadata::class)->tahunAjaranFor($record))
+                    ->state(fn(EdomResponse $record): string => app(EdomResponseMetadata::class)->semesterNameFor($record))
                     ->badge(),
-                TextColumn::make('submitted_at')
-                    ->label('Submit Terakhir')
-                    ->dateTime('d M Y H:i')
-                    ->sortable(),
+                TextColumn::make('filled_course_count')
+                    ->label('Jumlah Mata Kuliah')
+                    ->state(fn(EdomResponse $record): int => app(EdomResponseMetadata::class)->courseCountForStudentGroup($record))
+                    ->badge(),
                 TextColumn::make('edomSettings.name')
                     ->label('Nama EDOM')
                     ->placeholder('-')
                     ->badge()
                     ->wrap(),
-                TextColumn::make('filled_courses')
-                    ->label('Mata Kuliah yang Sudah Diisi')
-                    ->state(fn (EdomResponse $record): array => app(EdomResponseMetadata::class)->courseLabelsForStudentGroup($record))
-                    ->bulleted()
-                    ->listWithLineBreaks()
-                    ->wrap(),
-                TextColumn::make('filled_course_count')
-                    ->label('Jumlah Mata Kuliah')
-                    ->state(fn (EdomResponse $record): int => app(EdomResponseMetadata::class)->courseCountForStudentGroup($record))
-                    ->badge(),
+                TextColumn::make('submitted_at')
+                    ->label('Submit Terakhir')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
+
             ])
             ->filters([
                 SelectFilter::make('edom_setting_id')
                     ->label('EDOM')
-                    ->options(fn (): array => EdomSettings::query()->pluck('name', 'id')->all()),
+                    ->options(fn(): array => EdomSettings::query()->pluck('name', 'id')->all()),
                 SelectFilter::make('edom_period_id')
                     ->label('Periode')
-                    ->options(fn (): array => EdomPeriod::query()
+                    ->options(fn(): array => EdomPeriod::query()
                         ->orderByDesc('year')
                         ->orderBy('siakad_idsemester')
                         ->get()
-                        ->mapWithKeys(fn (EdomPeriod $period): array => [
-                            $period->id => $period->year.' / Semester '.$period->siakad_idsemester,
+                        ->mapWithKeys(fn(EdomPeriod $period): array => [
+                            $period->id => $period->year . ' / Semester ' . $period->siakad_idsemester,
                         ])
                         ->all()),
             ])
@@ -74,9 +68,9 @@ class EdomResponsesTable
                 Action::make('viewStudentResponses')
                     ->label('Lihat Mata Kuliah')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (EdomResponse $record): string => self::studentDetailUrl($record)),
+                    ->url(fn(EdomResponse $record): string => self::studentDetailUrl($record)),
             ])
-            ->recordUrl(fn (EdomResponse $record): string => self::studentDetailUrl($record))
+            ->recordUrl(fn(EdomResponse $record): string => self::studentDetailUrl($record))
             ->toolbarActions([]);
     }
 
