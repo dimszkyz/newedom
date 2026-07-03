@@ -13,6 +13,7 @@ use Filament\Resources\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -47,6 +48,13 @@ class ViewEdomCourseReport extends Page implements HasTable
         return $table
             ->query($this->reportQuery())
             ->columns($this->reportColumns())
+            ->defaultGroup(
+                Group::make('report_category')
+                    ->label('Kategori')
+                    ->titlePrefixedWithLabel(false)
+            )
+            ->defaultSort('id')
+            ->groupingSettingsHidden()
             ->recordActions([])
             ->toolbarActions([]);
     }
@@ -68,10 +76,6 @@ class ViewEdomCourseReport extends Page implements HasTable
     private function reportColumns(): array
     {
         $columns = [
-            TextColumn::make('report_category')
-                ->label('Kategori')
-                ->badge()
-                ->wrap(),
             TextColumn::make('report_statement')
                 ->label('Pernyataan')
                 ->wrap()
@@ -112,8 +116,7 @@ class ViewEdomCourseReport extends Page implements HasTable
                 'edom_question_categories.name',
                 'edom_response_detail.question_statement_snapshot',
                 'edom_questions.statement',
-            ])
-            ->orderBy('id');
+            ]);
 
         if ($responseIds->isEmpty()) {
             return $query->whereRaw('1 = 0');
