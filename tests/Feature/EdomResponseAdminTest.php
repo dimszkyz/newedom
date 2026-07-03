@@ -44,7 +44,7 @@ class EdomResponseAdminTest extends TestCase
         ], app(EdomResponseMetadata::class)->courseLabelsForStudentGroup($group));
     }
 
-    public function test_student_detail_query_contains_answers_from_all_filled_courses(): void
+    public function test_student_detail_query_lists_all_filled_courses_before_their_answers(): void
     {
         [$period, $setting, $question, $option] = $this->createResponseDependencies();
         $first = $this->createResponse($period, $setting, 3926, 22489, now()->subMinute());
@@ -58,17 +58,18 @@ class EdomResponseAdminTest extends TestCase
             ]);
         }
 
-        $details = ViewStudentEdomResponses::detailsForStudentGroup(
+        $responses = ViewStudentEdomResponses::responsesForStudentGroup(
             '18273',
             $period->id,
             $setting->id,
         )->get();
 
-        $this->assertCount(2, $details);
+        $this->assertCount(2, $responses);
         $this->assertEqualsCanonicalizing(
             [$first->id, $second->id],
-            $details->pluck('edom_response_id')->all()
+            $responses->pluck('id')->all()
         );
+        $this->assertSame([1, 1], $responses->pluck('details_count')->all());
     }
 
     /**

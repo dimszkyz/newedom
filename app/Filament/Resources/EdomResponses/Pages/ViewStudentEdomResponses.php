@@ -4,7 +4,6 @@ namespace App\Filament\Resources\EdomResponses\Pages;
 
 use App\Filament\Resources\EdomResponses\EdomResponseResource;
 use App\Models\EdomResponse;
-use App\Models\EdomResponseDetail;
 use App\Services\Edom\EdomResponseMetadata;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\Page;
@@ -41,7 +40,7 @@ class ViewStudentEdomResponses extends Page implements HasTable
     {
         $response = $this->representativeResponse();
 
-        return 'Detail Jawaban - '.app(EdomResponseMetadata::class)->studentNameFor($response);
+        return 'EDOM Mata Kuliah - '.app(EdomResponseMetadata::class)->studentNameFor($response);
     }
 
     public function getSubheading(): ?string
@@ -60,43 +59,42 @@ class ViewStudentEdomResponses extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->detailsQuery())
+            ->query($this->responsesQuery())
             ->columns([
                 TextColumn::make('course_name')
                     ->label('Mata Kuliah')
-                    ->state(fn (EdomResponseDetail $record): string => app(EdomResponseMetadata::class)
-                        ->krsCourseLabelFor($record->response))
+                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)
+                        ->krsCourseLabelFor($record))
+                    ->url(fn (EdomResponse $record): string => EdomResponseResource::getUrl('view', [
+                        'record' => $record,
+                    ]))
+                    ->color('primary')
                     ->wrap(),
-                TextColumn::make('category_name_for_display')
-                    ->label('Kategori')
-                    ->state(fn (EdomResponseDetail $record): string => $record->category_name_for_display)
-                    ->badge()
-                    ->wrap(),
-                TextColumn::make('question_statement_for_display')
-                    ->label('Pernyataan')
-                    ->state(fn (EdomResponseDetail $record): string => $record->question_statement_for_display)
-                    ->wrap(),
-                TextColumn::make('option_name_for_display')
-                    ->label('Jawaban')
-                    ->state(fn (EdomResponseDetail $record): ?string => $record->option_name_for_display)
-                    ->placeholder('-')
+                TextColumn::make('details_count')
+                    ->label('Jumlah Jawaban')
                     ->badge(),
-                TextColumn::make('option_score_for_display')
-                    ->label('Nilai')
-                    ->state(fn (EdomResponseDetail $record): ?int => $record->option_score_for_display)
-                    ->placeholder('-')
+                TextColumn::make('average_score')
+                    ->label('Rata-rata Nilai')
+                    ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)
+                        ->formattedAverageScoreFor($record))
                     ->badge()
                     ->color('success'),
-                TextColumn::make('answer_text')
-                    ->label('Jawaban Teks')
-                    ->placeholder('-')
-                    ->wrap(),
-                TextColumn::make('response.submitted_at')
+                TextColumn::make('submitted_at')
                     ->label('Waktu Submit')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
-            ->recordActions([])
+            ->recordActions([
+                Action::make('viewResponse')
+                    ->label('Lihat Detail Jawaban')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (EdomResponse $record): string => EdomResponseResource::getUrl('view', [
+                        'record' => $record,
+                    ])),
+            ])
+            ->recordUrl(fn (EdomResponse $record): string => EdomResponseResource::getUrl('view', [
+                'record' => $record,
+            ]))
             ->toolbarActions([]);
     }
 
@@ -110,48 +108,32 @@ class ViewStudentEdomResponses extends Page implements HasTable
         ];
     }
 
-    private function detailsQuery(): Builder
-    {
-        return self::detailsForStudentGroup(
-            $this->studentId,
-            $this->periodId,
-            $this->settingId,
-        );
-    }
-
-    public static function detailsForStudentGroup(
+    public static function responsesForStudentGroup(
         string $studentId,
         int $periodId,
         int $settingId,
     ): Builder {
-        return EdomResponseDetail::query()
-            ->whereHas('response', fn (Builder $query): Builder => $query
-                ->where('siakad_idmahasiswa', $studentId)
-                ->where('edom_period_id', $periodId)
-                ->where('edom_setting_id', $settingId))
+        return EdomResponse::query()
+            ->where('siakad_idmahasiswa', $studentId)
+            ->where('edom_period_id', $periodId)
+            ->where('edom_setting_id', $settingId)
             ->with([
-                'response.period',
-                'response.edomSettings',
-                'question.category',
-                'questionOption',
+                'period',
+                'edomSettings',
+                'details.questionOption',
             ])
-            ->orderBy('edom_response_id')
-            ->orderBy('id');
+            ->withCount('details')
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id');
     }
 
     private function responsesQuery(): Builder
     {
-        return $this->applyResponseScope(
-            EdomResponse::query()->with(['period', 'edomSettings'])
+        return self::responsesForStudentGroup(
+            $this->studentId,
+            $this->periodId,
+            $this->settingId,
         );
-    }
-
-    private function applyResponseScope(Builder $query): Builder
-    {
-        return $query
-            ->where('siakad_idmahasiswa', $this->studentId)
-            ->where('edom_period_id', $this->periodId)
-            ->where('edom_setting_id', $this->settingId);
     }
 
     private function representativeResponse(): EdomResponse

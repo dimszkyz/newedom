@@ -23,6 +23,8 @@ class EdomResponsesTable
                 TextColumn::make('student_name')
                     ->label('Nama Mahasiswa')
                     ->state(fn (EdomResponse $record): string => app(EdomResponseMetadata::class)->studentNameFor($record))
+                    ->url(fn (EdomResponse $record): string => self::studentDetailUrl($record))
+                    ->color('primary')
                     ->wrap(),
                 TextColumn::make('student_nim')
                     ->label('NIM')
@@ -70,7 +72,7 @@ class EdomResponsesTable
             ])
             ->recordActions([
                 Action::make('viewStudentResponses')
-                    ->label('Lihat Detail Jawaban')
+                    ->label('Lihat Mata Kuliah')
                     ->icon('heroicon-o-eye')
                     ->url(fn (EdomResponse $record): string => self::studentDetailUrl($record)),
             ])
