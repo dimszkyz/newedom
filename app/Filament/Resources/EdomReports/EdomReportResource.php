@@ -67,7 +67,7 @@ class EdomReportResource extends Resource
                 TextColumn::make('course_count')
                     ->label('Jumlah Mata Kuliah')
                     ->state(fn (ProgramStudi $record): int => self::courseCountForProgramStudi($record))
-                    ->description('Berdasarkan idmatakuliah unik dari /edom/krs')
+                    ->description('Berdasarkan mata kuliah yang memiliki respons')
                     ->badge()
                     ->color('info'),
                 TextColumn::make('response_count')
@@ -110,14 +110,9 @@ class EdomReportResource extends Resource
 
     public static function courseCountForProgramStudi(ProgramStudi $programStudi): int
     {
-        if ($programStudi->id_unw_program_studi === null) {
-            return 0;
-        }
-
-        return EdomKrsSection::query()
-            ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
-            ->distinct('idmatakuliah')
-            ->count('idmatakuliah');
+        return static::responsesForProgramStudi($programStudi)
+            ->distinct('siakad_idmatakuliah')
+            ->count('siakad_idmatakuliah');
     }
 
     public static function responseCountForProgramStudi(ProgramStudi $programStudi): int
@@ -152,5 +147,34 @@ class EdomReportResource extends Resource
             'id_unw_program_studi',
             (int) $programStudi->id_unw_program_studi,
         );
+    }
+
+    public static function coursesForProgramStudi(ProgramStudi $programStudi): Builder
+    {
+        if ($programStudi->id_unw_program_studi === null) {
+            return EdomKrsSection::query()->whereRaw('1 = 0');
+        }
+
+        return EdomKrsSection::query()
+            ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
+            ->whereIn(
+                'idmatakuliah',
+                static::responsesForProgramStudi($programStudi)
+                    ->select('siakad_idmatakuliah')
+                    ->distinct(),
+            )
+            ->select([
+                'idmatakuliah',
+            ])
+            ->selectRaw('MIN(id) as id')
+            ->selectRaw('MIN(idtawarmatakuliahdetail) as idtawarmatakuliahdetail')
+            ->selectRaw('MIN(kode) as kode')
+            ->selectRaw('MIN(nama) as nama')
+            ->selectRaw('COUNT(DISTINCT siakad_idmahasiswa) as krs_student_count')
+            ->groupBy([
+                'idmatakuliah',
+            ])
+            ->orderBy('kode')
+            ->orderBy('nama');
     }
 }

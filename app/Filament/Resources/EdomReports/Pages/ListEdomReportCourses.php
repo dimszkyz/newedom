@@ -98,20 +98,6 @@ class ListEdomReportCourses extends Page implements HasTable
         /** @var ProgramStudi $programStudi */
         $programStudi = $this->record;
 
-        return EdomKrsSection::query()
-            ->where('id_unw_program_studi', (int) $programStudi->id_unw_program_studi)
-            ->select([
-                'idmatakuliah',
-            ])
-            ->selectRaw('MIN(id) as id')
-            ->selectRaw('MIN(idtawarmatakuliahdetail) as idtawarmatakuliahdetail')
-            ->selectRaw('MIN(kode) as kode')
-            ->selectRaw('MIN(nama) as nama')
-            ->selectRaw('COUNT(DISTINCT siakad_idmahasiswa) as krs_student_count')
-            ->groupBy([
-                'idmatakuliah',
-            ])
-            ->orderBy('kode')
-            ->orderBy('nama');
+        return EdomReportResource::coursesForProgramStudi($programStudi);
     }
 }

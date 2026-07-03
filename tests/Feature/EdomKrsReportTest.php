@@ -18,7 +18,7 @@ class EdomKrsReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_report_course_count_uses_distinct_course_ids_from_krs_api(): void
+    public function test_report_only_lists_krs_courses_that_have_responses(): void
     {
         $programStudi = ProgramStudi::query()->create([
             'id_unw_program_studi' => 22,
@@ -61,8 +61,15 @@ class EdomKrsReportTest extends TestCase
             'id' => $response->id,
             'id_unw_program_studi' => 22,
         ]);
-        $this->assertSame(2, EdomReportResource::courseCountForProgramStudi($programStudi));
+        $this->assertSame(1, EdomReportResource::courseCountForProgramStudi($programStudi));
         $this->assertSame(1, EdomReportResource::responseCountForProgramStudi($programStudi));
+        $this->assertSame(
+            [3926],
+            EdomReportResource::coursesForProgramStudi($programStudi)
+                ->pluck('idmatakuliah')
+                ->map(fn ($id): int => (int) $id)
+                ->all(),
+        );
 
         $course = EdomKrsSection::query()->where('idmatakuliah', 3926)->firstOrFail();
         $this->assertSame('m_3926', EdomReportResource::courseKeyForKrsSection($course));
@@ -113,6 +120,8 @@ class EdomKrsReportTest extends TestCase
 
         $this->assertSame(3, EdomReportResource::responseCountForProgramStudi($magisterHukum));
         $this->assertSame(1, EdomReportResource::responseCountForProgramStudi($keperawatan));
+        $this->assertSame(3, EdomReportResource::courseCountForProgramStudi($magisterHukum));
+        $this->assertSame(1, EdomReportResource::courseCountForProgramStudi($keperawatan));
         $this->assertSame(
             1,
             EdomReportResource::responseCountForProgramStudiAndCourse($magisterHukum, 'm_3926'),
