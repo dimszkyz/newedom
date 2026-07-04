@@ -100,4 +100,19 @@ class EdomPeriod extends Model
             ? 'Terbuka'
             : 'Pembaruan Dikunci';
     }
+
+    public function getSemesterNameAttribute(): string
+    {
+        return match ((int) $this->siakad_idsemester) {
+            1 => 'Gasal',
+            2 => 'Genap',
+            3 => 'Antara',
+            default => 'Semester ' . $this->siakad_idsemester,
+        };
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->year . ' / ' . $this->semester_name;
+    }
 }

@@ -29,7 +29,7 @@ class EdomSettingsForm
             Select::make('periods')
                 ->label('Periode EDOM')
                 ->relationship('periods', 'year')
-                ->getOptionLabelFromRecordUsing(fn ($record): string => $record->year.' / Semester '.$record->siakad_idsemester)
+                ->getOptionLabelFromRecordUsing(fn ($record): string => $record->display_name)
                 ->multiple()
                 ->searchable()
                 ->preload()

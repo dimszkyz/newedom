@@ -67,13 +67,11 @@ class EdomReportResource extends Resource
                 TextColumn::make('course_count')
                     ->label('Jumlah Mata Kuliah')
                     ->state(fn (ProgramStudi $record): int => self::courseCountForProgramStudi($record))
-                    ->description('Berdasarkan mata kuliah yang memiliki respons')
                     ->badge()
                     ->color('info'),
                 TextColumn::make('response_count')
                     ->label('Jumlah Respons')
                     ->state(fn (ProgramStudi $record): int => self::responseCountForProgramStudi($record))
-                    ->description('Berdasarkan prodi mata kuliah saat mahasiswa submit')
                     ->badge()
                     ->color('success'),
             ])

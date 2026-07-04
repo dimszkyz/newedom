@@ -21,7 +21,7 @@ class EdomSettingsTable
                 TextColumn::make('period_preview')
                     ->label('Periode')
                     ->state(fn ($record): array => $record->periods
-                        ->map(fn ($period): string => $period->year.' / Semester '.$period->siakad_idsemester)
+                        ->map(fn ($period): string => $period->display_name)
                         ->all())
                     ->bulleted()
                     ->listWithLineBreaks()
