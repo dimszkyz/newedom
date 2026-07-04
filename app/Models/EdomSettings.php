@@ -6,7 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class EdomSettings extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_CLOSED = 'closed';
+
     protected $table = 'edom_settings';
+
+    protected $attributes = [
+        'status' => self::STATUS_DRAFT,
+    ];
 
     protected $fillable = [
         'name',
@@ -73,18 +83,32 @@ class EdomSettings extends Model
         return $this->hasMany(EdomResponse::class, 'edom_setting_id');
     }
 
+    public static function statusOptions(): array
+    {
+        return [
+            self::STATUS_DRAFT => 'Draft',
+            self::STATUS_ACTIVE => 'Aktif',
+            self::STATUS_CLOSED => 'Ditutup',
+        ];
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::statusOptions()[$this->status] ?? ucfirst((string) $this->status);
+    }
+
     public function isDraft(): bool
     {
-        return $this->status === 'draft';
+        return $this->status === self::STATUS_DRAFT;
     }
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === self::STATUS_ACTIVE;
     }
 
     public function isClosed(): bool
     {
-        return $this->status === 'closed';
+        return $this->status === self::STATUS_CLOSED;
     }
 }
