@@ -38,6 +38,16 @@ class EdomSettings extends Model
         return $this->programStudis();
     }
 
+    public function periods()
+    {
+        return $this->belongsToMany(
+            EdomPeriod::class,
+            'edom_period_edom_setting',
+            'edom_setting_id',
+            'edom_period_id',
+        )->withTimestamps();
+    }
+
     public function categories()
     {
         return $this->hasMany(EdomQuestionCategory::class, 'edom_setting_id');

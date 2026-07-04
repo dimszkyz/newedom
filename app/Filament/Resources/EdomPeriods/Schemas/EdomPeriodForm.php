@@ -32,6 +32,14 @@ class EdomPeriodForm
                 ->required()
                 ->placeholder('Pilih semester dari SIAKAD')
                 ->helperText('Daftar semester diambil melalui /edom/semester.'),
+
+            Select::make('settings')
+                ->label('EDOM Settings')
+                ->relationship('settings', 'name')
+                ->multiple()
+                ->searchable()
+                ->preload()
+                ->helperText('Pilih set pertanyaan yang berlaku pada periode ini.'),
         ]);
     }
 

@@ -6,8 +6,6 @@ use App\Filament\Resources\EdomPeriods\Schemas\EdomPeriodForm;
 use App\Models\EdomPeriod;
 use App\Services\Siakad\UnwApiSiakad;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
@@ -30,11 +28,14 @@ class EdomPeriodsTable
                         return $semesterOptions[(int) $state] ?? 'Semester '.$state;
                     })
                     ->sortable(),
-                TextColumn::make('is_open_in_siakad')
-                    ->label('Status SIAKAD')
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'Terbuka' : 'Ditutup')
+                TextColumn::make('lifecycle_status')
+                    ->label('Status Periode')
                     ->badge()
-                    ->color(fn (bool $state): string => $state ? 'success' : 'danger'),
+                    ->color(fn (string $state): string => match ($state) {
+                        'Terbuka' => 'success',
+                        'Pembaruan Dikunci' => 'warning',
+                        default => 'danger',
+                    }),
                 TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->recordActions([
@@ -43,13 +44,44 @@ class EdomPeriodsTable
                     ->icon('heroicon-o-lock-open')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->visible(fn (EdomPeriod $record): bool => $record->locksResponseUpdates())
+                    ->visible(fn (EdomPeriod $record): bool => ! $record->isOpenInSiakad())
                     ->action(function (EdomPeriod $record): void {
                         app(UnwApiSiakad::class)->openPeriod($record->year, $record->siakad_idsemester);
                         $record->markAsOpenInSiakad();
 
                         Notification::make()
                             ->title('Periode EDOM dibuka; jawaban dapat diperbarui kembali')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('lockUpdates')
+                    ->label('Kunci Pembaruan')
+                    ->icon('heroicon-o-pencil-slash')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->visible(fn (EdomPeriod $record): bool => $record->allowsResponseUpdates())
+                    ->action(function (EdomPeriod $record): void {
+                        $record->lockResponseUpdates();
+
+                        Notification::make()
+                            ->title('Pembaruan dikunci; pengisian baru tetap dibuka')
+                            ->warning()
+                            ->send();
+                    }),
+
+                Action::make('unlockUpdates')
+                    ->label('Buka Pembaruan')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->visible(fn (EdomPeriod $record): bool => $record->isOpenInSiakad()
+                        && $record->locksResponseUpdates())
+                    ->action(function (EdomPeriod $record): void {
+                        $record->unlockResponseUpdates();
+
+                        Notification::make()
+                            ->title('Jawaban mahasiswa dapat diperbarui kembali')
                             ->success()
                             ->send();
                     }),
@@ -65,15 +97,14 @@ class EdomPeriodsTable
                         $record->markAsClosedInSiakad();
 
                         Notification::make()
-                            ->title('Periode EDOM ditutup; jawaban lama tidak dapat diperbarui')
+                            ->title('Ditutup di SIAKAD; pengisian baru tetap dibuka, pembaruan dikunci')
                             ->success()
                             ->send();
                     }),
 
-                EditAction::make(),
+                EditAction::make()
+                    ->visible(fn (EdomPeriod $record): bool => ! $record->responses()->exists()),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([DeleteBulkAction::make()]),
-            ]);
+            ->toolbarActions([]);
     }
 }
