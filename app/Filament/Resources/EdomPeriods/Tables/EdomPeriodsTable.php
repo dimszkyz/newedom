@@ -29,8 +29,18 @@ class EdomPeriodsTable
                         return $semesterOptions[(int) $state] ?? 'Semester '.$state;
                     })
                     ->sortable(),
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(fn (string $state): string => EdomPeriod::statusOptions()[$state] ?? $state)
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        EdomPeriod::STATUS_ACTIVE => 'success',
+                        EdomPeriod::STATUS_CLOSED => 'danger',
+                        default => 'gray',
+                    })
+                    ->sortable(),
                 TextColumn::make('lifecycle_status')
-                    ->label('Status Periode')
+                    ->label('Status SIAKAD')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'Terbuka' => 'success',

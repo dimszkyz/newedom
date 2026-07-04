@@ -265,12 +265,44 @@ class EdomResponseSubmissionTest extends TestCase
         $this->assertDatabaseCount('edom_response_detail', 1);
     }
 
+    public function test_draft_and_closed_periods_reject_student_access_and_submission(): void
+    {
+        [$setting, , , $period] = $this->createActiveSetting();
+        $this->withoutVite();
+
+        foreach ([
+            EdomPeriod::STATUS_DRAFT => 'Periode EDOM masih berstatus draft',
+            EdomPeriod::STATUS_CLOSED => 'Periode EDOM sudah ditutup',
+        ] as $status => $expectedMessage) {
+            $period->update(['status' => $status]);
+
+            $this->withSession(['edom_student' => $this->student()])
+                ->get(route('edom.fill', [
+                    'edomSettings' => $setting,
+                    'section' => 'd_4567',
+                ]))
+                ->assertOk()
+                ->assertSee($expectedMessage);
+
+            $this->withSession(['edom_student' => $this->student()])
+                ->post(route('edom.home.submit'), ['edom_id' => $setting->id])
+                ->assertRedirect(route('edom.home'))
+                ->assertSessionHas('error', fn (string $message): bool => str_contains(
+                    $message,
+                    $expectedMessage,
+                ));
+        }
+
+        $this->assertDatabaseCount('edom_response', 0);
+    }
+
     public function test_student_home_renders_the_real_krs_response_shape(): void
     {
         [$setting] = $this->createActiveSetting();
         $period = EdomPeriod::query()->create([
             'year' => 2025,
             'siakad_idsemester' => 1,
+            'status' => EdomPeriod::STATUS_ACTIVE,
             'is_open_in_siakad' => true,
             'allows_response_updates' => true,
         ]);
@@ -757,11 +789,13 @@ class EdomResponseSubmissionTest extends TestCase
                 'siakad_idsemester' => 2,
             ],
             [
+                'status' => EdomPeriod::STATUS_ACTIVE,
                 'is_open_in_siakad' => true,
                 'allows_response_updates' => true,
             ],
         );
         $period->update([
+            'status' => EdomPeriod::STATUS_ACTIVE,
             'is_open_in_siakad' => true,
             'allows_response_updates' => true,
         ]);

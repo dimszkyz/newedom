@@ -6,7 +6,7 @@
     <main class="page">
         <div class="container">
             <section class="status-card">
-                <span class="badge">{{ strtoupper($edom->status ?? '-') }}</span>
+                <span class="badge">{{ strtoupper($statusBadge ?? $edom->status ?? '-') }}</span>
                 <h1>{{ $statusTitle }}</h1>
                 <p class="edom-name">{{ $edom->name ?? '-' }}</p>
                 <p class="message">{{ $statusMessage }}</p>

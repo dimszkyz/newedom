@@ -7,11 +7,22 @@ use LogicException;
 
 class EdomPeriod extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_CLOSED = 'closed';
+
     protected $table = 'edom_periods';
+
+    protected $attributes = [
+        'status' => self::STATUS_DRAFT,
+    ];
 
     protected $fillable = [
         'year',
         'siakad_idsemester',
+        'status',
         'is_open_in_siakad',
         'allows_response_updates',
     ];
@@ -38,6 +49,35 @@ class EdomPeriod extends Model
     public function isOpenInSiakad(): bool
     {
         return (bool) $this->is_open_in_siakad;
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === self::STATUS_CLOSED;
+    }
+
+    public static function statusOptions(): array
+    {
+        return [
+            self::STATUS_DRAFT => 'Draft',
+            self::STATUS_ACTIVE => 'Aktif',
+            self::STATUS_CLOSED => 'Ditutup',
+        ];
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::statusOptions()[$this->status] ?? ucfirst((string) $this->status);
     }
 
     public function allowsResponseUpdates(): bool
@@ -107,12 +147,12 @@ class EdomPeriod extends Model
             1 => 'Gasal',
             2 => 'Genap',
             3 => 'Antara',
-            default => 'Semester ' . $this->siakad_idsemester,
+            default => 'Semester '.$this->siakad_idsemester,
         };
     }
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->year . ' / ' . $this->semester_name;
+        return $this->year.' / '.$this->semester_name;
     }
 }
