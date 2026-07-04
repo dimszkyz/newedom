@@ -8,6 +8,7 @@ use App\Services\Siakad\UnwApiSiakad;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -41,7 +42,7 @@ class EdomPeriodsTable
             ->recordActions([
                 Action::make('openPeriod')
                     ->label('Buka ke SIAKAD')
-                    ->icon('heroicon-o-lock-open')
+                    ->icon(Heroicon::OutlinedLockOpen)
                     ->color('success')
                     ->requiresConfirmation()
                     ->visible(fn (EdomPeriod $record): bool => ! $record->isOpenInSiakad())
@@ -57,7 +58,7 @@ class EdomPeriodsTable
 
                 Action::make('lockUpdates')
                     ->label('Kunci Pembaruan')
-                    ->icon('heroicon-o-pencil-slash')
+                    ->icon(Heroicon::OutlinedNoSymbol)
                     ->color('warning')
                     ->requiresConfirmation()
                     ->visible(fn (EdomPeriod $record): bool => $record->allowsResponseUpdates())
@@ -72,7 +73,7 @@ class EdomPeriodsTable
 
                 Action::make('unlockUpdates')
                     ->label('Buka Pembaruan')
-                    ->icon('heroicon-o-pencil-square')
+                    ->icon(Heroicon::OutlinedPencilSquare)
                     ->color('info')
                     ->requiresConfirmation()
                     ->visible(fn (EdomPeriod $record): bool => $record->isOpenInSiakad()
@@ -88,7 +89,7 @@ class EdomPeriodsTable
 
                 Action::make('closePeriod')
                     ->label('Tutup di SIAKAD')
-                    ->icon('heroicon-o-lock-closed')
+                    ->icon(Heroicon::OutlinedLockClosed)
                     ->color('danger')
                     ->requiresConfirmation()
                     ->visible(fn (EdomPeriod $record): bool => $record->isOpenInSiakad())
