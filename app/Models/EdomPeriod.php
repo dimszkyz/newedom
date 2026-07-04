@@ -3,21 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use LogicException;
 
 class EdomPeriod extends Model
 {
-    public const STATUS_DRAFT = 'draft';
+    public const STATUS_DRAFT = EdomSettings::STATUS_DRAFT;
 
-    public const STATUS_ACTIVE = 'active';
+    public const STATUS_ACTIVE = EdomSettings::STATUS_ACTIVE;
 
-    public const STATUS_CLOSED = 'closed';
+    public const STATUS_CLOSED = EdomSettings::STATUS_CLOSED;
 
     protected $table = 'edom_periods';
-
-    protected $attributes = [
-        'status' => self::STATUS_DRAFT,
-    ];
 
     protected $fillable = [
         'year',
@@ -32,12 +29,23 @@ class EdomPeriod extends Model
         'allows_response_updates' => 'boolean',
     ];
 
+    private ?string $pendingSettingsStatus = null;
+
     protected static function booted(): void
     {
         static::deleting(function (EdomPeriod $period): void {
             if ($period->responses()->exists()) {
                 throw new LogicException('Periode EDOM yang sudah memiliki respons tidak dapat dihapus.');
             }
+        });
+
+        static::saved(function (EdomPeriod $period): void {
+            if ($period->pendingSettingsStatus === null) {
+                return;
+            }
+
+            $period->updateSettingsStatus($period->pendingSettingsStatus);
+            $period->pendingSettingsStatus = null;
         });
     }
 
@@ -49,6 +57,24 @@ class EdomPeriod extends Model
     public function isOpenInSiakad(): bool
     {
         return (bool) $this->is_open_in_siakad;
+    }
+
+    public function setStatusAttribute(?string $status): void
+    {
+        if ($status === null || $status === '') {
+            return;
+        }
+
+        if (! array_key_exists($status, self::statusOptions())) {
+            throw new InvalidArgumentException("Status EDOM Settings [{$status}] tidak valid.");
+        }
+
+        $this->pendingSettingsStatus = $status;
+    }
+
+    public function getStatusAttribute(): string
+    {
+        return $this->settingsStatus();
     }
 
     public function isDraft(): bool
@@ -68,16 +94,40 @@ class EdomPeriod extends Model
 
     public static function statusOptions(): array
     {
-        return [
-            self::STATUS_DRAFT => 'Draft',
-            self::STATUS_ACTIVE => 'Aktif',
-            self::STATUS_CLOSED => 'Ditutup',
-        ];
+        return EdomSettings::statusOptions();
     }
 
     public function getStatusLabelAttribute(): string
     {
         return self::statusOptions()[$this->status] ?? ucfirst((string) $this->status);
+    }
+
+    public function getSettingsStatusSummaryAttribute(): array
+    {
+        return $this->settings
+            ->map(fn (EdomSettings $setting): string => $setting->name.' — '.$setting->status_label)
+            ->all();
+    }
+
+    public function updateSettingsStatus(string $status): int
+    {
+        if (! array_key_exists($status, self::statusOptions())) {
+            throw new InvalidArgumentException("Status EDOM Settings [{$status}] tidak valid.");
+        }
+
+        $settingIds = $this->settings()->pluck('edom_settings.id');
+
+        if ($settingIds->isEmpty()) {
+            return 0;
+        }
+
+        $updated = EdomSettings::query()
+            ->whereKey($settingIds)
+            ->update(['status' => $status]);
+
+        $this->load('settings');
+
+        return $updated;
     }
 
     public function allowsResponseUpdates(): bool
@@ -154,5 +204,24 @@ class EdomPeriod extends Model
     public function getDisplayNameAttribute(): string
     {
         return $this->year.' / '.$this->semester_name;
+    }
+
+    private function settingsStatus(): string
+    {
+        $statuses = $this->settings()
+            ->pluck('edom_settings.status')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($statuses->contains(self::STATUS_ACTIVE)) {
+            return self::STATUS_ACTIVE;
+        }
+
+        if ($statuses->isNotEmpty() && $statuses->every(fn (string $status): bool => $status === self::STATUS_CLOSED)) {
+            return self::STATUS_CLOSED;
+        }
+
+        return self::STATUS_DRAFT;
     }
 }
