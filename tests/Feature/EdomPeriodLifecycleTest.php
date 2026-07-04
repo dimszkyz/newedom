@@ -14,27 +14,37 @@ class EdomPeriodLifecycleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_period_content_status_defaults_to_draft_and_supports_all_admin_choices(): void
+    public function test_period_status_updates_the_connected_edom_settings_status(): void
     {
         $period = EdomPeriod::query()->create([
             'year' => 2030,
             'siakad_idsemester' => 1,
         ]);
+        $setting = EdomSettings::query()->create([
+            'name' => 'EDOM Pascasarjana',
+            'status' => EdomSettings::STATUS_DRAFT,
+        ]);
 
-        $this->assertTrue($period->isDraft());
-        $this->assertFalse($period->isActive());
-        $this->assertFalse($period->isClosed());
-        $this->assertSame('Draft', $period->status_label);
+        $period->settings()->attach($setting);
 
-        $period->update(['status' => EdomPeriod::STATUS_ACTIVE]);
+        $this->assertTrue($period->fresh()->isDraft());
+        $this->assertSame('Draft', $period->fresh()->status_label);
 
-        $this->assertTrue($period->isActive());
-        $this->assertSame('Aktif', $period->status_label);
+        $period->updateSettingsStatus(EdomSettings::STATUS_ACTIVE);
 
-        $period->update(['status' => EdomPeriod::STATUS_CLOSED]);
+        $this->assertTrue($period->fresh()->isActive());
+        $this->assertDatabaseHas('edom_settings', [
+            'id' => $setting->id,
+            'status' => EdomSettings::STATUS_ACTIVE,
+        ]);
 
-        $this->assertTrue($period->isClosed());
-        $this->assertSame('Ditutup', $period->status_label);
+        $period->update(['status' => EdomSettings::STATUS_CLOSED]);
+
+        $this->assertTrue($period->fresh()->isClosed());
+        $this->assertDatabaseHas('edom_settings', [
+            'id' => $setting->id,
+            'status' => EdomSettings::STATUS_CLOSED,
+        ]);
     }
 
     public function test_new_periods_are_closed_by_default_and_can_move_through_each_lifecycle_state(): void
