@@ -38,7 +38,7 @@ class EdomPeriodLifecycleTest extends TestCase
             'status' => EdomSettings::STATUS_ACTIVE,
         ]);
 
-        $period->update(['status' => EdomSettings::STATUS_CLOSED]);
+        $period->updateSettingsStatus(EdomSettings::STATUS_CLOSED);
 
         $this->assertTrue($period->fresh()->isClosed());
         $this->assertDatabaseHas('edom_settings', [
