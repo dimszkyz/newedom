@@ -16,6 +16,10 @@ class EdomPeriod extends Model
 
     protected $table = 'edom_periods';
 
+    protected $attributes = [
+        'status' => self::STATUS_DRAFT,
+    ];
+
     protected $fillable = [
         'year',
         'siakad_idsemester',
@@ -29,23 +33,12 @@ class EdomPeriod extends Model
         'allows_response_updates' => 'boolean',
     ];
 
-    private ?string $pendingSettingsStatus = null;
-
     protected static function booted(): void
     {
         static::deleting(function (EdomPeriod $period): void {
             if ($period->responses()->exists()) {
                 throw new LogicException('Periode EDOM yang sudah memiliki respons tidak dapat dihapus.');
             }
-        });
-
-        static::saved(function (EdomPeriod $period): void {
-            if ($period->pendingSettingsStatus === null) {
-                return;
-            }
-
-            $period->updateSettingsStatus($period->pendingSettingsStatus);
-            $period->pendingSettingsStatus = null;
         });
     }
 
@@ -57,24 +50,6 @@ class EdomPeriod extends Model
     public function isOpenInSiakad(): bool
     {
         return (bool) $this->is_open_in_siakad;
-    }
-
-    public function setStatusAttribute(?string $status): void
-    {
-        if ($status === null || $status === '') {
-            return;
-        }
-
-        if (! array_key_exists($status, self::statusOptions())) {
-            throw new InvalidArgumentException("Status EDOM Settings [{$status}] tidak valid.");
-        }
-
-        $this->pendingSettingsStatus = $status;
-    }
-
-    public function getStatusAttribute(): string
-    {
-        return $this->settingsStatus();
     }
 
     public function isDraft(): bool
@@ -114,6 +89,8 @@ class EdomPeriod extends Model
         if (! array_key_exists($status, self::statusOptions())) {
             throw new InvalidArgumentException("Status EDOM Settings [{$status}] tidak valid.");
         }
+
+        $this->update(['status' => $status]);
 
         $settingIds = $this->settings()->pluck('edom_settings.id');
 
@@ -204,24 +181,5 @@ class EdomPeriod extends Model
     public function getDisplayNameAttribute(): string
     {
         return $this->year.' / '.$this->semester_name;
-    }
-
-    private function settingsStatus(): string
-    {
-        $statuses = $this->settings()
-            ->pluck('edom_settings.status')
-            ->filter()
-            ->unique()
-            ->values();
-
-        if ($statuses->contains(self::STATUS_ACTIVE)) {
-            return self::STATUS_ACTIVE;
-        }
-
-        if ($statuses->isNotEmpty() && $statuses->every(fn (string $status): bool => $status === self::STATUS_CLOSED)) {
-            return self::STATUS_CLOSED;
-        }
-
-        return self::STATUS_DRAFT;
     }
 }
