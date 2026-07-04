@@ -21,6 +21,10 @@ class EdomPublicController extends Controller
 {
     private const RESPONSE_UPDATE_LOCKED_MESSAGE = 'Pembaruan jawaban pada periode EDOM ini dikunci. Jawaban yang sudah tersimpan tidak dapat diperbarui, tetapi mata kuliah yang belum diisi masih dapat dikerjakan.';
 
+    private const PERIOD_DRAFT_MESSAGE = 'Periode EDOM masih berstatus draft dan belum dapat diisi oleh mahasiswa.';
+
+    private const PERIOD_CLOSED_MESSAGE = 'Periode EDOM sudah ditutup dan tidak lagi menerima pengisian maupun pembaruan jawaban.';
+
     public function index(Request $request): View
     {
         $student = session('edom_student');
@@ -71,7 +75,7 @@ class EdomPublicController extends Controller
             ->withCount(['categories', 'questions'])
             ->where('status', 'active')
             ->when(is_array($student), function ($query) use ($studentPeriod) {
-                return $studentPeriod
+                return $studentPeriod?->isActive()
                     ? $query->whereHas('periods', fn ($query) => $query->whereKey($studentPeriod->id))
                     : $query->whereRaw('1 = 0');
             })
@@ -191,6 +195,17 @@ class EdomPublicController extends Controller
             ]);
         }
 
+        if (! $period->isActive()) {
+            return view('edom.status', [
+                'edom' => $edom,
+                'statusBadge' => $period->status_label,
+                'statusTitle' => $period->isDraft()
+                    ? 'Periode EDOM belum dibuka'
+                    : 'Periode EDOM sudah ditutup',
+                'statusMessage' => $this->periodUnavailableMessage($period),
+            ]);
+        }
+
         try {
             $sections = $this->sectionsForEdomSettings($edom, $this->fetchStudentSections($student));
         } catch (Throwable $exception) {
@@ -267,6 +282,12 @@ class EdomPublicController extends Controller
                 ->with('error', 'EDOM Settings tidak tersedia pada periode mahasiswa ini.');
         }
 
+        if (! $period->isActive()) {
+            return redirect()
+                ->route('edom.home')
+                ->with('error', $this->periodUnavailableMessage($period));
+        }
+
         return $this->submitStudentSections($request, $edom, $period);
     }
 
@@ -335,6 +356,12 @@ class EdomPublicController extends Controller
                 ];
 
                 $currentPeriod = $period->fresh();
+
+                if (! $currentPeriod->isActive()) {
+                    throw ValidationException::withMessages([
+                        'sections' => $this->periodUnavailableMessage($currentPeriod),
+                    ]);
+                }
 
                 if (
                     $currentPeriod->locksResponseUpdates()
@@ -658,6 +685,10 @@ class EdomPublicController extends Controller
             return false;
         }
 
+        if (! $period->isActive()) {
+            return false;
+        }
+
         $applicableEdoms = EdomSettings::query()
             ->with('programStudis')
             ->where('status', 'active')
@@ -687,6 +718,13 @@ class EdomPublicController extends Controller
         }
 
         return true;
+    }
+
+    private function periodUnavailableMessage(EdomPeriod $period): string
+    {
+        return $period->isDraft()
+            ? self::PERIOD_DRAFT_MESSAGE
+            : self::PERIOD_CLOSED_MESSAGE;
     }
 
     private function studentHasCompletedAllSections(array $student, array $sections, Model $edom): bool
