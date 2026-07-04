@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EdomSettings\Schemas;
 
+use App\Models\EdomSettings;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -24,6 +25,17 @@ class EdomSettingsForm
                 ->searchable()
                 ->preload()
                 ->required(),
+
+            Select::make('periods')
+                ->label('Periode EDOM')
+                ->relationship('periods', 'year')
+                ->getOptionLabelFromRecordUsing(fn ($record): string => $record->year.' / Semester '.$record->siakad_idsemester)
+                ->multiple()
+                ->searchable()
+                ->preload()
+                ->required()
+                ->disabled(fn (?EdomSettings $record): bool => $record?->responses()->exists() ?? false)
+                ->helperText('Setting hanya ditampilkan pada periode yang dipilih. Relasi periode dikunci setelah respons pertama tersimpan.'),
 
             Select::make('status')
                 ->label('Status')

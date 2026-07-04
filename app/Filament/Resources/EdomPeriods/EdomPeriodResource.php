@@ -11,15 +11,22 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class EdomPeriodResource extends Resource
 {
     protected static ?string $model = EdomPeriod::class;
+
     protected static string|\UnitEnum|null $navigationGroup = 'Master Data';
+
     protected static ?string $navigationLabel = 'EDOM Periods';
+
     protected static ?string $modelLabel = 'EDOM Periods';
+
     protected static ?string $pluralModelLabel = 'EDOM Periods';
+
     protected static ?string $slug = 'edom-periods';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
 
     public static function form(Schema $schema): Schema
@@ -30,6 +37,16 @@ class EdomPeriodResource extends Resource
     public static function table(Table $table): Table
     {
         return EdomPeriodsTable::configure($table);
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return ! $record->responses()->exists();
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return ! $record->responses()->exists();
     }
 
     public static function getPages(): array

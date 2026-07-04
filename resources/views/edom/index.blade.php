@@ -166,7 +166,9 @@
                                         {{ $edom->categories_count }} kategori
                                     </p>
                                 </div>
-                                <span class="badge badge-active">Aktif</span>
+                                <span class="badge {{ ($group['period_status'] ?? '') === 'Terbuka' ? 'badge-active' : 'badge-pending' }}">
+                                    {{ $group['period_status'] ?? 'Tidak Tersedia' }}
+                                </span>
                             </div>
 
                             <ol class="course-list">

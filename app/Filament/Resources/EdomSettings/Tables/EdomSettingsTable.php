@@ -15,9 +15,17 @@ class EdomSettingsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('programStudis'))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['programStudis', 'periods']))
             ->columns([
                 TextColumn::make('name')->label('Nama EdomSettings')->searchable(),
+                TextColumn::make('period_preview')
+                    ->label('Periode')
+                    ->state(fn ($record): array => $record->periods
+                        ->map(fn ($period): string => $period->year.' / Semester '.$period->siakad_idsemester)
+                        ->all())
+                    ->bulleted()
+                    ->listWithLineBreaks()
+                    ->placeholder('-'),
                 TextColumn::make('program_studi_preview')
                     ->label('Program Studi')
                     ->state(function ($record): string {

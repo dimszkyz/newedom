@@ -124,11 +124,10 @@ class EdomResponseSubmissionTest extends TestCase
 
     public function test_closed_siakad_period_locks_existing_answers_but_keeps_unfilled_courses_available(): void
     {
-        [$setting] = $this->createActiveSetting();
-        $period = EdomPeriod::query()->create([
-            'year' => 2026,
-            'siakad_idsemester' => 2,
+        [$setting, , , $period] = $this->createActiveSetting();
+        $period->update([
             'is_open_in_siakad' => false,
+            'allows_response_updates' => false,
         ]);
         EdomResponse::query()->create([
             'edom_period_id' => $period->id,
@@ -175,11 +174,10 @@ class EdomResponseSubmissionTest extends TestCase
 
     public function test_closed_siakad_period_rejects_an_existing_answer_update(): void
     {
-        [$setting, $question, $option] = $this->createActiveSetting();
-        $period = EdomPeriod::query()->create([
-            'year' => 2026,
-            'siakad_idsemester' => 2,
+        [$setting, $question, $option, $period] = $this->createActiveSetting();
+        $period->update([
             'is_open_in_siakad' => false,
+            'allows_response_updates' => false,
         ]);
         EdomResponse::query()->create([
             'edom_period_id' => $period->id,
@@ -226,11 +224,10 @@ class EdomResponseSubmissionTest extends TestCase
 
     public function test_closed_siakad_period_still_accepts_a_new_course_response(): void
     {
-        [$setting, $question, $option] = $this->createActiveSetting();
-        EdomPeriod::query()->create([
-            'year' => 2026,
-            'siakad_idsemester' => 2,
+        [$setting, $question, $option, $period] = $this->createActiveSetting();
+        $period->update([
             'is_open_in_siakad' => false,
+            'allows_response_updates' => false,
         ]);
 
         $siakad = Mockery::mock(UnwApiSiakad::class);
@@ -270,7 +267,14 @@ class EdomResponseSubmissionTest extends TestCase
 
     public function test_student_home_renders_the_real_krs_response_shape(): void
     {
-        $this->createActiveSetting();
+        [$setting] = $this->createActiveSetting();
+        $period = EdomPeriod::query()->create([
+            'year' => 2025,
+            'siakad_idsemester' => 1,
+            'is_open_in_siakad' => true,
+            'allows_response_updates' => true,
+        ]);
+        $setting->periods()->attach($period);
         $student = [
             'siakad_idmahasiswa' => '18273',
             'siakad_idtahunajaran' => 2025,
@@ -527,7 +531,7 @@ class EdomResponseSubmissionTest extends TestCase
         $this->assertDatabaseCount('edom_response_detail', 0);
     }
 
-    public function test_program_studi_scope_does_not_filter_krs_sections_from_api(): void
+    public function test_program_studi_scope_filters_krs_sections_from_api(): void
     {
         [$setting, $question, $option] = $this->createActiveSetting();
         $student = $this->student();
@@ -540,18 +544,20 @@ class EdomResponseSubmissionTest extends TestCase
             'id_unw_program_studi' => 15,
         ]);
 
-        $programStudi = ProgramStudi::query()->create([
-            'id_unw_program_studi' => 14,
-            'nama' => 'Teknik Informatika',
-        ]);
-        $setting->programStudis()->attach($programStudi);
+        $programStudi = ProgramStudi::query()
+            ->where('id_unw_program_studi', 14)
+            ->firstOrFail();
+        $setting->programStudis()->sync([$programStudi->id]);
 
         $siakad = Mockery::mock(UnwApiSiakad::class);
         $siakad->shouldReceive('krs')
             ->twice()
             ->with(18273, 2026, 2)
             ->andReturn([$matchingSection, $otherSection]);
-        $siakad->shouldNotReceive('complete');
+        $siakad->shouldReceive('complete')
+            ->once()
+            ->with(18273, 2026, 2)
+            ->andReturn(['completed' => true]);
         $this->app->instance(UnwApiSiakad::class, $siakad);
 
         $this->withSession(['edom_student' => $student])
@@ -569,7 +575,7 @@ class EdomResponseSubmissionTest extends TestCase
                     ],
                 ],
             ])
-            ->assertRedirect(route('edom.home'));
+            ->assertRedirect('https://siakad.test/edom');
 
         $this->assertDatabaseCount('edom_response', 1);
         $this->assertDatabaseHas('edom_response', [
@@ -653,15 +659,16 @@ class EdomResponseSubmissionTest extends TestCase
 
     public function test_completion_waits_for_every_applicable_active_setting(): void
     {
-        [$firstSetting] = $this->createActiveSetting();
+        [$firstSetting, , , $period] = $this->createActiveSetting();
         $secondSetting = EdomSettings::query()->create([
             'name' => 'EDOM Aktif Kedua',
             'status' => 'active',
         ]);
-        $period = EdomPeriod::query()->create([
-            'year' => 2026,
-            'siakad_idsemester' => 2,
-        ]);
+        $programStudi = ProgramStudi::query()
+            ->where('id_unw_program_studi', 14)
+            ->firstOrFail();
+        $secondSetting->periods()->attach($period);
+        $secondSetting->programStudis()->attach($programStudi);
         $student = $this->student();
         $section = $this->section();
 
@@ -691,6 +698,37 @@ class EdomResponseSubmissionTest extends TestCase
         $this->assertTrue($method->invoke($controller, $student, [$section]));
     }
 
+    public function test_completion_ignores_active_settings_for_another_program_studi(): void
+    {
+        [$firstSetting, , , $period] = $this->createActiveSetting();
+        $otherProgramSetting = EdomSettings::query()->create([
+            'name' => 'EDOM Program Studi Lain',
+            'status' => 'active',
+        ]);
+        $otherProgram = ProgramStudi::query()->create([
+            'id_unw_program_studi' => 15,
+            'nama' => 'Sistem Informasi',
+        ]);
+        $otherProgramSetting->periods()->attach($period);
+        $otherProgramSetting->programStudis()->attach($otherProgram);
+        $student = $this->student();
+        $section = $this->section();
+
+        EdomResponse::query()->create([
+            'edom_period_id' => $period->id,
+            'edom_setting_id' => $firstSetting->id,
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idmatakuliah' => 123,
+            'siakad_idtawarmatakuliahdetail' => 4567,
+            'submitted_at' => now(),
+        ]);
+
+        $method = new ReflectionMethod(EdomPublicController::class, 'studentHasCompletedAllApplicableEdoms');
+        $controller = app(EdomPublicController::class);
+
+        $this->assertTrue($method->invoke($controller, $student, [$section]));
+    }
+
     private function createActiveSetting(): array
     {
         $setting = EdomSettings::query()->create([
@@ -713,7 +751,35 @@ class EdomResponseSubmissionTest extends TestCase
             'score' => 5,
         ]);
 
-        return [$setting, $question, $option];
+        $period = EdomPeriod::query()->firstOrCreate(
+            [
+                'year' => 2026,
+                'siakad_idsemester' => 2,
+            ],
+            [
+                'is_open_in_siakad' => true,
+                'allows_response_updates' => true,
+            ],
+        );
+        $period->update([
+            'is_open_in_siakad' => true,
+            'allows_response_updates' => true,
+        ]);
+
+        $programStudiIds = collect([
+            14 => 'Teknik Informatika',
+            22 => 'Hukum',
+        ])->map(function (string $name, int $siakadId): int {
+            return ProgramStudi::query()->firstOrCreate(
+                ['id_unw_program_studi' => $siakadId],
+                ['nama' => $name],
+            )->id;
+        })->values()->all();
+
+        $setting->periods()->attach($period);
+        $setting->programStudis()->sync($programStudiIds);
+
+        return [$setting, $question, $option, $period];
     }
 
     private function student(): array
