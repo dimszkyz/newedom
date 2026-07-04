@@ -23,6 +23,23 @@ class EdomSettings extends Model
         'status',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (EdomSettings $setting): void {
+            if (! $setting->wasChanged('status')) {
+                return;
+            }
+
+            $setting->periods()->get()->each(function (EdomPeriod $period): void {
+                $status = self::periodStatus($period);
+
+                EdomPeriod::query()
+                    ->whereKey($period->id)
+                    ->update(['status' => $status]);
+            });
+        });
+    }
+
     public function getEdomNameAttribute(): ?string
     {
         return $this->attributes['name'] ?? null;
@@ -110,5 +127,24 @@ class EdomSettings extends Model
     public function isClosed(): bool
     {
         return $this->status === self::STATUS_CLOSED;
+    }
+
+    private static function periodStatus(EdomPeriod $period): string
+    {
+        $statuses = $period->settings()
+            ->pluck('edom_settings.status')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($statuses->contains(self::STATUS_ACTIVE)) {
+            return self::STATUS_ACTIVE;
+        }
+
+        if ($statuses->isNotEmpty() && $statuses->every(fn (string $status): bool => $status === self::STATUS_CLOSED)) {
+            return self::STATUS_CLOSED;
+        }
+
+        return self::STATUS_DRAFT;
     }
 }
