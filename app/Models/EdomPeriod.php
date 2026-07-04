@@ -3,15 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use LogicException;
 
 class EdomPeriod extends Model
 {
-    public const STATUS_DRAFT = 'draft';
+    public const STATUS_DRAFT = EdomSettings::STATUS_DRAFT;
 
-    public const STATUS_ACTIVE = 'active';
+    public const STATUS_ACTIVE = EdomSettings::STATUS_ACTIVE;
 
-    public const STATUS_CLOSED = 'closed';
+    public const STATUS_CLOSED = EdomSettings::STATUS_CLOSED;
 
     protected $table = 'edom_periods';
 
@@ -68,16 +69,42 @@ class EdomPeriod extends Model
 
     public static function statusOptions(): array
     {
-        return [
-            self::STATUS_DRAFT => 'Draft',
-            self::STATUS_ACTIVE => 'Aktif',
-            self::STATUS_CLOSED => 'Ditutup',
-        ];
+        return EdomSettings::statusOptions();
     }
 
     public function getStatusLabelAttribute(): string
     {
         return self::statusOptions()[$this->status] ?? ucfirst((string) $this->status);
+    }
+
+    public function getSettingsStatusSummaryAttribute(): array
+    {
+        return $this->settings
+            ->map(fn (EdomSettings $setting): string => $setting->name.' — '.$setting->status_label)
+            ->all();
+    }
+
+    public function updateSettingsStatus(string $status): int
+    {
+        if (! array_key_exists($status, self::statusOptions())) {
+            throw new InvalidArgumentException("Status EDOM Settings [{$status}] tidak valid.");
+        }
+
+        $this->update(['status' => $status]);
+
+        $settingIds = $this->settings()->pluck('edom_settings.id');
+
+        if ($settingIds->isEmpty()) {
+            return 0;
+        }
+
+        $updated = EdomSettings::query()
+            ->whereKey($settingIds)
+            ->update(['status' => $status]);
+
+        $this->load('settings');
+
+        return $updated;
     }
 
     public function allowsResponseUpdates(): bool

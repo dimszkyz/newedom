@@ -39,12 +39,8 @@ class EdomSettingsForm
 
             Select::make('status')
                 ->label('Status')
-                ->options([
-                    'draft' => 'Draft',
-                    'active' => 'Aktif',
-                    'closed' => 'Ditutup',
-                ])
-                ->default('draft')
+                ->options(EdomSettings::statusOptions())
+                ->default(EdomSettings::STATUS_DRAFT)
                 ->required(),
         ]);
     }
