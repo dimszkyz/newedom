@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use InvalidArgumentException;
 use LogicException;
 
 class EdomPeriod extends Model
@@ -17,7 +16,7 @@ class EdomPeriod extends Model
     protected $table = 'edom_periods';
 
     protected $attributes = [
-        'status' => self::STATUS_DRAFT,
+        'status' => self::STATUS_ACTIVE,
     ];
 
     protected $fillable = [
@@ -77,36 +76,6 @@ class EdomPeriod extends Model
         return self::statusOptions()[$this->status] ?? ucfirst((string) $this->status);
     }
 
-    public function getSettingsStatusSummaryAttribute(): array
-    {
-        return $this->settings
-            ->map(fn (EdomSettings $setting): string => $setting->name.' — '.$setting->status_label)
-            ->all();
-    }
-
-    public function updateSettingsStatus(string $status): int
-    {
-        if (! array_key_exists($status, self::statusOptions())) {
-            throw new InvalidArgumentException("Status EDOM Settings [{$status}] tidak valid.");
-        }
-
-        $this->update(['status' => $status]);
-
-        $settingIds = $this->settings()->pluck('edom_settings.id');
-
-        if ($settingIds->isEmpty()) {
-            return 0;
-        }
-
-        $updated = EdomSettings::query()
-            ->whereKey($settingIds)
-            ->update(['status' => $status]);
-
-        $this->load('settings');
-
-        return $updated;
-    }
-
     public function allowsResponseUpdates(): bool
     {
         return $this->isOpenInSiakad() && (bool) $this->allows_response_updates;
@@ -115,16 +84,6 @@ class EdomPeriod extends Model
     public function locksResponseUpdates(): bool
     {
         return ! $this->allowsResponseUpdates();
-    }
-
-    public function settings()
-    {
-        return $this->belongsToMany(
-            EdomSettings::class,
-            'edom_period_edom_setting',
-            'edom_period_id',
-            'edom_setting_id',
-        )->withTimestamps();
     }
 
     public function markAsOpenInSiakad(): void
