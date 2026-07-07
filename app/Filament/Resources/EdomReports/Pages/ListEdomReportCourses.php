@@ -22,7 +22,7 @@ class ListEdomReportCourses extends Page implements HasTable
 
     protected static string $resource = EdomReportResource::class;
 
-    protected string $view = 'filament.resources.edom-reports.pages.list-edom-report-courses';
+    protected string $view = 'filament-panels::resources.pages.list-records';
 
     public function mount(int|string $record): void
     {

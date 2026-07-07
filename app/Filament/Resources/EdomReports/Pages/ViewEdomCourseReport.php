@@ -26,7 +26,7 @@ class ViewEdomCourseReport extends Page implements HasTable
 
     protected static string $resource = EdomReportResource::class;
 
-    protected string $view = 'filament.resources.edom-reports.pages.view-edom-course-report';
+    protected string $view = 'filament-panels::resources.pages.list-records';
 
     public string $courseKey;
 
