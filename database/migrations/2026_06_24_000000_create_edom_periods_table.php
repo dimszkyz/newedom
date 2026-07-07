@@ -12,6 +12,9 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('year');
             $table->unsignedBigInteger('siakad_idsemester');
+            $table->enum('status', ['draft', 'active', 'closed'])->default('draft');
+            $table->boolean('is_open_in_siakad')->default(false);
+            $table->boolean('allows_response_updates')->default(false);
             $table->timestamps();
 
             $table->unique(['year', 'siakad_idsemester'], 'edom_periods_year_semester_unique');
@@ -20,8 +23,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        $tableName = 'edom_periods';
-
-        Schema::dropIfExists($tableName);
+        Schema::dropIfExists('edom_periods');
     }
 };
