@@ -65,13 +65,14 @@ class EdomKrsReportTest extends TestCase
             'id' => $response->id,
             'id_unw_program_studi' => 22,
         ]);
-        $this->assertSame(1, EdomReportResource::courseCountForProgramStudi($programStudi));
+        $this->assertSame(2, EdomReportResource::courseCountForProgramStudi($programStudi));
         $this->assertSame(1, EdomReportResource::responseCountForProgramStudi($programStudi));
         $this->assertSame(
-            [3926],
+            [3926, 3931],
             EdomReportResource::coursesForProgramStudi($programStudi)
                 ->pluck('siakad_idmatakuliah')
                 ->map(fn ($id): int => (int) $id)
+                ->values()
                 ->all(),
         );
         $this->assertSame('m_3926', EdomReportResource::courseKeyForCourseId(3926));
