@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\EdomPeriods\Schemas;
 
-use App\Models\EdomSettings;
 use App\Services\Siakad\UnwApiSiakad;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -33,22 +32,6 @@ class EdomPeriodForm
                 ->required()
                 ->placeholder('Pilih semester dari SIAKAD')
                 ->helperText('Daftar semester diambil melalui /edom/semester.'),
-
-            Select::make('settings')
-                ->label('EDOM Settings')
-                ->relationship('settings', 'name')
-                ->multiple()
-                ->searchable()
-                ->preload()
-                ->helperText('Pilih set pertanyaan yang berlaku pada periode ini.'),
-
-            Select::make('status')
-                ->label('Status EDOM Settings')
-                ->options(EdomSettings::statusOptions())
-                ->default(EdomSettings::STATUS_DRAFT)
-                ->native(false)
-                ->required()
-                ->helperText('Status ini mengubah status EDOM Settings yang dipilih pada periode ini, bukan membuat status periode baru.'),
         ]);
     }
 
