@@ -64,7 +64,7 @@ class ViewEdomCourseReport extends Page implements HasTable
                 ->label('Export Excel')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('success')
-                ->action('exportExcel'),
+                ->action(fn (): StreamedResponse => $this->exportExcel()),
             Action::make('backToCourses')
                 ->label('Kembali ke Mata Kuliah')
                 ->icon('heroicon-o-arrow-left')
@@ -87,7 +87,9 @@ class ViewEdomCourseReport extends Page implements HasTable
             .'.xls';
 
         return response()->streamDownload(
-            fn (): print|int => print($this->excelXml()),
+            function (): void {
+                echo $this->excelXml();
+            },
             $filename,
             [
                 'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
@@ -266,7 +268,7 @@ class ViewEdomCourseReport extends Page implements HasTable
         $xml .= '<Styles>' . "\n";
         $xml .= '<Style ss:ID="Title"><Font ss:Bold="1" ss:Size="16"/><Interior ss:Color="#DCEBFF" ss:Pattern="Solid"/></Style>' . "\n";
         $xml .= '<Style ss:ID="Meta"><Font ss:Bold="1"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/></Style>' . "\n";
-        $xml .= '<Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#022B63" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF" ss:Bold="1"/></Style>' . "\n";
+        $xml .= '<Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#022B63" ss:Pattern="Solid"/></Style>' . "\n";
         $xml .= '<Style ss:ID="Category"><Font ss:Bold="1"/><Interior ss:Color="#EAF1FB" ss:Pattern="Solid"/></Style>' . "\n";
         $xml .= '<Style ss:ID="Text"><Alignment ss:Vertical="Top" ss:WrapText="1"/></Style>' . "\n";
         $xml .= '<Style ss:ID="Number"><Alignment ss:Horizontal="Center" ss:Vertical="Top"/></Style>' . "\n";
