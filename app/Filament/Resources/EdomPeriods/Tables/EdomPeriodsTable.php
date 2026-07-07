@@ -33,7 +33,7 @@ class EdomPeriodsTable
                     })
                     ->sortable(),
                 TextColumn::make('status')
-                    ->label('Status EDOM Settings')
+                    ->label('Status EDOM')
                     ->formatStateUsing(fn (string $state): string => EdomSettings::statusOptions()[$state] ?? $state)
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -41,12 +41,6 @@ class EdomPeriodsTable
                         EdomSettings::STATUS_CLOSED => 'danger',
                         default => 'gray',
                     }),
-                TextColumn::make('settings_status_summary')
-                    ->label('Detail EDOM Settings')
-                    ->bulleted()
-                    ->listWithLineBreaks()
-                    ->placeholder('-')
-                    ->wrap(),
                 TextColumn::make('lifecycle_status')
                     ->label('Status SIAKAD')
                     ->badge()
