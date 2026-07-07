@@ -192,8 +192,8 @@ class EdomReportResource extends Resource
         }
 
         return EdomResponse::query()
-            ->fromSub($union, 'edom_report_courses')
-            ->select('edom_report_courses.*')
+            ->fromSub($union, 'edom_response')
+            ->select('edom_response.*')
             ->orderBy('kode')
             ->orderBy('nama');
     }
