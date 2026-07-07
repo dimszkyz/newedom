@@ -2,7 +2,6 @@
 
 namespace App\Services\Edom;
 
-use App\Models\EdomKrsSection;
 use App\Models\EdomResponse;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Support\Facades\Cache;
@@ -28,6 +27,7 @@ class EdomResponseMetadata
     public function __construct(
         private readonly UnwApiSiakad $siakad,
         private readonly EdomResultAggregator $aggregator,
+        private readonly EdomKrsReportData $krsReportData,
     ) {}
 
     public function studentNameFor(EdomResponse $response): string
@@ -73,37 +73,14 @@ class EdomResponseMetadata
 
     public function krsCourseLabelFor(EdomResponse $response): string
     {
-        $period = $response->period;
+        $label = trim($this->krsReportData->courseLabelForResponse($response));
 
-        if ($period) {
-            $section = EdomKrsSection::query()
-                ->where('siakad_idmahasiswa', (string) $response->siakad_idmahasiswa)
-                ->where('siakad_idtahunajaran', (int) $period->year)
-                ->where('siakad_idsemester', (int) $period->siakad_idsemester)
-                ->where('idmatakuliah', (int) $response->siakad_idmatakuliah)
-                ->when(
-                    filled($response->siakad_idtawarmatakuliahdetail),
-                    fn ($query) => $query->orderByRaw(
-                        'CASE WHEN idtawarmatakuliahdetail = ? THEN 0 ELSE 1 END',
-                        [(int) $response->siakad_idtawarmatakuliahdetail]
-                    )
-                )
-                ->first();
-
-            if ($section) {
-                return $section->course_label;
-            }
-        }
-
-        return $this->courseLabelFor($response);
+        return $label !== '' ? $label : $this->courseLabelFor($response);
     }
 
     public function courseNameFor(EdomResponse $response): string
     {
-        $section = $this->sectionFor($response);
-        $courseName = trim((string) data_get($section, 'nama', ''));
-
-        return $courseName !== '' ? $courseName : 'Mata kuliah #'.$response->siakad_idmatakuliah;
+        return $this->krsReportData->courseNameForResponse($response);
     }
 
     /**
@@ -127,24 +104,8 @@ class EdomResponseMetadata
             ->unique(fn (EdomResponse $item): string => (string) $item->siakad_idmatakuliah)
             ->values();
 
-        $period = $response->period;
-        $cachedSections = EdomKrsSection::query()
-            ->where('siakad_idmahasiswa', (string) $response->siakad_idmahasiswa)
-            ->when($period, fn ($query) => $query
-                ->where('siakad_idtahunajaran', (int) $period->year)
-                ->where('siakad_idsemester', (int) $period->siakad_idsemester))
-            ->whereIn('idmatakuliah', $responses->pluck('siakad_idmatakuliah')->all())
-            ->orderBy('id')
-            ->get()
-            ->unique(fn (EdomKrsSection $section): string => (string) $section->idmatakuliah)
-            ->keyBy(fn (EdomKrsSection $section): string => (string) $section->idmatakuliah);
-
         return $this->studentGroupCourseLabels[$groupKey] = $responses
-            ->map(function (EdomResponse $item) use ($cachedSections): string {
-                $section = $cachedSections->get((string) $item->siakad_idmatakuliah);
-
-                return $section?->course_label ?: $this->krsCourseLabelFor($item);
-            })
+            ->map(fn (EdomResponse $item): string => $this->krsCourseLabelFor($item))
             ->unique()
             ->values()
             ->all();
@@ -189,26 +150,6 @@ class EdomResponseMetadata
             ->avg();
 
         return $average === null ? null : round((float) $average, 2);
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function sectionFor(EdomResponse $response): ?array
-    {
-        $year = $response->getAttribute('siakad_idtahunajaran') ?? $response->period?->year;
-        $semester = $response->getAttribute('siakad_idsemester') ?? $response->period?->siakad_idsemester;
-
-        if ($year === null || $year === '' || $semester === null || $semester === '') {
-            return null;
-        }
-
-        return $this->aggregator->sectionFor(
-            $year,
-            $semester,
-            $response->siakad_idtawarmatakuliahdetail,
-            $response->siakad_idmatakuliah,
-        );
     }
 
     /**

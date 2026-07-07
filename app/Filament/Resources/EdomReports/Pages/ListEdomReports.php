@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\EdomReports\Pages;
 
 use App\Filament\Resources\EdomReports\EdomReportResource;
-use App\Services\Edom\EdomKrsSectionSyncService;
+use App\Services\Edom\EdomKrsReportData;
 use App\Services\Edom\EdomReportsExcelExporter;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
@@ -17,7 +17,7 @@ class ListEdomReports extends ListRecords
     {
         parent::mount();
 
-        app(EdomKrsSectionSyncService::class)->syncKnownStudentPeriods();
+        app(EdomKrsReportData::class)->refreshKnownResponseMetadata();
     }
 
     protected function getHeaderActions(): array
@@ -33,11 +33,13 @@ class ListEdomReports extends ListRecords
 
     public function exportAllExcel(): StreamedResponse
     {
+        app(EdomKrsReportData::class)->refreshKnownResponseMetadata();
+
         $filename = 'edom-reports-semua-'.now()->format('Ymd-His').'.xls';
 
         return response()->streamDownload(
             function (): void {
-                echo app(EdomReportsExcelExporter::class)->toXml();
+                print app(EdomReportsExcelExporter::class)->toXml();
             },
             $filename,
             [

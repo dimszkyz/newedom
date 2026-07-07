@@ -3,14 +3,15 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\EdomReports\EdomReportResource;
-use App\Models\EdomKrsSection;
 use App\Models\EdomPeriod;
 use App\Models\EdomResponse;
 use App\Models\EdomSettings;
 use App\Models\ProgramStudi;
-use App\Services\Edom\EdomKrsSectionSyncService;
+use App\Services\Edom\EdomKrsReportData;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Mockery;
 use Tests\TestCase;
 
@@ -18,8 +19,10 @@ class EdomKrsReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_report_only_lists_krs_courses_that_have_responses(): void
+    public function test_report_uses_krs_api_metadata_without_local_krs_table(): void
     {
+        Cache::flush();
+
         $programStudi = ProgramStudi::query()->create([
             'id_unw_program_studi' => 22,
             'nama' => 'Magister Hukum',
@@ -52,11 +55,12 @@ class EdomKrsReportTest extends TestCase
             ]);
         $this->app->instance(UnwApiSiakad::class, $siakad);
 
-        $result = app(EdomKrsSectionSyncService::class)->syncKnownStudentPeriods();
+        $result = app(EdomKrsReportData::class)->refreshKnownResponseMetadata();
 
         $this->assertSame(1, $result['student_periods']);
-        $this->assertSame(3, $result['synced_sections']);
-        $this->assertDatabaseCount('edom_krs_sections', 3);
+        $this->assertSame(3, $result['fetched_sections']);
+        $this->assertSame(1, $result['updated_responses']);
+        $this->assertFalse(Schema::hasTable('edom_krs_sections'));
         $this->assertDatabaseHas('edom_response', [
             'id' => $response->id,
             'id_unw_program_studi' => 22,
@@ -66,13 +70,11 @@ class EdomKrsReportTest extends TestCase
         $this->assertSame(
             [3926],
             EdomReportResource::coursesForProgramStudi($programStudi)
-                ->pluck('idmatakuliah')
+                ->pluck('siakad_idmatakuliah')
                 ->map(fn ($id): int => (int) $id)
                 ->all(),
         );
-
-        $course = EdomKrsSection::query()->where('idmatakuliah', 3926)->firstOrFail();
-        $this->assertSame('m_3926', EdomReportResource::courseKeyForKrsSection($course));
+        $this->assertSame('m_3926', EdomReportResource::courseKeyForCourseId(3926));
     }
 
     public function test_response_counts_are_scoped_by_submitted_program_studi_and_course(): void
@@ -132,31 +134,44 @@ class EdomKrsReportTest extends TestCase
         );
     }
 
-    public function test_sync_replaces_stale_krs_courses_for_the_same_student_period(): void
+    public function test_refresh_replaces_stale_program_studi_from_latest_krs_api(): void
     {
-        $siakad = Mockery::mock(UnwApiSiakad::class);
-        $this->app->instance(UnwApiSiakad::class, $siakad);
-        $sync = app(EdomKrsSectionSyncService::class);
+        Cache::flush();
 
-        $sync->syncStudentSections('18273', 2025, 1, [
-            $this->section(22489, 3926, '24KK01', 'Hukum Kesehatan Dan Digital'),
-            $this->section(22494, 3931, '24KK02', 'Hukum Pembuktian Tindak Pidana Digital'),
-        ]);
-
-        $sync->syncStudentSections('18273', 2025, 1, [
-            $this->section(22494, 3931, '24KK02', 'Hukum Pembuktian Tindak Pidana Digital'),
-        ]);
-
-        $this->assertDatabaseCount('edom_krs_sections', 1);
-        $this->assertDatabaseMissing('edom_krs_sections', [
-            'siakad_idmahasiswa' => '18273',
-            'idmatakuliah' => 3926,
-        ]);
-        $this->assertDatabaseHas('edom_krs_sections', [
-            'siakad_idmahasiswa' => '18273',
-            'siakad_idtahunajaran' => 2025,
+        $period = EdomPeriod::query()->create([
+            'year' => 2025,
             'siakad_idsemester' => 1,
-            'idmatakuliah' => 3931,
+        ]);
+        $setting = EdomSettings::query()->create([
+            'name' => 'EDOM 2025',
+            'status' => 'active',
+        ]);
+        $response = EdomResponse::query()->create([
+            'edom_period_id' => $period->id,
+            'edom_setting_id' => $setting->id,
+            'siakad_idmahasiswa' => '18273',
+            'siakad_idmatakuliah' => 3931,
+            'siakad_idtawarmatakuliahdetail' => 22494,
+            'id_unw_program_studi' => 99,
+            'submitted_at' => now(),
+        ]);
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with('18273', 2025, 1)
+            ->andReturn([
+                $this->section(22494, 3931, '24KK02', 'Hukum Pembuktian Tindak Pidana Digital'),
+            ]);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
+
+        $result = app(EdomKrsReportData::class)->refreshKnownResponseMetadata();
+
+        $this->assertSame(1, $result['updated_responses']);
+        $this->assertFalse(Schema::hasTable('edom_krs_sections'));
+        $this->assertDatabaseHas('edom_response', [
+            'id' => $response->id,
+            'id_unw_program_studi' => 22,
         ]);
     }
 

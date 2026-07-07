@@ -2,12 +2,10 @@
 
 namespace App\Services\Siakad;
 
-use App\Services\Edom\EdomKrsSectionSyncService;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
-use Throwable;
 
 class UnwApiSiakad
 {
@@ -98,24 +96,11 @@ class UnwApiSiakad
         int|string $siakadIdTahunAjaran,
         int|string $siakadIdSemester
     ): array {
-        $sections = $this->request('get', '/edom/krs', [
+        return $this->request('get', '/edom/krs', [
             'siakad_idmahasiswa' => (int) $siakadIdMahasiswa,
             'siakad_idtahunajaran' => (int) $siakadIdTahunAjaran,
             'siakad_idsemester' => (int) $siakadIdSemester,
         ]);
-
-        try {
-            app(EdomKrsSectionSyncService::class)->syncStudentSections(
-                (string) $siakadIdMahasiswa,
-                (int) $siakadIdTahunAjaran,
-                (int) $siakadIdSemester,
-                $sections,
-            );
-        } catch (Throwable $exception) {
-            report($exception);
-        }
-
-        return $sections;
     }
 
     public function penawaran(int|string $siakadIdTahunAjaran, int|string $siakadIdSemester, int|string|null $idUnwProgramStudi = null): array
