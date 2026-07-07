@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('siakad_idmahasiswa');
             $table->unsignedBigInteger('siakad_idmatakuliah');
             $table->unsignedBigInteger('siakad_idtawarmatakuliahdetail');
+            $table->unsignedBigInteger('id_unw_program_studi')->nullable()->index();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
 
