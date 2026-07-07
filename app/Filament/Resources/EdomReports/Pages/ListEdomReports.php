@@ -64,12 +64,41 @@ class ListEdomReports extends ListRecords
             ->keyBy(fn (ProgramStudi $programStudi): string => (string) $programStudi->id_unw_program_studi);
         $courseGroups = $this->courseGroupsForResponses($responses, $programStudis);
         $exportedAt = now()->format('d/m/Y H:i:s');
-        $columnCount = 7 + ($optionLabels->count() * 2) + 1;
+        $usedSheetNames = [];
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
         $xml .= '<?mso-application progid="Excel.Sheet"?>' . "\n";
         $xml .= '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n";
-        $xml .= '<Styles>' . "\n";
+        $xml .= $this->excelStyles();
+        $xml .= $this->summaryWorksheet(
+            $this->safeWorksheetName('Ringkasan', $usedSheetNames),
+            $responses,
+            $courseGroups,
+            $optionLabels,
+            $exportedAt,
+        );
+        $xml .= $this->reportWorksheet(
+            $this->safeWorksheetName('Semua Report', $usedSheetNames),
+            $courseGroups,
+            $optionLabels,
+        );
+
+        foreach ($courseGroups->groupBy('program_studi_label') as $programStudiLabel => $programCourseGroups) {
+            $xml .= $this->reportWorksheet(
+                $this->safeWorksheetName((string) $programStudiLabel, $usedSheetNames),
+                $programCourseGroups->values(),
+                $optionLabels,
+            );
+        }
+
+        $xml .= '</Workbook>';
+
+        return $xml;
+    }
+
+    private function excelStyles(): string
+    {
+        $xml = '<Styles>' . "\n";
         $xml .= '<Style ss:ID="Title"><Font ss:Bold="1" ss:Size="16"/><Interior ss:Color="#DCEBFF" ss:Pattern="Solid"/></Style>' . "\n";
         $xml .= '<Style ss:ID="Meta"><Font ss:Bold="1"/><Interior ss:Color="#F3F4F6" ss:Pattern="Solid"/></Style>' . "\n";
         $xml .= '<Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#022B63" ss:Pattern="Solid"/></Style>' . "\n";
@@ -78,10 +107,29 @@ class ListEdomReports extends ListRecords
         $xml .= '<Style ss:ID="Text"><Alignment ss:Vertical="Top" ss:WrapText="1"/></Style>' . "\n";
         $xml .= '<Style ss:ID="Number"><Alignment ss:Horizontal="Center" ss:Vertical="Top"/></Style>' . "\n";
         $xml .= '</Styles>' . "\n";
-        $xml .= '<Worksheet ss:Name="Semua Report EDOM"><Table>' . "\n";
 
+        return $xml;
+    }
+
+    /**
+     * @param Collection<int, EdomResponse> $responses
+     * @param Collection<int, array{program_studi_label: string, course_label: string, response_ids: Collection<int, int>}> $courseGroups
+     * @param Collection<int, string> $optionLabels
+     */
+    private function summaryWorksheet(
+        string $sheetName,
+        Collection $responses,
+        Collection $courseGroups,
+        Collection $optionLabels,
+        string $exportedAt,
+    ): string {
+        $xml = $this->openWorksheet($sheetName);
         $xml .= $this->excelRow([
-            ['value' => 'Semua Report EDOM', 'style' => 'Title', 'mergeAcross' => max($columnCount - 1, 1)],
+            ['value' => 'Ringkasan Export Semua Report EDOM', 'style' => 'Title', 'mergeAcross' => 3],
+        ]);
+        $xml .= $this->excelRow([
+            ['value' => 'Tanggal Export', 'style' => 'Meta'],
+            ['value' => $exportedAt, 'mergeAcross' => 2],
         ]);
         $xml .= $this->excelRow([
             ['value' => 'Total Program Studi', 'style' => 'Meta'],
@@ -96,8 +144,53 @@ class ListEdomReports extends ListRecords
             ['value' => $responses->count(), 'type' => 'Number'],
         ]);
         $xml .= $this->excelRow([
-            ['value' => 'Tanggal Export', 'style' => 'Meta'],
-            ['value' => $exportedAt, 'mergeAcross' => max($columnCount - 2, 0)],
+            ['value' => 'Opsi Jawaban Terdeteksi', 'style' => 'Meta'],
+            ['value' => $optionLabels->join(', ') ?: '-', 'mergeAcross' => 2],
+        ]);
+        $xml .= '<Row></Row>' . "\n";
+
+        $xml .= $this->excelRow([
+            ['value' => 'Program Studi', 'style' => 'Header'],
+            ['value' => 'Mata Kuliah Report', 'style' => 'Header'],
+            ['value' => 'Respons', 'style' => 'Header'],
+        ]);
+
+        foreach ($courseGroups->groupBy('program_studi_label') as $programStudiLabel => $programCourseGroups) {
+            $xml .= $this->excelRow([
+                ['value' => (string) $programStudiLabel, 'style' => 'Program'],
+                ['value' => $programCourseGroups->count(), 'type' => 'Number', 'style' => 'Number'],
+                ['value' => $programCourseGroups->sum(fn (array $group): int => $group['response_ids']->count()), 'type' => 'Number', 'style' => 'Number'],
+            ]);
+        }
+
+        if ($courseGroups->isEmpty()) {
+            $xml .= $this->excelRow([
+                ['value' => 'Belum ada data EDOM Reports untuk diexport.', 'style' => 'Text', 'mergeAcross' => 2],
+            ]);
+        }
+
+        return $xml.$this->closeWorksheet();
+    }
+
+    /**
+     * @param Collection<int, array{program_studi_label: string, course_label: string, response_ids: Collection<int, int>}> $courseGroups
+     * @param Collection<int, string> $optionLabels
+     */
+    private function reportWorksheet(string $sheetName, Collection $courseGroups, Collection $optionLabels): string
+    {
+        $columnCount = 7 + ($optionLabels->count() * 2) + 1;
+        $xml = $this->openWorksheet($sheetName);
+
+        $xml .= $this->excelRow([
+            ['value' => 'Report EDOM - '.$sheetName, 'style' => 'Title', 'mergeAcross' => max($columnCount - 1, 1)],
+        ]);
+        $xml .= $this->excelRow([
+            ['value' => 'Total Mata Kuliah Report', 'style' => 'Meta'],
+            ['value' => $courseGroups->count(), 'type' => 'Number'],
+        ]);
+        $xml .= $this->excelRow([
+            ['value' => 'Total Respons', 'style' => 'Meta'],
+            ['value' => $courseGroups->sum(fn (array $group): int => $group['response_ids']->count()), 'type' => 'Number'],
         ]);
         $xml .= '<Row></Row>' . "\n";
 
@@ -174,13 +267,11 @@ class ListEdomReports extends ListRecords
 
         if ($courseGroups->isEmpty()) {
             $xml .= $this->excelRow([
-                ['value' => 'Belum ada data EDOM Reports untuk diexport.', 'style' => 'Text', 'mergeAcross' => max($columnCount - 1, 1)],
+                ['value' => 'Belum ada data EDOM Reports untuk sheet ini.', 'style' => 'Text', 'mergeAcross' => max($columnCount - 1, 1)],
             ]);
         }
 
-        $xml .= '</Table></Worksheet></Workbook>';
-
-        return $xml;
+        return $xml.$this->closeWorksheet();
     }
 
     /**
@@ -356,6 +447,16 @@ class ListEdomReports extends ListRecords
             ->values();
     }
 
+    private function openWorksheet(string $sheetName): string
+    {
+        return '<Worksheet ss:Name="'.$this->xmlEscape($sheetName).'"><Table>' . "\n";
+    }
+
+    private function closeWorksheet(): string
+    {
+        return '</Table></Worksheet>' . "\n";
+    }
+
     /**
      * @param array<int, array<string, mixed>> $cells
      */
@@ -390,6 +491,29 @@ class ListEdomReports extends ListRecords
         $dataType = $type === 'Number' && is_numeric($value) ? 'Number' : 'String';
 
         return '<Cell'.$attributes.'><Data ss:Type="'.$dataType.'">'.$this->xmlEscape((string) $value).'</Data></Cell>';
+    }
+
+    /**
+     * @param array<int, string> $usedSheetNames
+     */
+    private function safeWorksheetName(string $value, array &$usedSheetNames): string
+    {
+        $name = trim(preg_replace('/[\\\\\/\?\*\[\]\:]+/', ' ', $value) ?? '');
+        $name = preg_replace('/\s+/', ' ', $name) ?? '';
+        $name = $name !== '' ? $name : 'Sheet';
+        $name = mb_substr($name, 0, 31);
+        $baseName = $name;
+        $counter = 2;
+
+        while (in_array(strtolower($name), $usedSheetNames, true)) {
+            $suffix = ' '.$counter;
+            $name = mb_substr($baseName, 0, 31 - mb_strlen($suffix)).$suffix;
+            $counter++;
+        }
+
+        $usedSheetNames[] = strtolower($name);
+
+        return $name;
     }
 
     private function xmlEscape(string $value): string
