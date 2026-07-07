@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\EdomResponses\Pages\ViewStudentEdomResponses;
 use App\Filament\Resources\EdomResponses\Tables\EdomResponsesTable;
-use App\Models\EdomKrsSection;
 use App\Models\EdomPeriod;
 use App\Models\EdomQuestion;
 use App\Models\EdomQuestionCategory;
@@ -13,7 +12,10 @@ use App\Models\EdomResponse;
 use App\Models\EdomResponseDetail;
 use App\Models\EdomSettings;
 use App\Services\Edom\EdomResponseMetadata;
+use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Mockery;
 use Tests\TestCase;
 
 class EdomResponseAdminTest extends TestCase
@@ -22,15 +24,21 @@ class EdomResponseAdminTest extends TestCase
 
     public function test_response_list_groups_courses_filled_by_the_same_student(): void
     {
+        Cache::flush();
+
         [$period, $setting] = $this->createResponseDependencies();
-        $first = $this->createResponse($period, $setting, 3926, 22489, now()->subMinute());
+        $this->createResponse($period, $setting, 3926, 22489, now()->subMinute());
         $this->createResponse($period, $setting, 3931, 22494, now());
-        $this->cacheCourse($first, '24KK01', 'Hukum Kesehatan Dan Digital');
-        $this->cacheCourse(
-            EdomResponse::query()->where('siakad_idmatakuliah', 3931)->firstOrFail(),
-            '24KK02',
-            'Hukum Pembuktian Tindak Pidana Digital'
-        );
+
+        $siakad = Mockery::mock(UnwApiSiakad::class);
+        $siakad->shouldReceive('krs')
+            ->once()
+            ->with('18273', 2025, 1)
+            ->andReturn([
+                $this->section(22489, 3926, '24KK01', 'Hukum Kesehatan Dan Digital'),
+                $this->section(22494, 3931, '24KK02', 'Hukum Pembuktian Tindak Pidana Digital'),
+            ]);
+        $this->app->instance(UnwApiSiakad::class, $siakad);
 
         $groupedResponses = EdomResponsesTable::applyStudentGrouping(EdomResponse::query())->get();
 
@@ -121,18 +129,17 @@ class EdomResponseAdminTest extends TestCase
         ]);
     }
 
-    private function cacheCourse(EdomResponse $response, string $code, string $name): void
+    /**
+     * @return array<string, mixed>
+     */
+    private function section(int $detailId, int $courseId, string $code, string $name): array
     {
-        EdomKrsSection::query()->create([
-            'siakad_idmahasiswa' => $response->siakad_idmahasiswa,
-            'siakad_idtahunajaran' => $response->period->year,
-            'siakad_idsemester' => $response->period->siakad_idsemester,
-            'idtawarmatakuliahdetail' => $response->siakad_idtawarmatakuliahdetail,
-            'idmatakuliah' => $response->siakad_idmatakuliah,
+        return [
+            'idtawarmatakuliahdetail' => $detailId,
+            'idmatakuliah' => $courseId,
             'kode' => $code,
             'nama' => $name,
             'id_unw_program_studi' => 22,
-            'fetched_at' => now(),
-        ]);
+        ];
     }
 }
