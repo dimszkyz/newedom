@@ -8,7 +8,6 @@ use App\Models\EdomSettings;
 use App\Services\Siakad\UnwApiSiakad;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -59,29 +58,6 @@ class EdomPeriodsTable
                 TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->recordActions([
-                Action::make('updateSettingsStatus')
-                    ->label('Atur Status EDOM Settings')
-                    ->form([
-                        Select::make('status')
-                            ->label('Status')
-                            ->options(EdomSettings::statusOptions())
-                            ->native(false)
-                            ->required(),
-                    ])
-                    ->modalHeading('Atur Status EDOM Settings')
-                    ->modalDescription('Status yang dipilih akan diterapkan ke semua EDOM Settings yang terhubung pada periode ini.')
-                    ->visible(fn (EdomPeriod $record): bool => $record->settings()->exists())
-                    ->action(function (EdomPeriod $record, array $data): void {
-                        $status = (string) $data['status'];
-                        $updated = $record->updateSettingsStatus($status);
-
-                        Notification::make()
-                            ->title('Status EDOM Settings diperbarui')
-                            ->body($updated.' EDOM Settings diubah menjadi '.(EdomSettings::statusOptions()[$status] ?? $status).'.')
-                            ->success()
-                            ->send();
-                    }),
-
                 Action::make('openPeriod')
                     ->label('Buka ke SIAKAD')
                     ->icon(Heroicon::OutlinedLockOpen)
