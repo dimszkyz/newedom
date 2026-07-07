@@ -19,7 +19,7 @@ class ViewStudentEdomResponses extends Page implements HasTable
 
     protected static string $resource = EdomResponseResource::class;
 
-    protected string $view = 'filament-panels::resources.pages.list-records';
+    protected string $view = 'filament.pages.table-page';
 
     public string $studentId;
 
