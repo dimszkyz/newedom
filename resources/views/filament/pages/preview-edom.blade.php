@@ -76,12 +76,15 @@
 
             .edom-preview-textarea {
                 width: 100%;
-                min-height: 84px;
-                padding: 10px 12px;
+                min-height: 96px;
+                padding: 12px 14px;
                 border: 1px solid #cbd5e1;
                 border-radius: 10px;
                 background: #f8fafc;
                 color: #111827;
+                font-family: inherit;
+                font-size: 14px;
+                line-height: 1.6;
                 resize: vertical;
             }
         </style>
@@ -134,13 +137,18 @@
                             </tr>
 
                             @forelse ($category->questions as $question)
+                                @php
+                                    $questionType = strtolower(trim((string) $question->question_type));
+                                    $isTextQuestion = in_array($questionType, ['text', 'textarea', 'essay', 'esai', 'isian', 'uraian'], true);
+                                @endphp
+
                                 <tr>
                                     <td class="edom-preview-number">{{ $loop->iteration }}</td>
                                     <td class="edom-preview-statement">{{ $question->statement ?: '-' }}</td>
 
-                                    @if (in_array(strtolower((string) $question->question_type), ['essay', 'esai']))
+                                    @if ($isTextQuestion)
                                         <td colspan="{{ max($edom->questionOptions->count(), 1) }}">
-                                            <textarea class="edom-preview-textarea" readonly placeholder="Jawaban essay mahasiswa akan diisi di sini..."></textarea>
+                                            <textarea class="edom-preview-textarea" readonly placeholder="Jawaban teks atau esai akan ditampilkan di sini..."></textarea>
                                         </td>
                                     @else
                                         @forelse ($edom->questionOptions as $option)
