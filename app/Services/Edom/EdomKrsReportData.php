@@ -22,6 +22,11 @@ class EdomKrsReportData
      */
     private ?Collection $knownStudentPeriods = null;
 
+    /**
+     * @var array<string, Collection<int, object>>
+     */
+    private array $studentPeriodsByProgramStudi = [];
+
     public function __construct(private readonly UnwApiSiakad $siakad) {}
 
     /**
@@ -65,26 +70,20 @@ class EdomKrsReportData
 
     /**
      * Mengambil daftar mata kuliah laporan dari API /edom/krs.
-     * Data ini sengaja tidak disimpan ke tabel lokal agar report mengikuti KRS terbaru.
+     * Program studi ditentukan dari edom_response, sedangkan daftar mata kuliah diambil penuh dari KRS mahasiswa.
+     * Ini sengaja tidak bergantung pada id_unw_program_studi di item KRS karena beberapa response API bisa kosong/tidak konsisten.
      *
      * @return Collection<int, array{id:int, siakad_idmatakuliah:int, siakad_idtawarmatakuliahdetail:int|null, idmatakuliah:int, idtawarmatakuliahdetail:int|null, kode:string|null, nama:string, course_label:string, krs_student_count:int}>
      */
     public function reportCourseRowsForProgramStudi(ProgramStudi $programStudi): Collection
     {
-        $programStudiId = $this->nullableInteger($programStudi->id_unw_program_studi);
-
-        if ($programStudiId === null) {
-            return collect();
-        }
-
-        return $this->knownStudentPeriods()
-            ->flatMap(function (object $studentPeriod) use ($programStudiId): Collection {
+        return $this->studentPeriodsForProgramStudi($programStudi)
+            ->flatMap(function (object $studentPeriod): Collection {
                 return $this->sectionsForStudentPeriod(
                     (string) $studentPeriod->siakad_idmahasiswa,
                     (int) $studentPeriod->siakad_idtahunajaran,
                     (int) $studentPeriod->siakad_idsemester,
                 )
-                    ->filter(fn (array $section): bool => $this->nullableInteger(data_get($section, 'id_unw_program_studi')) === $programStudiId)
                     ->map(function (array $section) use ($studentPeriod): array {
                         $section['siakad_idmahasiswa'] = (string) $studentPeriod->siakad_idmahasiswa;
 
@@ -249,11 +248,40 @@ class EdomKrsReportData
     }
 
     /**
+     * @return Collection<int, object>
+     */
+    private function studentPeriodsForProgramStudi(ProgramStudi $programStudi): Collection
+    {
+        $programStudiId = $this->nullableInteger($programStudi->id_unw_program_studi);
+
+        if ($programStudiId === null) {
+            return collect();
+        }
+
+        $cacheKey = (string) $programStudiId;
+
+        if (! array_key_exists($cacheKey, $this->studentPeriodsByProgramStudi)) {
+            $this->studentPeriodsByProgramStudi[$cacheKey] = EdomResponse::query()
+                ->join('edom_periods', 'edom_periods.id', '=', 'edom_response.edom_period_id')
+                ->where('edom_response.id_unw_program_studi', $programStudiId)
+                ->select([
+                    'edom_response.siakad_idmahasiswa',
+                    'edom_periods.year as siakad_idtahunajaran',
+                    'edom_periods.siakad_idsemester',
+                ])
+                ->distinct()
+                ->get();
+        }
+
+        return $this->studentPeriodsByProgramStudi[$cacheKey];
+    }
+
+    /**
      * @return Collection<int, array<string, mixed>>
      */
     private function sectionsForStudentPeriod(string $studentId, int $tahunAjaran, int $semester): Collection
     {
-        $cacheKey = 'edom-report:krs-api:'.$studentId.':'.$tahunAjaran.':'.$semester;
+        $cacheKey = 'edom-report:krs-api-v2:'.$studentId.':'.$tahunAjaran.':'.$semester;
 
         if (! array_key_exists($cacheKey, $this->studentPeriodSections)) {
             try {
