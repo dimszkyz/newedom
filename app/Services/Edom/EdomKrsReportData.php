@@ -4,6 +4,7 @@ namespace App\Services\Edom;
 
 use App\Models\EdomPeriod;
 use App\Models\EdomResponse;
+use App\Models\ProgramStudi;
 use App\Services\Siakad\UnwApiSiakad;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -16,6 +17,11 @@ class EdomKrsReportData
      */
     private array $studentPeriodSections = [];
 
+    /**
+     * @var Collection<int, object>|null
+     */
+    private ?Collection $knownStudentPeriods = null;
+
     public function __construct(private readonly UnwApiSiakad $siakad) {}
 
     /**
@@ -25,16 +31,7 @@ class EdomKrsReportData
      */
     public function refreshKnownResponseMetadata(): array
     {
-        $studentPeriods = EdomResponse::query()
-            ->join('edom_periods', 'edom_periods.id', '=', 'edom_response.edom_period_id')
-            ->select([
-                'edom_response.siakad_idmahasiswa',
-                'edom_periods.year as siakad_idtahunajaran',
-                'edom_periods.siakad_idsemester',
-            ])
-            ->distinct()
-            ->get();
-
+        $studentPeriods = $this->knownStudentPeriods();
         $fetchedSections = 0;
         $updatedResponses = 0;
 
@@ -61,8 +58,81 @@ class EdomKrsReportData
         ];
     }
 
+    public function courseCountForProgramStudi(ProgramStudi $programStudi): int
+    {
+        return $this->reportCourseRowsForProgramStudi($programStudi)->count();
+    }
+
+    /**
+     * Mengambil daftar mata kuliah laporan dari API /edom/krs.
+     * Data ini sengaja tidak disimpan ke tabel lokal agar report mengikuti KRS terbaru.
+     *
+     * @return Collection<int, array{id:int, siakad_idmatakuliah:int, siakad_idtawarmatakuliahdetail:int|null, idmatakuliah:int, idtawarmatakuliahdetail:int|null, kode:string|null, nama:string, course_label:string, krs_student_count:int}>
+     */
+    public function reportCourseRowsForProgramStudi(ProgramStudi $programStudi): Collection
+    {
+        $programStudiId = $this->nullableInteger($programStudi->id_unw_program_studi);
+
+        if ($programStudiId === null) {
+            return collect();
+        }
+
+        return $this->knownStudentPeriods()
+            ->flatMap(function (object $studentPeriod) use ($programStudiId): Collection {
+                return $this->sectionsForStudentPeriod(
+                    (string) $studentPeriod->siakad_idmahasiswa,
+                    (int) $studentPeriod->siakad_idtahunajaran,
+                    (int) $studentPeriod->siakad_idsemester,
+                )
+                    ->filter(fn (array $section): bool => $this->nullableInteger(data_get($section, 'id_unw_program_studi')) === $programStudiId)
+                    ->map(function (array $section) use ($studentPeriod): array {
+                        $section['siakad_idmahasiswa'] = (string) $studentPeriod->siakad_idmahasiswa;
+
+                        return $section;
+                    });
+            })
+            ->filter(fn (array $section): bool => $this->nullableInteger(data_get($section, 'idmatakuliah')) !== null)
+            ->groupBy(fn (array $section): string => (string) $this->nullableInteger(data_get($section, 'idmatakuliah')))
+            ->map(function (Collection $sections): array {
+                /** @var array<string, mixed> $first */
+                $first = $sections->first();
+                $courseId = (int) $this->nullableInteger(data_get($first, 'idmatakuliah'));
+                $detailId = $this->nullableInteger(data_get($first, 'idtawarmatakuliahdetail'));
+                $code = trim((string) data_get($first, 'kode', ''));
+                $name = trim((string) data_get($first, 'nama', ''));
+                $label = trim($code.' - '.$name, ' -');
+
+                return [
+                    'id' => $courseId,
+                    'siakad_idmatakuliah' => $courseId,
+                    'siakad_idtawarmatakuliahdetail' => $detailId,
+                    'idmatakuliah' => $courseId,
+                    'idtawarmatakuliahdetail' => $detailId,
+                    'kode' => $code !== '' ? $code : null,
+                    'nama' => $name !== '' ? $name : 'Mata kuliah #'.$courseId,
+                    'course_label' => $label !== '' ? $label : 'Mata kuliah #'.$courseId,
+                    'krs_student_count' => $sections
+                        ->pluck('siakad_idmahasiswa')
+                        ->filter()
+                        ->unique()
+                        ->count(),
+                ];
+            })
+            ->sortBy([
+                ['kode', 'asc'],
+                ['nama', 'asc'],
+            ])
+            ->values();
+    }
+
     public function courseNameForGroupedCourse(EdomResponse $record): string
     {
+        $name = trim((string) $record->getAttribute('nama'));
+
+        if ($name !== '') {
+            return $name;
+        }
+
         $response = $this->responseForGroupedCourse($record);
 
         if (! $response) {
@@ -74,6 +144,12 @@ class EdomKrsReportData
 
     public function courseCodeForGroupedCourse(EdomResponse $record): string
     {
+        $code = trim((string) $record->getAttribute('kode'));
+
+        if ($code !== '') {
+            return $code;
+        }
+
         $response = $this->responseForGroupedCourse($record);
 
         if (! $response) {
@@ -85,6 +161,12 @@ class EdomKrsReportData
 
     public function courseLabelForGroupedCourse(EdomResponse $record): string
     {
+        $label = trim((string) $record->getAttribute('course_label'));
+
+        if ($label !== '') {
+            return $label;
+        }
+
         $response = $this->responseForGroupedCourse($record);
 
         if (! $response) {
@@ -144,6 +226,26 @@ class EdomKrsReportData
             $this->nullableInteger($response->siakad_idtawarmatakuliahdetail),
             $this->nullableInteger($response->siakad_idmatakuliah),
         );
+    }
+
+    /**
+     * @return Collection<int, object>
+     */
+    private function knownStudentPeriods(): Collection
+    {
+        if ($this->knownStudentPeriods === null) {
+            $this->knownStudentPeriods = EdomResponse::query()
+                ->join('edom_periods', 'edom_periods.id', '=', 'edom_response.edom_period_id')
+                ->select([
+                    'edom_response.siakad_idmahasiswa',
+                    'edom_periods.year as siakad_idtahunajaran',
+                    'edom_periods.siakad_idsemester',
+                ])
+                ->distinct()
+                ->get();
+        }
+
+        return $this->knownStudentPeriods;
     }
 
     /**
