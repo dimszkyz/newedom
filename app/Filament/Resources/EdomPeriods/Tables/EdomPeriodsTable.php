@@ -4,7 +4,6 @@ namespace App\Filament\Resources\EdomPeriods\Tables;
 
 use App\Filament\Resources\EdomPeriods\Schemas\EdomPeriodForm;
 use App\Models\EdomPeriod;
-use App\Models\EdomSettings;
 use App\Services\Siakad\UnwApiSiakad;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -12,14 +11,12 @@ use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class EdomPeriodsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('settings'))
             ->columns([
                 TextColumn::make('year')->label('Tahun Ajaran')->sortable(),
                 TextColumn::make('siakad_idsemester')
@@ -32,15 +29,6 @@ class EdomPeriodsTable
                         return $semesterOptions[(int) $state] ?? 'Semester '.$state;
                     })
                     ->sortable(),
-                TextColumn::make('status')
-                    ->label('Status EDOM')
-                    ->formatStateUsing(fn (string $state): string => EdomSettings::statusOptions()[$state] ?? $state)
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        EdomSettings::STATUS_ACTIVE => 'success',
-                        EdomSettings::STATUS_CLOSED => 'danger',
-                        default => 'gray',
-                    }),
                 TextColumn::make('lifecycle_status')
                     ->label('Status SIAKAD')
                     ->badge()
@@ -116,13 +104,6 @@ class EdomPeriodsTable
                     }),
 
                 EditAction::make()
-                    ->after(function (EdomPeriod $record, array $data): void {
-                        if (! isset($data['status'])) {
-                            return;
-                        }
-
-                        $record->updateSettingsStatus((string) $data['status']);
-                    })
                     ->visible(fn (EdomPeriod $record): bool => ! $record->responses()->exists()),
             ])
             ->toolbarActions([]);
