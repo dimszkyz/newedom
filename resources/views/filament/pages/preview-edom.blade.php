@@ -94,23 +94,76 @@
         </div>
 
         @if ($edom)
-            <x-filament::section>
-                <x-slot name="heading">Informasi Detail EdomSettings</x-slot>
+            @php
+                $programStudiItems = $edom->programStudis
+                    ->map(fn ($programStudi): string => $programStudi->display_name)
+                    ->filter()
+                    ->values();
 
-                <div class="grid gap-4 md:grid-cols-3">
-                    <div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400">Nama EdomSettings</div>
-                        <div class="font-semibold">{{ $edom->edom_name }}</div>
-                    </div>
-                    <div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400">Program Studi</div>
-                        <div class="font-semibold">
-                            {{ $edom->programStudis->map(fn ($programStudi) => $programStudi->display_name)->join(', ') ?: '-' }}
+                $statusColor = match ($edom->status) {
+                    'active' => 'success',
+                    'closed' => 'danger',
+                    default => 'gray',
+                };
+            @endphp
+
+            <x-filament::section>
+                <x-slot name="heading">Informasi EDOM Settings</x-slot>
+                <x-slot name="description">Ringkasan pengaturan EDOM yang sedang dipilih untuk preview.</x-slot>
+
+                <div class="space-y-6">
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                Nama EDOM
+                            </div>
+                            <div class="mt-1 text-base font-semibold text-gray-950 dark:text-white">
+                                {{ $edom->edom_name ?: '-' }}
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                Status
+                            </div>
+                            <div class="mt-2">
+                                <x-filament::badge :color="$statusColor">
+                                    {{ $edom->status_label ?? strtoupper($edom->status ?? '-') }}
+                                </x-filament::badge>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                Jumlah Struktur
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <x-filament::badge color="info">
+                                    {{ $edom->categories->count() }} Kategori
+                                </x-filament::badge>
+                                <x-filament::badge color="gray">
+                                    {{ $edom->categories->sum(fn ($category) => $category->questions->count()) }} Pernyataan
+                                </x-filament::badge>
+                            </div>
                         </div>
                     </div>
+
                     <div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400">Status</div>
-                        <div class="font-semibold">{{ strtoupper($edom->status ?? '-') }}</div>
+                        <div class="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            Program Studi
+                        </div>
+
+                        <div class="max-h-44 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-white/5">
+                            <div class="flex flex-wrap gap-2">
+                                @forelse ($programStudiItems as $programStudi)
+                                    <x-filament::badge color="gray">
+                                        {{ $programStudi }}
+                                    </x-filament::badge>
+                                @empty
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">Belum ada program studi yang terhubung.</span>
+                                @endforelse
+                            </div>
+                        </div>
                     </div>
                 </div>
             </x-filament::section>

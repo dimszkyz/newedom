@@ -39,9 +39,11 @@ class PreviewEdom extends Page implements HasForms
         return $form
             ->schema([
                 Forms\Components\Select::make('edom_settings_id')
-                    ->label('Pilih EdomSettings untuk di-preview')
+                    ->label('Pilih EDOM Settings')
+                    ->placeholder('Pilih EDOM Settings yang ingin di-preview')
                     ->options(EdomSettings::pluck('name', 'id'))
                     ->searchable()
+                    ->preload()
                     ->live(),
             ])
             ->statePath('formData');
