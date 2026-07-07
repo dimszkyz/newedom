@@ -109,7 +109,15 @@ class EdomReportResource extends Resource
 
     public static function courseCountForProgramStudi(ProgramStudi $programStudi): int
     {
-        return app(EdomKrsReportData::class)->courseCountForProgramStudi($programStudi);
+        $krsCourseCount = app(EdomKrsReportData::class)->courseCountForProgramStudi($programStudi);
+
+        if ($krsCourseCount > 0) {
+            return $krsCourseCount;
+        }
+
+        return static::responsesForProgramStudi($programStudi)
+            ->distinct('siakad_idmatakuliah')
+            ->count('siakad_idmatakuliah');
     }
 
     public static function responseCountForProgramStudi(ProgramStudi $programStudi): int
@@ -151,7 +159,19 @@ class EdomReportResource extends Resource
         $rows = app(EdomKrsReportData::class)->reportCourseRowsForProgramStudi($programStudi);
 
         if ($rows->isEmpty()) {
-            return EdomResponse::query()->whereRaw('1 = 0');
+            return static::responsesForProgramStudi($programStudi)
+                ->whereNotNull('siakad_idmatakuliah')
+                ->selectRaw('MIN(id) as id')
+                ->selectRaw('siakad_idmatakuliah')
+                ->selectRaw('MIN(siakad_idtawarmatakuliahdetail) as siakad_idtawarmatakuliahdetail')
+                ->selectRaw('siakad_idmatakuliah as idmatakuliah')
+                ->selectRaw('MIN(siakad_idtawarmatakuliahdetail) as idtawarmatakuliahdetail')
+                ->selectRaw('NULL as kode')
+                ->selectRaw("CONCAT('Mata kuliah #', siakad_idmatakuliah) as nama")
+                ->selectRaw("CONCAT('Mata kuliah #', siakad_idmatakuliah) as course_label")
+                ->selectRaw('COUNT(DISTINCT siakad_idmahasiswa) as krs_student_count')
+                ->groupBy('siakad_idmatakuliah')
+                ->orderBy('siakad_idmatakuliah');
         }
 
         $union = null;
