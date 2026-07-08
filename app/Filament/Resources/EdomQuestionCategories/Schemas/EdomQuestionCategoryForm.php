@@ -39,7 +39,7 @@ class EdomQuestionCategoryForm
                 $query->where('status', EdomSettings::STATUS_DRAFT);
 
                 if ($record?->edom_setting_id !== null) {
-                    $query->orWhereKey($record->edom_setting_id);
+                    $query->orWhere('id', $record->edom_setting_id);
                 }
             })
             ->orderBy('name')
