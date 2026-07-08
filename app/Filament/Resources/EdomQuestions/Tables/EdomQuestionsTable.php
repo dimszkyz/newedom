@@ -5,6 +5,7 @@ namespace App\Filament\Resources\EdomQuestions\Tables;
 use App\Models\EdomQuestion;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -16,7 +17,10 @@ class EdomQuestionsTable
             ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['edomSettings']))
             ->columns([
                 TextColumn::make('category.name')->label('Kategori')->searchable()->sortable(),
-                TextColumn::make('statement')->label('Pernyataan')->limit(60)->searchable(),
+                ViewColumn::make('statement')
+                    ->label('Pernyataan')
+                    ->view('filament.tables.columns.expandable-question-text')
+                    ->searchable(),
                 TextColumn::make('question_type')->label('Tipe')->badge(),
                 TextColumn::make('lock_info')
                     ->label('Keterangan')
