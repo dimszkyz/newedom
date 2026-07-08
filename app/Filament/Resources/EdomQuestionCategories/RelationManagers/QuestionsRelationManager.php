@@ -24,7 +24,10 @@ class QuestionsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('statement')->label('Pernyataan')->limit(80)->searchable(),
+                Tables\Columns\ViewColumn::make('statement')
+                    ->label('Pernyataan')
+                    ->view('filament.tables.columns.expandable-question-text')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('question_type')->label('Tipe')->badge(),
                 Tables\Columns\TextColumn::make('lock_info')
                     ->label('Keterangan')
