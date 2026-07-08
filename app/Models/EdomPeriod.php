@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 use LogicException;
 
 class EdomPeriod extends Model
@@ -34,6 +35,27 @@ class EdomPeriod extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (EdomPeriod $period): void {
+            if ($period->year === null || $period->siakad_idsemester === null) {
+                return;
+            }
+
+            $periodExists = self::query()
+                ->where('year', (int) $period->year)
+                ->where('siakad_idsemester', (int) $period->siakad_idsemester)
+                ->when($period->exists, fn ($query) => $query->whereKeyNot($period->getKey()))
+                ->exists();
+
+            if (! $periodExists) {
+                return;
+            }
+
+            throw ValidationException::withMessages([
+                'year' => 'Kombinasi Tahun Ajaran dan Semester SIAKAD sudah ada. Pilih tahun ajaran atau semester lain.',
+                'siakad_idsemester' => 'Kombinasi Tahun Ajaran dan Semester SIAKAD sudah ada. Pilih tahun ajaran atau semester lain.',
+            ]);
+        });
+
         static::deleting(function (EdomPeriod $period): void {
             if ($period->responses()->exists()) {
                 throw new LogicException('Periode EDOM yang sudah memiliki respons tidak dapat dihapus.');
