@@ -12,6 +12,16 @@ class EditEdomQuestionCategory extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [DeleteAction::make()];
+        return [
+            DeleteAction::make()
+                ->visible(fn (): bool => $this->record->edomSettings?->isDraft() ?? false),
+        ];
+    }
+
+    protected function getFormActions(): array
+    {
+        return ($this->record->edomSettings?->isDraft() ?? false)
+            ? parent::getFormActions()
+            : [];
     }
 }

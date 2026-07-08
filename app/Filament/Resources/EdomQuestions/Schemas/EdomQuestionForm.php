@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EdomQuestions\Schemas;
 
+use App\Models\EdomQuestion;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -9,6 +10,8 @@ use Filament\Schemas\Schema;
 
 class EdomQuestionForm
 {
+    private const LOCK_HELPER = 'Pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft. Jika status Aktif atau Ditutup, data ini dikunci.';
+
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
@@ -18,6 +21,8 @@ class EdomQuestionForm
             Textarea::make('statement')
                 ->label('Pernyataan')
                 ->required()
+                ->disabled(fn (?EdomQuestion $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->isDraft())
+                ->helperText(self::LOCK_HELPER)
                 ->columnSpanFull(),
 
             Select::make('question_type')
@@ -27,7 +32,9 @@ class EdomQuestionForm
                     'text' => 'Teks / Esai',
                 ])
                 ->default('option')
-                ->required(),
+                ->required()
+                ->disabled(fn (?EdomQuestion $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->isDraft())
+                ->helperText(self::LOCK_HELPER),
         ]);
     }
 }

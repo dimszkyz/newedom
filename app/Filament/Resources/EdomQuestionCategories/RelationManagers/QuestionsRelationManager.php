@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EdomQuestionCategories\RelationManagers;
 
+use App\Models\EdomQuestion;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -17,19 +18,32 @@ class QuestionsRelationManager extends RelationManager
 
     protected static ?string $title = 'Pertanyaan';
 
+    private const LOCK_HELPER = 'Pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft. Jika status Aktif atau Ditutup, data ini dikunci.';
+
     public function table(Table $table): Table
     {
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('statement')->label('Pernyataan')->limit(80)->searchable(),
                 Tables\Columns\TextColumn::make('question_type')->label('Tipe')->badge(),
+                Tables\Columns\TextColumn::make('lock_info')
+                    ->label('Keterangan')
+                    ->state(fn (): string => $this->ownerRecord->edomSettings?->isDraft()
+                        ? 'Bisa diubah'
+                        : 'Dikunci karena status EDOM Settings Aktif atau Ditutup')
+                    ->badge()
+                    ->color(fn (): string => $this->ownerRecord->edomSettings?->isDraft() ? 'success' : 'warning'),
             ])
             ->headerActions([
                 CreateAction::make()
                     ->label('Tambah Pertanyaan')
                     ->slideOver()
                     ->schema([
-                        Textarea::make('statement')->label('Pernyataan')->required()->columnSpanFull(),
+                        Textarea::make('statement')
+                            ->label('Pernyataan')
+                            ->required()
+                            ->helperText(self::LOCK_HELPER)
+                            ->columnSpanFull(),
                         Select::make('question_type')
                             ->label('Tipe Soal')
                             ->options([
@@ -37,30 +51,39 @@ class QuestionsRelationManager extends RelationManager
                                 'text' => 'Teks / Esai',
                             ])
                             ->default('option')
-                            ->required(),
+                            ->required()
+                            ->helperText(self::LOCK_HELPER),
                     ])
                     ->using(function (array $data) {
                         $data['edom_question_category_id'] = $this->ownerRecord->id;
                         $data['edom_setting_id'] = $this->ownerRecord->edom_setting_id;
 
                         return $this->ownerRecord->questions()->create($data);
-                    }),
+                    })
+                    ->visible(fn (): bool => $this->ownerRecord->edomSettings?->isDraft() ?? false),
             ])
             ->recordActions([
                 EditAction::make()
                     ->label('Edit')
                     ->slideOver()
                     ->schema([
-                        Textarea::make('statement')->label('Pernyataan')->required()->columnSpanFull(),
+                        Textarea::make('statement')
+                            ->label('Pernyataan')
+                            ->required()
+                            ->helperText(self::LOCK_HELPER)
+                            ->columnSpanFull(),
                         Select::make('question_type')
                             ->label('Tipe Soal')
                             ->options([
                                 'option' => 'Pilihan / Opsi',
                                 'text' => 'Teks / Esai',
                             ])
-                            ->required(),
-                    ]),
-                DeleteAction::make(),
+                            ->required()
+                            ->helperText(self::LOCK_HELPER),
+                    ])
+                    ->visible(fn (EdomQuestion $record): bool => $record->edomSettings?->isDraft() ?? false),
+                DeleteAction::make()
+                    ->visible(fn (EdomQuestion $record): bool => $record->edomSettings?->isDraft() ?? false),
             ]);
     }
 }

@@ -9,13 +9,17 @@ use Filament\Schemas\Schema;
 
 class EdomSettingsForm
 {
+    private const LOCK_HELPER = 'Nama EdomSettings dan Program Studi hanya dapat diubah saat status masih Draft. Jika status Aktif atau Ditutup, bagian ini dikunci agar struktur EDOM yang sudah digunakan tidak berubah.';
+
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
             TextInput::make('name')
                 ->label('Nama EdomSettings')
                 ->required()
-                ->maxLength(255),
+                ->maxLength(255)
+                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->isDraft())
+                ->helperText(self::LOCK_HELPER),
 
             Select::make('programStudis')
                 ->label('Program Studi')
@@ -24,13 +28,16 @@ class EdomSettingsForm
                 ->multiple()
                 ->searchable()
                 ->preload()
-                ->required(),
+                ->required()
+                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->isDraft())
+                ->helperText(self::LOCK_HELPER),
 
             Select::make('status')
                 ->label('Status')
                 ->options(EdomSettings::statusOptions())
                 ->default(EdomSettings::STATUS_DRAFT)
-                ->required(),
+                ->required()
+                ->helperText('Saat status Aktif atau Ditutup, kategori, pertanyaan, dan opsi pertanyaan tidak dapat ditambah, diedit, atau dihapus.'),
         ]);
     }
 }

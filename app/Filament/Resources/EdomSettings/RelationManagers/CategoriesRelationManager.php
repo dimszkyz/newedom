@@ -18,10 +18,16 @@ class CategoriesRelationManager extends RelationManager
 
     protected static ?string $title = 'Kategori Pertanyaan';
 
+    private const LOCK_HELPER = 'Kategori hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft. Jika status Aktif atau Ditutup, data ini dikunci.';
+
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Forms\Components\TextInput::make('name')->label('Nama Kategori')->required()->maxLength(255),
+            Forms\Components\TextInput::make('name')
+                ->label('Nama Kategori')
+                ->required()
+                ->maxLength(255)
+                ->helperText(self::LOCK_HELPER),
         ]);
     }
 
@@ -31,6 +37,13 @@ class CategoriesRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('name')->label('Nama Kategori')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('questions_count')->label('Jumlah Pertanyaan')->counts('questions')->badge(),
+                Tables\Columns\TextColumn::make('lock_info')
+                    ->label('Keterangan')
+                    ->state(fn (): string => $this->ownerRecord->isDraft()
+                        ? 'Bisa diubah'
+                        : 'Dikunci karena status EDOM Settings Aktif atau Ditutup')
+                    ->badge()
+                    ->color(fn (): string => $this->ownerRecord->isDraft() ? 'success' : 'warning'),
                 Tables\Columns\TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->recordUrl(fn ($record) => EdomQuestionCategoryResource::getUrl('edit', ['record' => $record]))
