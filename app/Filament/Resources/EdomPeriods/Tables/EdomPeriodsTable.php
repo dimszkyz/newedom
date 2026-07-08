@@ -51,7 +51,7 @@ class EdomPeriodsTable
                         $record->markAsOpenInSiakad();
 
                         Notification::make()
-                            ->title('Periode EDOM dibuka; jawaban dapat diperbarui kembali')
+                            ->title('Periode EDOM dibuka: jawaban dapat diperbarui kembali')
                             ->success()
                             ->send();
                     }),
