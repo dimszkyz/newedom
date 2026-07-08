@@ -16,17 +16,9 @@ class EdomSettingsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['programStudis', 'periods']))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['programStudis']))
             ->columns([
                 TextColumn::make('name')->label('Nama EdomSettings')->searchable(),
-                TextColumn::make('period_preview')
-                    ->label('Periode')
-                    ->state(fn ($record): array => $record->periods
-                        ->map(fn ($period): string => $period->display_name)
-                        ->all())
-                    ->bulleted()
-                    ->listWithLineBreaks()
-                    ->placeholder('-'),
                 TextColumn::make('program_studi_preview')
                     ->label('Program Studi')
                     ->state(function ($record): string {
