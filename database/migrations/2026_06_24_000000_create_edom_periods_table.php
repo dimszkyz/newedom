@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('year');
             $table->unsignedBigInteger('siakad_idsemester');
-            $table->enum('status', ['draft', 'active', 'closed'])->default('draft');
             $table->boolean('is_open_in_siakad')->default(false);
             $table->boolean('allows_response_updates')->default(false);
             $table->timestamps();
