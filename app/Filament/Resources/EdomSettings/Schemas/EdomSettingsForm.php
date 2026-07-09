@@ -5,6 +5,8 @@ namespace App\Filament\Resources\EdomSettings\Schemas;
 use App\Models\EdomSettings;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Schema;
 
 class EdomSettingsForm
@@ -14,30 +16,42 @@ class EdomSettingsForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('name')
-                ->label('Nama EdomSettings')
-                ->required()
-                ->maxLength(255)
-                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->isDraft())
-                ->helperText(self::LOCK_HELPER),
+            Grid::make([
+                'default' => 1,
+                'lg' => 2,
+            ])
+                ->schema([
+                    Group::make()
+                        ->schema([
+                            TextInput::make('name')
+                                ->label('Nama EdomSettings')
+                                ->required()
+                                ->maxLength(255)
+                                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->isDraft())
+                                ->helperText(self::LOCK_HELPER),
 
-            Select::make('programStudis')
-                ->label('Program Studi')
-                ->relationship('programStudis', 'nama')
-                ->getOptionLabelFromRecordUsing(fn ($record): string => $record->display_name)
-                ->multiple()
-                ->searchable()
-                ->preload()
-                ->required()
-                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->isDraft())
-                ->helperText(self::LOCK_HELPER),
+                            Select::make('status')
+                                ->label('Status')
+                                ->options(EdomSettings::statusOptions())
+                                ->default(EdomSettings::STATUS_DRAFT)
+                                ->required()
+                                ->helperText('Saat status Aktif atau Ditutup, kategori, pertanyaan, dan opsi pertanyaan tidak dapat ditambah, diedit, atau dihapus.'),
+                        ]),
 
-            Select::make('status')
-                ->label('Status')
-                ->options(EdomSettings::statusOptions())
-                ->default(EdomSettings::STATUS_DRAFT)
-                ->required()
-                ->helperText('Saat status Aktif atau Ditutup, kategori, pertanyaan, dan opsi pertanyaan tidak dapat ditambah, diedit, atau dihapus.'),
+                    Group::make()
+                        ->schema([
+                            Select::make('programStudis')
+                                ->label('Program Studi')
+                                ->relationship('programStudis', 'nama')
+                                ->getOptionLabelFromRecordUsing(fn ($record): string => $record->display_name)
+                                ->multiple()
+                                ->searchable()
+                                ->preload()
+                                ->required()
+                                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->isDraft()),
+                        ]),
+                ])
+                ->columnSpanFull(),
         ]);
     }
 }
