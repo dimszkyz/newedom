@@ -21,7 +21,7 @@ class EdomQuestionOptionsTable
                     ->label('Keterangan')
                     ->state(fn (EdomQuestionOption $record): string => $record->edomSettings?->isDraft()
                         ? 'Bisa diubah'
-                        : 'Dikunci karena status EDOM Settings Aktif atau Ditutup')
+                        : 'EDOM Sedang Aktif')
                     ->badge()
                     ->color(fn (EdomQuestionOption $record): string => $record->edomSettings?->isDraft() ? 'success' : 'warning'),
             ])

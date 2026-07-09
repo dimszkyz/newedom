@@ -26,7 +26,7 @@ class EdomQuestionsTable
                     ->label('Keterangan')
                     ->state(fn (EdomQuestion $record): string => $record->edomSettings?->isDraft()
                         ? 'Bisa diubah'
-                        : 'Dikunci karena status EDOM Settings Aktif atau Ditutup')
+                        : 'EDOM Sedang Aktif')
                     ->badge()
                     ->color(fn (EdomQuestion $record): string => $record->edomSettings?->isDraft() ? 'success' : 'warning'),
                 TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),

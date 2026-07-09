@@ -41,7 +41,7 @@ class CategoriesRelationManager extends RelationManager
                     ->label('Keterangan')
                     ->state(fn (): string => $this->ownerRecord->isDraft()
                         ? 'Bisa diubah'
-                        : 'Dikunci karena status EDOM Settings Aktif atau Ditutup')
+                        : 'EDOM Sedang Aktif')
                     ->badge()
                     ->color(fn (): string => $this->ownerRecord->isDraft() ? 'success' : 'warning'),
                 Tables\Columns\TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),

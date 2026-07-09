@@ -33,7 +33,7 @@ class QuestionsRelationManager extends RelationManager
                     ->label('Keterangan')
                     ->state(fn (): string => $this->ownerRecord->edomSettings?->isDraft()
                         ? 'Bisa diubah'
-                        : 'Dikunci karena status EDOM Settings Aktif atau Ditutup')
+                        : 'EDOM Sedang Aktif')
                     ->badge()
                     ->color(fn (): string => $this->ownerRecord->edomSettings?->isDraft() ? 'success' : 'warning'),
             ])
