@@ -8,22 +8,11 @@ use LogicException;
 
 class EdomPeriod extends Model
 {
-    public const STATUS_DRAFT = EdomSettings::STATUS_DRAFT;
-
-    public const STATUS_ACTIVE = EdomSettings::STATUS_ACTIVE;
-
-    public const STATUS_CLOSED = EdomSettings::STATUS_CLOSED;
-
     protected $table = 'edom_periods';
-
-    protected $attributes = [
-        'status' => self::STATUS_ACTIVE,
-    ];
 
     protected $fillable = [
         'year',
         'siakad_idsemester',
-        'status',
         'is_open_in_siakad',
         'allows_response_updates',
     ];
@@ -71,31 +60,6 @@ class EdomPeriod extends Model
     public function isOpenInSiakad(): bool
     {
         return (bool) $this->is_open_in_siakad;
-    }
-
-    public function isDraft(): bool
-    {
-        return $this->status === self::STATUS_DRAFT;
-    }
-
-    public function isActive(): bool
-    {
-        return $this->status === self::STATUS_ACTIVE;
-    }
-
-    public function isClosed(): bool
-    {
-        return $this->status === self::STATUS_CLOSED;
-    }
-
-    public static function statusOptions(): array
-    {
-        return EdomSettings::statusOptions();
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return self::statusOptions()[$this->status] ?? ucfirst((string) $this->status);
     }
 
     public function allowsResponseUpdates(): bool
