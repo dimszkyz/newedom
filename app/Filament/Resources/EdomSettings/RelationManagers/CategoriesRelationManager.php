@@ -18,7 +18,7 @@ class CategoriesRelationManager extends RelationManager
 
     protected static ?string $title = 'Kategori Pertanyaan';
 
-    private const LOCK_HELPER = 'Kategori hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft. Jika status Aktif atau Ditutup, data ini dikunci.';
+    private const LOCK_HELPER = 'Kategori hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft dan belum memiliki response mahasiswa. Jika status Aktif/Ditutup atau sudah ada response, data ini dikunci.';
 
     public function form(Schema $schema): Schema
     {
@@ -39,11 +39,9 @@ class CategoriesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('questions_count')->label('Jumlah Pertanyaan')->counts('questions')->badge(),
                 Tables\Columns\TextColumn::make('lock_info')
                     ->label('Keterangan')
-                    ->state(fn (): string => $this->ownerRecord->isDraft()
-                        ? 'Bisa diubah'
-                        : 'EDOM Sedang Aktif')
+                    ->state(fn (): string => $this->ownerRecord->questionMasterLockLabel())
                     ->badge()
-                    ->color(fn (): string => $this->ownerRecord->isDraft() ? 'success' : 'warning'),
+                    ->color(fn (): string => $this->ownerRecord->canModifyQuestionMaster() ? 'success' : 'warning'),
                 Tables\Columns\TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->recordUrl(fn ($record) => EdomQuestionCategoryResource::getUrl('edit', ['record' => $record]))
@@ -55,11 +53,11 @@ class CategoriesRelationManager extends RelationManager
 
                         return $data;
                     })
-                    ->visible(fn ($livewire) => $livewire->ownerRecord->isDraft()),
+                    ->visible(fn ($livewire) => $livewire->ownerRecord->canModifyQuestionMaster()),
             ])
             ->actions([
-                EditAction::make()->slideOver()->visible(fn ($record) => $record->edomSettings?->isDraft()),
-                DeleteAction::make()->visible(fn ($record) => $record->edomSettings?->isDraft()),
+                EditAction::make()->slideOver()->visible(fn ($record) => $record->edomSettings?->canModifyQuestionMaster() ?? false),
+                DeleteAction::make()->visible(fn ($record) => $record->edomSettings?->canModifyQuestionMaster() ?? false),
             ]);
     }
 }
