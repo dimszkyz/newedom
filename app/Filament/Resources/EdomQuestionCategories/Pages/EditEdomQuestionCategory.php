@@ -23,13 +23,13 @@ class EditEdomQuestionCategory extends EditRecord
                     ? EdomSettingsResource::getUrl('edit', ['record' => $this->record->edom_setting_id])
                     : EdomSettingsResource::getUrl('index')),
             DeleteAction::make()
-                ->visible(fn (): bool => $this->record->edomSettings?->isDraft() ?? false),
+                ->visible(fn (): bool => $this->record->edomSettings?->canModifyQuestionMaster() ?? false),
         ];
     }
 
     protected function getFormActions(): array
     {
-        return ($this->record->edomSettings?->isDraft() ?? false)
+        return ($this->record->edomSettings?->canModifyQuestionMaster() ?? false)
             ? parent::getFormActions()
             : [];
     }
