@@ -115,11 +115,11 @@ class EdomSettings extends Model
     public function questionMasterLockLabel(): string
     {
         if ($this->hasResponses()) {
-            return 'Terkunci: sudah ada response mahasiswa';
+            return 'Sudah ada response mahasiswa';
         }
 
         if (! $this->isDraft()) {
-            return 'Terkunci: status Aktif atau Ditutup';
+            return 'Status Aktif atau Ditutup';
         }
 
         return 'Bisa diubah';
