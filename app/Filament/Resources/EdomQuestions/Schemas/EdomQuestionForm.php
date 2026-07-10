@@ -10,7 +10,7 @@ use Filament\Schemas\Schema;
 
 class EdomQuestionForm
 {
-    private const LOCK_HELPER = 'Pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft. Jika status Aktif atau Ditutup, data ini dikunci.';
+    private const LOCK_HELPER = 'Pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft dan belum memiliki response mahasiswa. Jika status Aktif/Ditutup atau sudah ada response, data ini dikunci.';
 
     public static function configure(Schema $schema): Schema
     {
@@ -21,7 +21,7 @@ class EdomQuestionForm
             Textarea::make('statement')
                 ->label('Pernyataan')
                 ->required()
-                ->disabled(fn (?EdomQuestion $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->isDraft())
+                ->disabled(fn (?EdomQuestion $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->canModifyQuestionMaster())
                 ->helperText(self::LOCK_HELPER)
                 ->columnSpanFull(),
 
@@ -33,7 +33,7 @@ class EdomQuestionForm
                 ])
                 ->default('option')
                 ->required()
-                ->disabled(fn (?EdomQuestion $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->isDraft())
+                ->disabled(fn (?EdomQuestion $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->canModifyQuestionMaster())
                 ->helperText(self::LOCK_HELPER),
         ]);
     }
