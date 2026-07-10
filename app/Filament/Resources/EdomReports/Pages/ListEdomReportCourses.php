@@ -42,22 +42,7 @@ class ListEdomReportCourses extends Page implements HasTable
             ->columns([
                 TextColumn::make('nama')
                     ->label('Mata Kuliah')
-                    ->description(fn (EdomResponse $record): string => (string) $record->getAttribute('course_label'))
                     ->wrap(),
-                TextColumn::make('kode')
-                    ->label('Kode')
-                    ->badge()
-                    ->placeholder('-'),
-                TextColumn::make('siakad_idmatakuliah')
-                    ->label('ID Mata Kuliah')
-                    ->badge(),
-                TextColumn::make('siakad_idtawarmatakuliahdetail')
-                    ->label('Contoh ID Detail Penawaran')
-                    ->badge(),
-                TextColumn::make('krs_student_count')
-                    ->label('Mahasiswa KRS')
-                    ->badge()
-                    ->color('info'),
                 TextColumn::make('response_count')
                     ->label('Respons')
                     ->state(fn (EdomResponse $record): int => EdomReportResource::responseCountForProgramStudiAndCourse(
