@@ -19,11 +19,9 @@ class EdomQuestionOptionsTable
                 TextColumn::make('score')->label('Nilai')->sortable(),
                 TextColumn::make('lock_info')
                     ->label('Keterangan')
-                    ->state(fn (EdomQuestionOption $record): string => $record->edomSettings?->isDraft()
-                        ? 'Bisa diubah'
-                        : 'EDOM Sedang Aktif')
+                    ->state(fn (EdomQuestionOption $record): string => $record->edomSettings?->questionMasterLockLabel() ?? 'Terkunci')
                     ->badge()
-                    ->color(fn (EdomQuestionOption $record): string => $record->edomSettings?->isDraft() ? 'success' : 'warning'),
+                    ->color(fn (EdomQuestionOption $record): string => $record->edomSettings?->canModifyQuestionMaster() ? 'success' : 'warning'),
             ])
             ->defaultSort('score');
     }
