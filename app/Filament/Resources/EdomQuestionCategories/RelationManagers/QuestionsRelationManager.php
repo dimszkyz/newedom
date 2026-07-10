@@ -18,7 +18,7 @@ class QuestionsRelationManager extends RelationManager
 
     protected static ?string $title = 'Pertanyaan';
 
-    private const LOCK_HELPER = 'Pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft. Jika status Aktif atau Ditutup, data ini dikunci.';
+    private const LOCK_HELPER = 'Pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft dan belum memiliki response mahasiswa. Jika status Aktif/Ditutup atau sudah ada response, data ini dikunci.';
 
     public function table(Table $table): Table
     {
@@ -31,11 +31,9 @@ class QuestionsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('question_type')->label('Tipe')->badge(),
                 Tables\Columns\TextColumn::make('lock_info')
                     ->label('Keterangan')
-                    ->state(fn (): string => $this->ownerRecord->edomSettings?->isDraft()
-                        ? 'Bisa diubah'
-                        : 'EDOM Sedang Aktif')
+                    ->state(fn (): string => $this->ownerRecord->edomSettings?->questionMasterLockLabel() ?? 'Terkunci')
                     ->badge()
-                    ->color(fn (): string => $this->ownerRecord->edomSettings?->isDraft() ? 'success' : 'warning'),
+                    ->color(fn (): string => $this->ownerRecord->edomSettings?->canModifyQuestionMaster() ? 'success' : 'warning'),
             ])
             ->headerActions([
                 CreateAction::make()
@@ -63,7 +61,7 @@ class QuestionsRelationManager extends RelationManager
 
                         return $this->ownerRecord->questions()->create($data);
                     })
-                    ->visible(fn (): bool => $this->ownerRecord->edomSettings?->isDraft() ?? false),
+                    ->visible(fn (): bool => $this->ownerRecord->edomSettings?->canModifyQuestionMaster() ?? false),
             ])
             ->recordActions([
                 EditAction::make()
@@ -84,9 +82,9 @@ class QuestionsRelationManager extends RelationManager
                             ->required()
                             ->helperText(self::LOCK_HELPER),
                     ])
-                    ->visible(fn (EdomQuestion $record): bool => $record->edomSettings?->isDraft() ?? false),
+                    ->visible(fn (EdomQuestion $record): bool => $record->edomSettings?->canModifyQuestionMaster() ?? false),
                 DeleteAction::make()
-                    ->visible(fn (EdomQuestion $record): bool => $record->edomSettings?->isDraft() ?? false),
+                    ->visible(fn (EdomQuestion $record): bool => $record->edomSettings?->canModifyQuestionMaster() ?? false),
             ]);
     }
 }
