@@ -11,7 +11,7 @@ use Filament\Schemas\Schema;
 
 class EdomSettingsForm
 {
-    private const LOCK_HELPER = 'Nama EdomSettings dan Program Studi hanya dapat diubah saat status masih Draft. Jika status Aktif atau Ditutup, bagian ini dikunci agar struktur EDOM yang sudah digunakan tidak berubah.';
+    private const LOCK_HELPER = 'Nama EdomSettings dan Program Studi hanya dapat diubah saat status masih Draft dan belum memiliki response mahasiswa. Jika status Aktif/Ditutup atau sudah ada response, bagian ini dikunci agar struktur EDOM yang sudah digunakan tidak berubah.';
 
     public static function configure(Schema $schema): Schema
     {
@@ -27,7 +27,7 @@ class EdomSettingsForm
                                 ->label('Nama EdomSettings')
                                 ->required()
                                 ->maxLength(255)
-                                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->isDraft())
+                                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->canModifyQuestionMaster())
                                 ->helperText(self::LOCK_HELPER),
 
                             Select::make('status')
@@ -35,7 +35,7 @@ class EdomSettingsForm
                                 ->options(EdomSettings::statusOptions())
                                 ->default(EdomSettings::STATUS_DRAFT)
                                 ->required()
-                                ->helperText('Saat status Aktif atau Ditutup, kategori, pertanyaan, dan opsi pertanyaan tidak dapat ditambah, diedit, atau dihapus.'),
+                                ->helperText('Saat status Aktif/Ditutup atau sudah ada response mahasiswa, kategori, pertanyaan, dan opsi pertanyaan tidak dapat ditambah, diedit, atau dihapus.'),
                         ]),
 
                     Group::make()
@@ -48,7 +48,7 @@ class EdomSettingsForm
                                 ->searchable()
                                 ->preload()
                                 ->required()
-                                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->isDraft()),
+                                ->disabled(fn (?EdomSettings $record): bool => $record !== null && ! $record->canModifyQuestionMaster()),
                         ]),
                 ])
                 ->columnSpanFull(),
