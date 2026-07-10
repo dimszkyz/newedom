@@ -18,7 +18,7 @@ class QuestionOptionsRelationManager extends RelationManager
 
     protected static ?string $title = 'Opsi Pertanyaan';
 
-    private const LOCK_HELPER = 'Opsi pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft. Jika status Aktif atau Ditutup, data ini dikunci.';
+    private const LOCK_HELPER = 'Opsi pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft dan belum memiliki response mahasiswa. Jika status Aktif/Ditutup atau sudah ada response, data ini dikunci.';
 
     public function form(Schema $schema): Schema
     {
@@ -27,14 +27,14 @@ class QuestionOptionsRelationManager extends RelationManager
                 ->label('Opsi Jawaban')
                 ->required()
                 ->maxLength(255)
-                ->disabled(fn (?EdomQuestionOption $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->isDraft())
+                ->disabled(fn (?EdomQuestionOption $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->canModifyQuestionMaster())
                 ->helperText(self::LOCK_HELPER),
 
             TextInput::make('score')
                 ->label('Nilai')
                 ->numeric()
                 ->required()
-                ->disabled(fn (?EdomQuestionOption $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->isDraft())
+                ->disabled(fn (?EdomQuestionOption $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->canModifyQuestionMaster())
                 ->helperText(self::LOCK_HELPER),
         ]);
     }
@@ -47,11 +47,9 @@ class QuestionOptionsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('score')->label('Nilai'),
                 Tables\Columns\TextColumn::make('lock_info')
                     ->label('Keterangan')
-                    ->state(fn (): string => $this->ownerRecord->isDraft()
-                        ? 'Bisa diubah'
-                        : 'EDOM Sedang Aktif')
+                    ->state(fn (): string => $this->ownerRecord->questionMasterLockLabel())
                     ->badge()
-                    ->color(fn (): string => $this->ownerRecord->isDraft() ? 'success' : 'warning'),
+                    ->color(fn (): string => $this->ownerRecord->canModifyQuestionMaster() ? 'success' : 'warning'),
             ])
             ->headerActions([
                 CreateAction::make()
@@ -60,13 +58,13 @@ class QuestionOptionsRelationManager extends RelationManager
 
                         return $data;
                     })
-                    ->visible(fn (): bool => $this->ownerRecord->isDraft()),
+                    ->visible(fn (): bool => $this->ownerRecord->canModifyQuestionMaster()),
             ])
             ->recordActions([
                 EditAction::make()
-                    ->visible(fn (EdomQuestionOption $record): bool => $record->edomSettings?->isDraft() ?? false),
+                    ->visible(fn (EdomQuestionOption $record): bool => $record->edomSettings?->canModifyQuestionMaster() ?? false),
                 DeleteAction::make()
-                    ->visible(fn (EdomQuestionOption $record): bool => $record->edomSettings?->isDraft() ?? false),
+                    ->visible(fn (EdomQuestionOption $record): bool => $record->edomSettings?->canModifyQuestionMaster() ?? false),
             ]);
     }
 }
