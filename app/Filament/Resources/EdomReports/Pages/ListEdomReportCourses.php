@@ -5,6 +5,7 @@ namespace App\Filament\Resources\EdomReports\Pages;
 use App\Filament\Resources\EdomReports\EdomReportResource;
 use App\Models\EdomResponse;
 use App\Models\ProgramStudi;
+use App\Services\Edom\EdomCourseReportExporter;
 use App\Services\Edom\EdomKrsReportData;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
@@ -14,6 +15,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ListEdomReportCourses extends Page implements HasTable
 {
@@ -60,6 +62,14 @@ class ListEdomReportCourses extends Page implements HasTable
                         'record' => $this->record,
                         'courseKey' => EdomReportResource::courseKeyForCourseId($record->siakad_idmatakuliah),
                     ])),
+                Action::make('exportExcel')
+                    ->label('Export Excel')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->action(fn (EdomResponse $record): StreamedResponse => app(EdomCourseReportExporter::class)->export(
+                        $this->record,
+                        EdomReportResource::courseKeyForCourseId($record->siakad_idmatakuliah),
+                    )),
             ])
             ->recordUrl(fn (EdomResponse $record): string => EdomReportResource::getUrl('course-report', [
                 'record' => $this->record,
