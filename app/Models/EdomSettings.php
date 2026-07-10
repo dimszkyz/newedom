@@ -33,16 +33,6 @@ class EdomSettings extends Model
         $this->attributes['name'] = $value;
     }
 
-    public function periods()
-    {
-        return $this->belongsToMany(
-            EdomPeriod::class,
-            'edom_period_edom_setting',
-            'edom_setting_id',
-            'edom_period_id'
-        )->withTimestamps();
-    }
-
     public function programStudis()
     {
         return $this->belongsToMany(
@@ -110,5 +100,28 @@ class EdomSettings extends Model
     public function isClosed(): bool
     {
         return $this->status === self::STATUS_CLOSED;
+    }
+
+    public function hasResponses(): bool
+    {
+        return $this->responses()->exists();
+    }
+
+    public function canModifyQuestionMaster(): bool
+    {
+        return $this->isDraft() && ! $this->hasResponses();
+    }
+
+    public function questionMasterLockLabel(): string
+    {
+        if ($this->hasResponses()) {
+            return 'Terkunci: sudah ada response mahasiswa';
+        }
+
+        if (! $this->isDraft()) {
+            return 'Terkunci: status Aktif atau Ditutup';
+        }
+
+        return 'Bisa diubah';
     }
 }
