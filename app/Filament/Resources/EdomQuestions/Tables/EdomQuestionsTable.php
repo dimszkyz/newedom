@@ -24,16 +24,14 @@ class EdomQuestionsTable
                 TextColumn::make('question_type')->label('Tipe')->badge(),
                 TextColumn::make('lock_info')
                     ->label('Keterangan')
-                    ->state(fn (EdomQuestion $record): string => $record->edomSettings?->isDraft()
-                        ? 'Bisa diubah'
-                        : 'EDOM Sedang Aktif')
+                    ->state(fn (EdomQuestion $record): string => $record->edomSettings?->questionMasterLockLabel() ?? 'Terkunci')
                     ->badge()
-                    ->color(fn (EdomQuestion $record): string => $record->edomSettings?->isDraft() ? 'success' : 'warning'),
+                    ->color(fn (EdomQuestion $record): string => $record->edomSettings?->canModifyQuestionMaster() ? 'success' : 'warning'),
                 TextColumn::make('created_at')->label('Dibuat')->dateTime('d M Y H:i'),
             ])
             ->recordActions([
                 EditAction::make()
-                    ->visible(fn (EdomQuestion $record): bool => $record->edomSettings?->isDraft() ?? false),
+                    ->visible(fn (EdomQuestion $record): bool => $record->edomSettings?->canModifyQuestionMaster() ?? false),
             ])
             ->toolbarActions([]);
     }
