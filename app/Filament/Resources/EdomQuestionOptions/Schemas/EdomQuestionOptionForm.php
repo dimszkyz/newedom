@@ -8,7 +8,7 @@ use Filament\Schemas\Schema;
 
 class EdomQuestionOptionForm
 {
-    private const LOCK_HELPER = 'Opsi pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft. Jika status Aktif atau Ditutup, data ini dikunci.';
+    private const LOCK_HELPER = 'Opsi pertanyaan hanya dapat ditambah, diedit, atau dihapus saat EDOM Settings masih Draft dan belum memiliki response mahasiswa. Jika status Aktif/Ditutup atau sudah ada response, data ini dikunci.';
 
     public static function configure(Schema $schema): Schema
     {
@@ -17,13 +17,13 @@ class EdomQuestionOptionForm
                 ->label('Nama Opsi')
                 ->required()
                 ->maxLength(255)
-                ->disabled(fn (?EdomQuestionOption $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->isDraft())
+                ->disabled(fn (?EdomQuestionOption $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->canModifyQuestionMaster())
                 ->helperText(self::LOCK_HELPER),
             TextInput::make('score')
                 ->label('Nilai')
                 ->numeric()
                 ->required()
-                ->disabled(fn (?EdomQuestionOption $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->isDraft())
+                ->disabled(fn (?EdomQuestionOption $record): bool => $record?->edomSettings !== null && ! $record->edomSettings->canModifyQuestionMaster())
                 ->helperText(self::LOCK_HELPER),
         ]);
     }
