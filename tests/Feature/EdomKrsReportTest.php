@@ -19,7 +19,7 @@ class EdomKrsReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_report_uses_krs_api_metadata_without_local_krs_table(): void
+    public function test_report_uses_current_krs_metadata_without_a_local_krs_table(): void
     {
         Cache::flush();
 
@@ -33,7 +33,7 @@ class EdomKrsReportTest extends TestCase
         ]);
         $setting = EdomSettings::query()->create([
             'name' => 'EDOM 2025',
-            'status' => 'active',
+            'status' => EdomSettings::STATUS_ACTIVE,
         ]);
         $response = EdomResponse::query()->create([
             'edom_period_id' => $period->id,
@@ -46,6 +46,7 @@ class EdomKrsReportTest extends TestCase
 
         $siakad = Mockery::mock(UnwApiSiakad::class);
         $siakad->shouldReceive('krs')
+            ->atLeast()
             ->once()
             ->with('18273', 2025, 1)
             ->andReturn([
@@ -53,6 +54,9 @@ class EdomKrsReportTest extends TestCase
                 $this->section(32489, 3926, '24KK01 B', 'Hukum Kesehatan Dan Digital'),
                 $this->section(22494, 3931, '24KK02', 'Hukum Pembuktian Tindak Pidana Digital'),
             ]);
+        $siakad->shouldReceive('penawaran')
+            ->zeroOrMoreTimes()
+            ->andReturn([]);
         $this->app->instance(UnwApiSiakad::class, $siakad);
 
         $result = app(EdomKrsReportData::class)->refreshKnownResponseMetadata();
@@ -65,20 +69,24 @@ class EdomKrsReportTest extends TestCase
             'id' => $response->id,
             'id_unw_program_studi' => 22,
         ]);
-        $this->assertSame(1, EdomReportResource::courseCountForProgramStudi($programStudi));
+        $this->assertSame(2, EdomReportResource::courseCountForProgramStudi($programStudi));
         $this->assertSame(1, EdomReportResource::responseCountForProgramStudi($programStudi));
         $this->assertSame(
-            [3926],
+            [3926, 3931],
             EdomReportResource::coursesForProgramStudi($programStudi)
                 ->pluck('siakad_idmatakuliah')
                 ->map(fn ($id): int => (int) $id)
+                ->sort()
+                ->values()
                 ->all(),
         );
         $this->assertSame('m_3926', EdomReportResource::courseKeyForCourseId(3926));
     }
 
-    public function test_response_counts_are_scoped_by_submitted_program_studi_and_course(): void
+    public function test_response_counts_fall_back_to_submitted_program_studi_and_course_data(): void
     {
+        Cache::flush();
+
         $magisterHukum = ProgramStudi::query()->create([
             'id_unw_program_studi' => 22,
             'nama' => 'Hukum',
@@ -95,7 +103,7 @@ class EdomKrsReportTest extends TestCase
         ]);
         $setting = EdomSettings::query()->create([
             'name' => 'EDOM Bersama',
-            'status' => 'active',
+            'status' => EdomSettings::STATUS_ACTIVE,
         ]);
 
         foreach ([3926, 3931, 3927] as $courseId) {
@@ -119,6 +127,10 @@ class EdomKrsReportTest extends TestCase
             'id_unw_program_studi' => 1,
             'submitted_at' => now(),
         ]);
+
+        $reportData = Mockery::mock(EdomKrsReportData::class);
+        $reportData->shouldReceive('courseCountForProgramStudi')->andReturn(0);
+        $this->app->instance(EdomKrsReportData::class, $reportData);
 
         $this->assertSame(3, EdomReportResource::responseCountForProgramStudi($magisterHukum));
         $this->assertSame(1, EdomReportResource::responseCountForProgramStudi($keperawatan));
@@ -144,7 +156,7 @@ class EdomKrsReportTest extends TestCase
         ]);
         $setting = EdomSettings::query()->create([
             'name' => 'EDOM 2025',
-            'status' => 'active',
+            'status' => EdomSettings::STATUS_ACTIVE,
         ]);
         $response = EdomResponse::query()->create([
             'edom_period_id' => $period->id,
@@ -189,12 +201,7 @@ class EdomKrsReportTest extends TestCase
                 'nidn' => '0609077101',
                 'nama' => 'Dosen Pengampu',
             ],
-            'dosen_team' => [
-                [
-                    'nidn' => '0609077101',
-                    'nama' => 'Dosen Pengampu',
-                ],
-            ],
+            'dosen_team' => [],
             'id_unw_program_studi' => 22,
         ];
     }

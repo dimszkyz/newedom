@@ -77,17 +77,31 @@ class ViewEdomCourseReport extends Page implements HasTable
                 ->label('Pernyataan')
                 ->wrap()
                 ->limit(160),
-            TextColumn::make('option_answer_count')
+            TextColumn::make('answer_count')
                 ->label('Jumlah Jawaban')
                 ->badge()
                 ->color('info'),
+            TextColumn::make('essay_answers')
+                ->label('Jawaban Esai')
+                ->state(fn (EdomResponseDetail $record): ?string => $this->isEssayRow($record)
+                    ? $this->textAnswersFor($record)
+                        ->values()
+                        ->map(fn (string $answer, int $index): string => ($index + 1).'. '.$answer)
+                        ->join(' | ')
+                    : null)
+                ->wrap()
+                ->placeholder('-'),
         ];
 
         foreach ($this->optionLabels() as $index => $optionLabel) {
             $columns[] = TextColumn::make('option_'.$index)
                 ->label($optionLabel)
-                ->state(fn (EdomResponseDetail $record): string => $this->percentageLabelFor($record, $optionLabel))
-                ->description(fn (EdomResponseDetail $record): string => $this->selectedCountFor($record, $optionLabel).' dipilih')
+                ->state(fn (EdomResponseDetail $record): ?string => $this->isEssayRow($record)
+                    ? null
+                    : $this->percentageLabelFor($record, $optionLabel))
+                ->description(fn (EdomResponseDetail $record): ?string => $this->isEssayRow($record)
+                    ? null
+                    : $this->selectedCountFor($record, $optionLabel).' dipilih')
                 ->badge()
                 ->color('success');
         }
@@ -98,6 +112,7 @@ class ViewEdomCourseReport extends Page implements HasTable
     private function reportQuery(): Builder
     {
         $responseIds = $this->responseIds();
+        $questionTypeExpression = "COALESCE(edom_response_detail.question_type_snapshot, edom_questions.question_type, CASE WHEN edom_response_detail.answer_text IS NOT NULL THEN 'text' ELSE 'option' END)";
 
         $query = EdomResponseDetail::query()
             ->leftJoin('edom_questions', 'edom_questions.id', '=', 'edom_response_detail.edom_question_id')
@@ -106,6 +121,7 @@ class ViewEdomCourseReport extends Page implements HasTable
             ->selectRaw('MIN(edom_response_detail.id) as id')
             ->selectRaw("COALESCE(edom_response_detail.category_name_snapshot, edom_question_categories.name, 'Kategori dihapus') as report_category")
             ->selectRaw("COALESCE(edom_response_detail.question_statement_snapshot, edom_questions.statement, 'Pertanyaan dihapus') as report_statement")
+            ->selectRaw($questionTypeExpression.' as report_question_type')
             ->selectRaw('COUNT(edom_response_detail.id) as answer_count')
             ->selectRaw('COUNT(COALESCE(edom_response_detail.option_name_snapshot, edom_question_options.name)) as option_answer_count')
             ->groupBy([
@@ -113,7 +129,8 @@ class ViewEdomCourseReport extends Page implements HasTable
                 'edom_question_categories.name',
                 'edom_response_detail.question_statement_snapshot',
                 'edom_questions.statement',
-            ]);
+            ])
+            ->groupByRaw($questionTypeExpression);
 
         if ($responseIds->isEmpty()) {
             return $query->whereRaw('1 = 0');
@@ -177,13 +194,37 @@ class ViewEdomCourseReport extends Page implements HasTable
 
     private function detailsForReportRow(EdomResponseDetail $record): Builder
     {
+        $questionTypeExpression = "COALESCE(edom_response_detail.question_type_snapshot, edom_questions.question_type, CASE WHEN edom_response_detail.answer_text IS NOT NULL THEN 'text' ELSE 'option' END)";
+
         return EdomResponseDetail::query()
             ->leftJoin('edom_questions', 'edom_questions.id', '=', 'edom_response_detail.edom_question_id')
             ->leftJoin('edom_question_categories', 'edom_question_categories.id', '=', 'edom_questions.edom_question_category_id')
             ->leftJoin('edom_question_options', 'edom_question_options.id', '=', 'edom_response_detail.edom_option_id')
             ->whereIn('edom_response_detail.edom_response_id', $this->responseIds()->all())
             ->whereRaw("COALESCE(edom_response_detail.category_name_snapshot, edom_question_categories.name, 'Kategori dihapus') = ?", [$record->getAttribute('report_category')])
-            ->whereRaw("COALESCE(edom_response_detail.question_statement_snapshot, edom_questions.statement, 'Pertanyaan dihapus') = ?", [$record->getAttribute('report_statement')]);
+            ->whereRaw("COALESCE(edom_response_detail.question_statement_snapshot, edom_questions.statement, 'Pertanyaan dihapus') = ?", [$record->getAttribute('report_statement')])
+            ->whereRaw($questionTypeExpression.' = ?', [$record->getAttribute('report_question_type')]);
+    }
+
+    private function textAnswersFor(EdomResponseDetail $record): Collection
+    {
+        return (clone $this->detailsForReportRow($record))
+            ->whereNotNull('edom_response_detail.answer_text')
+            ->where('edom_response_detail.answer_text', '<>', '')
+            ->pluck('edom_response_detail.answer_text')
+            ->map(fn ($answer): string => trim((string) $answer))
+            ->filter()
+            ->unique()
+            ->values();
+    }
+
+    private function isEssayRow(EdomResponseDetail $record): bool
+    {
+        return in_array(
+            strtolower(trim((string) $record->getAttribute('report_question_type'))),
+            ['text', 'essay', 'esai'],
+            true,
+        );
     }
 
     private function responseIds(): Collection
